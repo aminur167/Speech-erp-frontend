@@ -71,6 +71,8 @@ export interface Payment {
   status: PaymentStatus;
   collectedBy: string;
   branchId: string;
+  /** Which service category this payment was collected for — powers revenue-by-category reporting. */
+  category?: ServiceCategory;
   createdAt: string;
 }
 

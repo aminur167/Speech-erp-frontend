@@ -86,6 +86,7 @@ export function InstallmentServiceEnrollment() {
         patientId: selectedPatient.id,
         amount: installment.amount,
         method,
+        category: "installment",
         collectedBy: user.name,
         branchId: user.branchId ?? "branch-1",
       },

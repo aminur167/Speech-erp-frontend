@@ -38,6 +38,7 @@ export function CollectDuePaymentModal({
           patientId: item.patientId,
           amount: item.amount,
           method,
+          category: item.type,
           collectedBy: user.name,
           branchId: user.branchId ?? "branch-1",
         },

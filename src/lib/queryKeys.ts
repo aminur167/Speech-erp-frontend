@@ -25,6 +25,14 @@ export const queryKeys = {
     summary: (branchId?: string) => ["transactions", "summary", branchId] as const,
     refundsAndVoids: (branchId?: string) =>
       ["transactions", "refunds-voids", branchId] as const,
+    trend: (branchId: string | undefined, days: number) =>
+      ["transactions", "trend", branchId, days] as const,
+    byMethodThisMonth: (branchId?: string) =>
+      ["transactions", "by-method-month", branchId] as const,
+    byCategoryThisMonth: (branchId?: string) =>
+      ["transactions", "by-category-month", branchId] as const,
+    dashboardMetrics: (branchId?: string) =>
+      ["transactions", "dashboard-metrics", branchId] as const,
   },
   duePayments: {
     all: ["due-payments"] as const,

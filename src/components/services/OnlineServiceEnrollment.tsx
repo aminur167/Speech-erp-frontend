@@ -91,6 +91,7 @@ export function OnlineServiceEnrollment() {
         patientId: selectedPatient.id,
         amount: booking.advanceAmount,
         method,
+        category: "online",
         collectedBy: user.name,
         branchId: user.branchId ?? "branch-1",
       },

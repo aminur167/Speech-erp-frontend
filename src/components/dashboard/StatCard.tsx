@@ -14,6 +14,15 @@ const toneStyles: Record<Tone, string> = {
   success: "bg-success/10 text-success",
 };
 
+const toneAccentColor: Record<Tone, string> = {
+  primary: "#0F766E",
+  danger: "#DC2626",
+  warning: "#D97706",
+  info: "#2563EB",
+  purple: "#7C3AED",
+  success: "#16A34A",
+};
+
 export function StatCard({
   label,
   value,
@@ -49,8 +58,14 @@ export function StatCard({
     </>
   );
 
+  const accentStyle = { borderTopColor: toneAccentColor[tone], borderTopWidth: 3 };
+
   if (!onClick) {
-    return <Card className="flex flex-col gap-3">{content}</Card>;
+    return (
+      <Card className="flex flex-col gap-3" style={accentStyle}>
+        {content}
+      </Card>
+    );
   }
 
   return (
@@ -60,6 +75,7 @@ export function StatCard({
         "cursor-pointer hover:shadow-md",
         selected && "ring-2 ring-primary",
       )}
+      style={accentStyle}
       role="button"
       tabIndex={0}
       onClick={onClick}

@@ -52,6 +52,7 @@ export function DailyServiceEnrollment() {
         patientId: selectedPatient.id,
         amount: selectedService.fee,
         method,
+        category: "daily",
         collectedBy: user.name,
         branchId: user.branchId ?? "branch-1",
       },

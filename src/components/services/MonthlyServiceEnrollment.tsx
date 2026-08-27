@@ -82,6 +82,7 @@ export function MonthlyServiceEnrollment() {
         patientId: selectedPatient.id,
         amount: bill.amount,
         method,
+        category: "monthly",
         collectedBy: user.name,
         branchId: user.branchId ?? "branch-1",
       },

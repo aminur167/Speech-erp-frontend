@@ -1,7 +1,7 @@
 import { listPayments } from "@/lib/api/payments";
 import { listPatients } from "@/lib/api/patients";
 import type { PaginatedResponse } from "@/types/api";
-import type { Payment, PaymentMethod, PaymentStatus } from "@/types/domain";
+import type { Payment, PaymentMethod, PaymentStatus, ServiceCategory } from "@/types/domain";
 
 /**
  * Denormalized "transaction history" view — joins payments with patient
@@ -80,6 +80,7 @@ export interface TransactionsSummary {
   totalCollected: number;
   transactionCount: number;
   todayCollected: number;
+  monthCollected: number;
   byMethod: { method: PaymentMethod; amount: number }[];
 }
 
@@ -89,6 +90,7 @@ export async function getTransactionsSummary(branchId?: string): Promise<Transac
   const paid = all.filter((item) => item.status === "paid");
   const now = new Date();
   const todayKey = now.toDateString();
+  const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
 
   const byMethodMap = new Map<PaymentMethod, number>();
   for (const item of paid) {
@@ -103,6 +105,106 @@ export async function getTransactionsSummary(branchId?: string): Promise<Transac
     transactionCount: all.length,
     todayCollected: paid
       .filter((item) => new Date(item.createdAt).toDateString() === todayKey)
+      .reduce((sum, item) => sum + item.amount, 0),
+    monthCollected: paid
+      .filter((item) => {
+        const created = new Date(item.createdAt);
+        return `${created.getFullYear()}-${created.getMonth()}` === monthKey;
+      })
+      .reduce((sum, item) => sum + item.amount, 0),
+  };
+}
+
+/** Daily collection totals for the last `days` calendar days (oldest first) — powers a revenue trend chart. */
+export async function getRevenueTrend(
+  branchId: string | undefined,
+  days = 7,
+): Promise<{ date: string; label: string; amount: number }[]> {
+  const all = await joinTransactions(branchId);
+  const paid = all.filter((item) => item.status === "paid");
+
+  const buckets: { date: string; label: string; amount: number }[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const day = new Date();
+    day.setDate(day.getDate() - i);
+    day.setHours(0, 0, 0, 0);
+    const dayKey = day.toDateString();
+    const amount = paid
+      .filter((item) => new Date(item.createdAt).toDateString() === dayKey)
+      .reduce((sum, item) => sum + item.amount, 0);
+    buckets.push({
+      date: dayKey,
+      label: day.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      amount,
+    });
+  }
+  return buckets;
+}
+
+/** This month's revenue split by payment method — for the Manager Dashboard's method breakdown chart. */
+export async function getMonthlyRevenueByMethod(
+  branchId?: string,
+): Promise<{ method: PaymentMethod; amount: number }[]> {
+  const all = await joinTransactions(branchId);
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+
+  const thisMonth = all.filter((item) => {
+    if (item.status !== "paid") return false;
+    const created = new Date(item.createdAt);
+    return `${created.getFullYear()}-${created.getMonth()}` === monthKey;
+  });
+
+  const map = new Map<PaymentMethod, number>();
+  for (const item of thisMonth) {
+    map.set(item.method, (map.get(item.method) ?? 0) + item.amount);
+  }
+  return Array.from(map.entries())
+    .map(([method, amount]) => ({ method, amount }))
+    .sort((a, b) => b.amount - a.amount);
+}
+
+/** This month's revenue split by service category — for the Manager Dashboard's category chart. */
+export async function getRevenueByCategory(
+  branchId?: string,
+): Promise<{ category: ServiceCategory; amount: number }[]> {
+  const all = await joinTransactions(branchId);
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+
+  const thisMonth = all.filter((item) => {
+    if (item.status !== "paid" || !item.category) return false;
+    const created = new Date(item.createdAt);
+    return `${created.getFullYear()}-${created.getMonth()}` === monthKey;
+  });
+
+  const map = new Map<ServiceCategory, number>();
+  for (const item of thisMonth) {
+    const category = item.category as ServiceCategory;
+    map.set(category, (map.get(category) ?? 0) + item.amount);
+  }
+  return Array.from(map.entries()).map(([category, amount]) => ({ category, amount }));
+}
+
+export interface BranchDashboardMetrics {
+  todayPatientsSeen: number;
+  todayDueCollected: number;
+}
+
+/** A couple of "today" metrics that don't fit neatly into the other summary functions. */
+export async function getBranchDashboardMetrics(
+  branchId?: string,
+): Promise<BranchDashboardMetrics> {
+  const all = await joinTransactions(branchId);
+  const paid = all.filter((item) => item.status === "paid");
+  const now = new Date();
+  const todayKey = now.toDateString();
+  const today = paid.filter((item) => new Date(item.createdAt).toDateString() === todayKey);
+
+  return {
+    todayPatientsSeen: new Set(today.map((item) => item.patientId)).size,
+    todayDueCollected: today
+      .filter((item) => item.category === "monthly" || item.category === "installment")
       .reduce((sum, item) => sum + item.amount, 0),
   };
 }
