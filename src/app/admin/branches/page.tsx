@@ -1,12 +1,5 @@
-import { PagePlaceholder } from "@/components/layout/PagePlaceholder";
+import { BranchesView } from "@/components/branches/BranchesView";
 
 export default function BranchesPage() {
-  return (
-    <PagePlaceholder
-      homeHref="/admin/dashboard"
-      roleLabel="Admin"
-      title="Branches"
-      subtitle="Manage clinic branches and compare their performance."
-    />
-  );
+  return <BranchesView />;
 }

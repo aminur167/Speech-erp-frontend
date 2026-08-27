@@ -1,12 +1,5 @@
-import { PagePlaceholder } from "@/components/layout/PagePlaceholder";
+import { SettingsView } from "@/components/settings/SettingsView";
 
 export default function AdminSettingsPage() {
-  return (
-    <PagePlaceholder
-      homeHref="/admin/dashboard"
-      roleLabel="Admin"
-      title="Settings"
-      subtitle="Manage system-wide configuration and preferences."
-    />
-  );
+  return <SettingsView homeHref="/admin/dashboard" roleLabel="Admin" />;
 }

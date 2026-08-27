@@ -1,12 +1,5 @@
-import { PagePlaceholder } from "@/components/layout/PagePlaceholder";
+import { SettingsView } from "@/components/settings/SettingsView";
 
 export default function ManagerSettingsPage() {
-  return (
-    <PagePlaceholder
-      homeHref="/manager/dashboard"
-      roleLabel="Branch Manager"
-      title="Settings"
-      subtitle="Manage your account and branch preferences."
-    />
-  );
+  return <SettingsView homeHref="/manager/dashboard" roleLabel="Branch Manager" />;
 }

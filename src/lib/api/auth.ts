@@ -56,3 +56,18 @@ export async function logout(): Promise<void> {
 export async function getCurrentUser(): Promise<AuthUser | null> {
   return delay(null, 150);
 }
+
+export interface UpdateProfileInput {
+  userId: string;
+  name: string;
+}
+
+export async function updateProfile(input: UpdateProfileInput): Promise<AuthUser> {
+  await delay(null, 300);
+  const match = MOCK_USERS.find((u) => u.user.id === input.userId);
+  if (!match) {
+    throw { message: "User not found.", status: 404 };
+  }
+  match.user = { ...match.user, name: input.name };
+  return match.user;
+}

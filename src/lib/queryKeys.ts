@@ -12,6 +12,10 @@ export const queryKeys = {
     all: ["services"] as const,
     list: (params?: object) => ["services", "list", params] as const,
   },
+  branches: {
+    all: ["branches"] as const,
+    overview: ["branches", "overview"] as const,
+  },
   payments: {
     all: ["payments"] as const,
   },
