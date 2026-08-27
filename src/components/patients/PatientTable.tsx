@@ -1,12 +1,48 @@
 import Link from "next/link";
-import type { Patient } from "@/types/domain";
+import { Badge } from "@/components/ui/Badge";
+import type { PatientDirectoryItem } from "@/lib/api/patientDirectory";
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
+const statusTone: Record<string, "success" | "purple" | "warning"> = {
+  "active-care": "success",
+  "in-progress": "purple",
+  "action-needed": "warning",
+};
+
+const statusLabel: Record<string, string> = {
+  "active-care": "Active Care",
+  "in-progress": "In Progress",
+  "action-needed": "Action Needed",
+};
+
+export interface PatientTableColumns {
+  [key: string]: boolean;
+  age: boolean;
+  gender: boolean;
+  guardian: boolean;
+  phone: boolean;
+  therapyType: boolean;
+  paymentType: boolean;
+  status: boolean;
+  branch: boolean;
+}
 
 export function PatientTable({
   patients,
   basePath,
+  columns,
 }: {
-  patients: Patient[];
+  patients: PatientDirectoryItem[];
   basePath: string;
+  columns: PatientTableColumns;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -14,8 +50,14 @@ export function PatientTable({
         <thead>
           <tr className="border-b border-border text-text-secondary">
             <th className="py-2 pr-4 font-medium">Patient ID</th>
-            <th className="py-2 pr-4 font-medium">Name</th>
-            <th className="py-2 pr-4 font-medium">Phone</th>
+            <th className="py-2 pr-4 font-medium">Patient Name</th>
+            {columns.age && <th className="py-2 pr-4 font-medium">Age</th>}
+            {columns.gender && <th className="py-2 pr-4 font-medium">Gender</th>}
+            {columns.guardian && <th className="py-2 pr-4 font-medium">Guardian</th>}
+            {columns.phone && <th className="py-2 pr-4 font-medium">Phone</th>}
+            {columns.therapyType && <th className="py-2 pr-4 font-medium">Therapy Type</th>}
+            {columns.paymentType && <th className="py-2 pr-4 font-medium">Payment Type</th>}
+            {columns.status && <th className="py-2 pr-4 font-medium">Status</th>}
           </tr>
         </thead>
         <tbody>
@@ -25,14 +67,51 @@ export function PatientTable({
                 {patient.patientCode}
               </td>
               <td className="py-2 pr-4">
-                <Link
-                  href={`${basePath}/${patient.id}`}
-                  className="font-medium text-primary hover:underline"
-                >
-                  {patient.name}
-                </Link>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-light text-xs font-semibold text-primary-dark">
+                    {getInitials(patient.name)}
+                  </span>
+                  <div>
+                    <Link
+                      href={`${basePath}/${patient.id}`}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {patient.name}
+                    </Link>
+                    {columns.branch && (
+                      <p className="text-xs text-text-secondary">{patient.branchName}</p>
+                    )}
+                  </div>
+                </div>
               </td>
-              <td className="py-2 pr-4">{patient.phone}</td>
+              {columns.age && <td className="py-2 pr-4">{patient.age ?? "—"}</td>}
+              {columns.gender && (
+                <td className="py-2 pr-4 capitalize">{patient.gender ?? "—"}</td>
+              )}
+              {columns.guardian && (
+                <td className="py-2 pr-4">
+                  {patient.guardianName ? (
+                    <>
+                      <p>{patient.guardianName}</p>
+                      {patient.guardianRelation && (
+                        <p className="text-xs capitalize text-text-secondary">
+                          {patient.guardianRelation}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+              )}
+              {columns.phone && <td className="py-2 pr-4">{patient.phone}</td>}
+              {columns.therapyType && <td className="py-2 pr-4">{patient.therapyType}</td>}
+              {columns.paymentType && <td className="py-2 pr-4">{patient.paymentType}</td>}
+              {columns.status && (
+                <td className="py-2 pr-4">
+                  <Badge tone={statusTone[patient.status]} label={statusLabel[patient.status]} />
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

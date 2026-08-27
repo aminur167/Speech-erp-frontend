@@ -5,12 +5,37 @@ import type { InstallmentPlan, Installment } from "@/types/domain";
  * once it calls the real Django/DRF `/enrollments/installments/` endpoints.
  */
 
-let plans: InstallmentPlan[] = [];
-
 const ORDINALS = ["1st", "2nd", "3rd", "4th", "5th", "6th"];
 
 function delay<T>(value: T, ms = 350): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+}
+
+function buildInstallments(totalAmount: number, numberOfInstallments: number): Installment[] {
+  const base = Math.floor(totalAmount / numberOfInstallments);
+  const remainder = totalAmount - base * numberOfInstallments;
+  return Array.from({ length: numberOfInstallments }, (_, i) => ({
+    index: i + 1,
+    label: `${ORDINALS[i] ?? `${i + 1}th`} Installment`,
+    amount: i === numberOfInstallments - 1 ? base + remainder : base,
+    status: i === 0 ? "due" : "upcoming",
+  }));
+}
+
+let plans: InstallmentPlan[] = [
+  {
+    id: "plan-seed-1",
+    patientId: "p-7",
+    serviceId: "s-7",
+    branchId: "branch-1",
+    totalAmount: 6000,
+    installments: buildInstallments(6000, 3),
+  },
+];
+
+export async function listInstallmentPlans(): Promise<InstallmentPlan[]> {
+  await delay(null, 150);
+  return plans;
 }
 
 export interface CreateInstallmentPlanInput {
@@ -25,26 +50,13 @@ export async function createInstallmentPlan(
   input: CreateInstallmentPlanInput,
 ): Promise<InstallmentPlan> {
   await delay(null);
-  const base = Math.floor(input.totalAmount / input.numberOfInstallments);
-  const remainder = input.totalAmount - base * input.numberOfInstallments;
-
-  const installments: Installment[] = Array.from(
-    { length: input.numberOfInstallments },
-    (_, i) => ({
-      index: i + 1,
-      label: `${ORDINALS[i] ?? `${i + 1}th`} Installment`,
-      amount: i === input.numberOfInstallments - 1 ? base + remainder : base,
-      status: i === 0 ? "due" : "upcoming",
-    }),
-  );
-
   const plan: InstallmentPlan = {
     id: `plan-${Date.now()}`,
     patientId: input.patientId,
     serviceId: input.serviceId,
     branchId: input.branchId,
     totalAmount: input.totalAmount,
-    installments,
+    installments: buildInstallments(input.totalAmount, input.numberOfInstallments),
   };
   plans = [plan, ...plans];
   return plan;

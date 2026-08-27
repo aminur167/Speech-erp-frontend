@@ -5,8 +5,6 @@ import type { MonthlyEnrollment, MonthlyBill } from "@/types/domain";
  * once it calls the real Django/DRF `/enrollments/monthly/` endpoints.
  */
 
-let enrollments: MonthlyEnrollment[] = [];
-
 function delay<T>(value: T, ms = 350): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
 }
@@ -20,6 +18,23 @@ function monthAt(offset: number): { month: string; label: string } {
   return { month, label };
 }
 
+function seedBills(fee: number): MonthlyBill[] {
+  return [0, 1, 2].map((offset) => {
+    const { month, label } = monthAt(offset);
+    return { month, label, amount: fee, status: offset === 0 ? "due" : "upcoming" };
+  });
+}
+
+let enrollments: MonthlyEnrollment[] = [
+  { id: "menr-seed-1", patientId: "p-4", serviceId: "s-5", branchId: "branch-1", bills: seedBills(5000) },
+  { id: "menr-seed-2", patientId: "p-6", serviceId: "s-6", branchId: "branch-1", bills: seedBills(3000) },
+];
+
+export async function listMonthlyEnrollments(): Promise<MonthlyEnrollment[]> {
+  await delay(null, 150);
+  return enrollments;
+}
+
 export interface CreateMonthlyEnrollmentInput {
   patientId: string;
   serviceId: string;
@@ -31,16 +46,12 @@ export async function createMonthlyEnrollment(
   input: CreateMonthlyEnrollmentInput,
 ): Promise<MonthlyEnrollment> {
   await delay(null);
-  const bills: MonthlyBill[] = [0, 1, 2].map((offset) => {
-    const { month, label } = monthAt(offset);
-    return { month, label, amount: input.fee, status: offset === 0 ? "due" : "upcoming" };
-  });
   const enrollment: MonthlyEnrollment = {
     id: `menr-${Date.now()}`,
     patientId: input.patientId,
     serviceId: input.serviceId,
     branchId: input.branchId,
-    bills,
+    bills: seedBills(input.fee),
   };
   enrollments = [enrollment, ...enrollments];
   return enrollment;

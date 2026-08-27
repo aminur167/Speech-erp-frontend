@@ -3,6 +3,9 @@ export const queryKeys = {
     all: ["patients"] as const,
     list: (params?: object) => ["patients", "list", params] as const,
     detail: (id: string) => ["patients", "detail", id] as const,
+    directory: (params?: object) => ["patients", "directory", params] as const,
+    directorySummary: (branchId?: string) =>
+      ["patients", "directory-summary", branchId] as const,
   },
   services: {
     all: ["services"] as const,
@@ -10,10 +13,13 @@ export const queryKeys = {
   },
   payments: {
     all: ["payments"] as const,
-    duePayments: (params?: object) =>
-      ["payments", "due", params] as const,
     transactions: (params?: object) =>
       ["payments", "transactions", params] as const,
+  },
+  duePayments: {
+    all: ["due-payments"] as const,
+    list: (params?: object) => ["due-payments", "list", params] as const,
+    summary: (branchId?: string) => ["due-payments", "summary", branchId] as const,
   },
   expenses: {
     all: ["expenses"] as const,

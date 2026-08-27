@@ -18,6 +18,10 @@ const patientSchema = z.object({
   gender: z.union([z.enum(["male", "female", "other"]), z.literal("")]).optional(),
   dateOfBirth: z.string().optional(),
   guardianName: z.string().optional(),
+  guardianRelation: z.union([
+    z.enum(["father", "mother", "guardian", "other"]),
+    z.literal(""),
+  ]).optional(),
   address: z.string().optional(),
 });
 
@@ -46,6 +50,7 @@ export function PatientRegistrationForm({
         ...values,
         email: values.email || undefined,
         gender: values.gender || undefined,
+        guardianRelation: values.guardianRelation || undefined,
         branchId: user?.branchId ?? "branch-1",
       },
       {
@@ -77,7 +82,16 @@ export function PatientRegistrationForm({
         <option value="other">Other</option>
       </Select>
       <Input type="date" aria-label="Date of Birth" {...register("dateOfBirth")} />
-      <Input placeholder="Guardian Name (optional)" {...register("guardianName")} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Input placeholder="Guardian Name (optional)" {...register("guardianName")} />
+        <Select defaultValue="" {...register("guardianRelation")}>
+          <option value="">Relation (optional)</option>
+          <option value="father">Father</option>
+          <option value="mother">Mother</option>
+          <option value="guardian">Guardian</option>
+          <option value="other">Other</option>
+        </Select>
+      </div>
       <Input placeholder="Address (optional)" {...register("address")} />
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>

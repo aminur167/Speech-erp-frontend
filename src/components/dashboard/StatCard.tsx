@@ -21,6 +21,8 @@ export function StatCard({
   tone = "primary",
   hint,
   footer,
+  selected,
+  onClick,
 }: {
   label: string;
   value: string;
@@ -28,9 +30,11 @@ export function StatCard({
   tone?: Tone;
   hint?: string;
   footer?: ReactNode;
+  selected?: boolean;
+  onClick?: () => void;
 }) {
-  return (
-    <Card className="flex flex-col gap-3">
+  const content = (
+    <>
       <div className="flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-wide text-text-secondary">{label}</p>
         {Icon && (
@@ -42,6 +46,31 @@ export function StatCard({
       <p className="text-2xl font-semibold text-text-primary">{value}</p>
       {hint && <p className="text-xs text-text-secondary">{hint}</p>}
       {footer}
+    </>
+  );
+
+  if (!onClick) {
+    return <Card className="flex flex-col gap-3">{content}</Card>;
+  }
+
+  return (
+    <Card
+      className={clsx(
+        "flex flex-col gap-3 text-left transition-shadow",
+        "cursor-pointer hover:shadow-md",
+        selected && "ring-2 ring-primary",
+      )}
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+    >
+      {content}
     </Card>
   );
 }

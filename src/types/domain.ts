@@ -14,6 +14,7 @@ export interface Branch {
 }
 
 export type Gender = "male" | "female" | "other";
+export type GuardianRelation = "father" | "mother" | "guardian" | "other";
 
 export interface Patient {
   id: string;
@@ -24,8 +25,10 @@ export interface Patient {
   gender?: Gender;
   dateOfBirth?: string;
   guardianName?: string;
+  guardianRelation?: GuardianRelation;
   address?: string;
   branchId: string;
+  createdAt: string;
 }
 
 export type ServiceCategory = "daily" | "monthly" | "installment" | "online";
