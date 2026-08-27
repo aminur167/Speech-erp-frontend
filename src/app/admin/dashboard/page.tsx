@@ -1,4 +1,4 @@
-import { Building2, Users, Wallet, TrendingUp } from "lucide-react";
+import { Building2, Users, Wallet, TrendingUp, Receipt } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 
 export default function AdminDashboardPage() {
@@ -10,6 +10,7 @@ export default function AdminDashboardPage() {
         <StatCard label="Total Patients" value="1,284" icon={Users} />
         <StatCard label="Today's Collection" value="৳42,500" icon={Wallet} />
         <StatCard label="Total Due" value="৳45,500" icon={TrendingUp} />
+        <StatCard label="Expenses (This Month)" value="৳97,200" icon={Receipt} />
       </div>
     </div>
   );

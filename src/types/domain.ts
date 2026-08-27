@@ -13,11 +13,18 @@ export interface Branch {
   name: string;
 }
 
+export type Gender = "male" | "female" | "other";
+
 export interface Patient {
   id: string;
   patientCode: string; // e.g. PT-2026-00125
   name: string;
   phone: string;
+  email?: string;
+  gender?: Gender;
+  dateOfBirth?: string;
+  guardianName?: string;
+  address?: string;
   branchId: string;
 }
 
@@ -61,5 +68,29 @@ export interface Payment {
   status: PaymentStatus;
   collectedBy: string;
   branchId: string;
+  createdAt: string;
+}
+
+export type ExpenseCategory =
+  | "rent"
+  | "utilities"
+  | "salaries"
+  | "supplies"
+  | "equipment"
+  | "maintenance"
+  | "marketing"
+  | "other";
+
+export type ExpenseStatus = "pending" | "approved" | "rejected";
+
+export interface Expense {
+  id: string;
+  expenseCode: string; // e.g. EXP-2026-00042
+  category: ExpenseCategory;
+  amount: number;
+  description: string;
+  branchId: string;
+  submittedBy: string;
+  status: ExpenseStatus;
   createdAt: string;
 }

@@ -71,3 +71,27 @@ body {
   background: var(--color-background);
   color: var(--color-text-primary);
 }
+
+/* Slim, muted scrollbars for the app shell's scrollable regions (Chromium/WebKit + Firefox). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-secondary);
+}

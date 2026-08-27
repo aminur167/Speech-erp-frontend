@@ -1,5 +1,5 @@
-import { PagePlaceholder } from "@/components/layout/PagePlaceholder";
+import { PatientListView } from "@/components/patients/PatientListView";
 
 export default function ManagerPatientsPage() {
-  return <PagePlaceholder title="Patients" />;
+  return <PatientListView basePath="/manager/patients" canRegister />;
 }

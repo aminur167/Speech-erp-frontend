@@ -280,6 +280,59 @@ Difference:      ৳0
 Status:          MATCHED
 ```
 
+### Expense Management
+
+Every business has running costs, so the frontend includes a voucher-based expense workflow for tracking and approving branch spending — not just patient revenue.
+
+**Expense voucher fields:**
+- Category — Rent, Utilities, Salaries, Supplies, Equipment, Maintenance, Marketing, Other
+- Amount (BDT)
+- Description
+- Paid To (vendor / payee name)
+- Date
+- Payment Method — Cash, bKash, Nagad, Rocket, Bank Transfer, Card, Online Payment
+- Status — Pending, Approved, Rejected
+- Remarks (optional notes)
+- Recurring flag — for repeating costs like monthly rent or salaries
+
+**Branch Manager — Expense screen:**
+- Page header: breadcrumb (`Home > Manager > Expense`) + title + short description + a primary **+ Add Expense** action
+- Summary stat cards:
+  - Total Expenses — all recorded branch spending, with voucher count and a **Quick Add** shortcut
+  - Today's Expenses — live daily operational cost total
+  - Monthly Expenses — running current-month aggregate
+  - Pending Approvals — vouchers awaiting review
+- Search by voucher ID, description, or payee
+- Filters: Category, Status, Payment Method, Date range, plus a **Clear** action
+- Table toolbar: Refresh, Export, Columns (show/hide columns)
+- **Add Expense** opens a form/modal covering all voucher fields above
+
+**Admin / Owner — Expense oversight:**
+- Same voucher list, scoped across every branch instead of one
+- Approve or reject vouchers pending review
+- Branch-wise and category-wise expense breakdown for reporting
+
+**Approval workflow:**
+
+```text
+Manager Records Voucher
+        ↓
+Amount below auto-approval threshold? ──Yes──> Approved
+        │No
+        ↓
+Pending Admin Approval
+        ↓
+Admin Approves / Rejects
+```
+
+> Example threshold: vouchers under ৳5,000 are auto-approved; larger ones require Admin sign-off. The exact threshold is a configurable business rule, not a hardcoded UI value.
+
+Example voucher:
+
+```text
+EXP-2026-00042   Equipment   ৳12,000   Paid To: Dhaka Medical Supplies   Status: PENDING
+```
+
 ### Admin Dashboard
 
 The Admin / Owner frontend can display:
@@ -289,6 +342,7 @@ The Admin / Owner frontend can display:
 - Today's collection
 - Monthly collection
 - Total due
+- Total expenses (this month)
 - Branch comparison
 - Revenue reports
 - Service reports
@@ -299,6 +353,7 @@ The Admin / Owner frontend can display:
 - Manager collection
 - Daily closing mismatches
 - Refund / void reports
+- Pending expense approvals
 
 ---
 
@@ -316,6 +371,8 @@ Enroll Service
     └── Online Services
 
 Due Payment Collection
+
+Expenses
 
 Daily Closing
 
@@ -546,6 +603,7 @@ All Services
 All Transactions
 Reports
 Daily Closing Review
+Expense Approvals
 System Settings
 ```
 
@@ -558,6 +616,7 @@ Patients
 Services
 Payments
 Due Payments
+Expenses
 Receipts
 Daily Closing
 Settings
@@ -627,6 +686,7 @@ Select
 Modal
 Dialog
 Dropdown
+Breadcrumb
 Table
 DataTable
 Pagination
@@ -643,6 +703,8 @@ PaymentMethodSelector
 PaymentSummary
 Receipt
 PrintReceiptButton
+ExpenseForm
+ExpenseStatusBadge
 Toast / Notification
 FileUpload
 StatusBadge
@@ -798,6 +860,7 @@ The primary workflow is expected to be used on desktop/laptop screens inside cli
 
 ### Phase 7 — Financial UI
 - Due payment collection
+- Expense management (record, search/filter, approve/reject)
 - Daily closing
 - Collection summary
 - Mismatch indicators
@@ -861,6 +924,7 @@ Recommended tools can include:
 - Online services
 - Payment collection UI
 - Due payment collection
+- Expense management (voucher entry, approvals)
 - Transaction history
 - Receipt
 - Daily closing
