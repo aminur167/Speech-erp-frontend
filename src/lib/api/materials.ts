@@ -9,11 +9,11 @@ import type { Material, MaterialMovement, MaterialMovementType, MaterialUnit, Pa
  */
 
 let mockMaterials: Material[] = [
-  { id: "mat-1", name: "Flashcards Set", code: "MAT-00001", unit: "packet", quantity: 20, unitCost: 250, sellingPrice: 350, reorderLevel: 5, branchId: "branch-1", createdAt: "2026-06-01T09:00:00Z" },
-  { id: "mat-2", name: "Speech Therapy Toys", code: "MAT-00002", unit: "set", quantity: 15, unitCost: 500, sellingPrice: 700, reorderLevel: 4, branchId: "branch-1", createdAt: "2026-06-01T09:00:00Z" },
-  { id: "mat-3", name: "Assessment Kit", code: "MAT-00003", unit: "set", quantity: 5, unitCost: 2000, sellingPrice: 2500, reorderLevel: 3, branchId: "branch-1", createdAt: "2026-06-15T09:00:00Z" },
-  { id: "mat-4", name: "Stationery Pack", code: "MAT-00004", unit: "packet", quantity: 2, unitCost: 150, sellingPrice: 220, reorderLevel: 5, branchId: "branch-1", createdAt: "2026-07-01T09:00:00Z" },
-  { id: "mat-5", name: "Hand Sanitizer", code: "MAT-00005", unit: "bottle", quantity: 30, unitCost: 120, sellingPrice: 180, reorderLevel: 10, branchId: "branch-1", createdAt: "2026-07-10T09:00:00Z" },
+  { id: "mat-1", name: "Flashcards Set", code: "MAT-00001", imageUrl: "/materials/flashcards-set.svg", unit: "packet", quantity: 20, unitCost: 250, sellingPrice: 350, reorderLevel: 5, branchId: "branch-1", createdAt: "2026-06-01T09:00:00Z" },
+  { id: "mat-2", name: "Speech Therapy Toys", code: "MAT-00002", imageUrl: "/materials/therapy-toys.svg", unit: "set", quantity: 15, unitCost: 500, sellingPrice: 700, reorderLevel: 4, branchId: "branch-1", createdAt: "2026-06-01T09:00:00Z" },
+  { id: "mat-3", name: "Assessment Kit", code: "MAT-00003", imageUrl: "/materials/assessment-kit.svg", unit: "set", quantity: 5, unitCost: 2000, sellingPrice: 2500, reorderLevel: 3, branchId: "branch-1", createdAt: "2026-06-15T09:00:00Z" },
+  { id: "mat-4", name: "Stationery Pack", code: "MAT-00004", imageUrl: "/materials/stationery-pack.svg", unit: "packet", quantity: 2, unitCost: 150, sellingPrice: 220, reorderLevel: 5, branchId: "branch-1", createdAt: "2026-07-01T09:00:00Z" },
+  { id: "mat-5", name: "Hand Sanitizer", code: "MAT-00005", imageUrl: "/materials/hand-sanitizer.svg", unit: "bottle", quantity: 30, unitCost: 120, sellingPrice: 180, reorderLevel: 10, branchId: "branch-1", createdAt: "2026-07-10T09:00:00Z" },
 ];
 
 let mockMovements: MaterialMovement[] = [];
@@ -50,6 +50,7 @@ export async function getMaterialsSummary(branchId?: string): Promise<MaterialsS
 
 export interface MaterialInput {
   name: string;
+  imageUrl?: string;
   unit: MaterialUnit;
   quantity: number;
   unitCost: number;

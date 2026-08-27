@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Assessment Kit">
+  <rect width="160" height="160" rx="16" fill="#CCFBF1"/>
+  <rect x="30" y="54" width="100" height="76" rx="10" fill="#ffffff" stroke="#0F766E" stroke-width="3"/>
+  <path d="M62 54 V44 a8 8 0 0 1 8-8 h20 a8 8 0 0 1 8 8 v10" fill="none" stroke="#0F766E" stroke-width="3"/>
+  <rect x="30" y="82" width="100" height="10" fill="#0F766E"/>
+  <rect x="70" y="74" width="20" height="26" rx="4" fill="#F97316"/>
+  <rect x="46" y="106" width="30" height="5" rx="2.5" fill="#99F6E4"/>
+  <rect x="46" y="117" width="20" height="5" rx="2.5" fill="#99F6E4"/>
+</svg>

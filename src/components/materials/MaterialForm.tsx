@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { MaterialImagePicker } from "@/components/materials/MaterialImagePicker";
 import type { Material } from "@/types/domain";
 import type { MaterialInput } from "@/lib/api/materials";
 
@@ -43,6 +45,7 @@ export function MaterialForm({
   onCancel: () => void;
   isSubmitting?: boolean;
 }) {
+  const [imageUrl, setImageUrl] = useState(initialValues?.imageUrl);
   const {
     register,
     handleSubmit,
@@ -64,6 +67,7 @@ export function MaterialForm({
   const submit = (values: MaterialFormValues) => {
     onSubmit({
       name: values.name,
+      imageUrl,
       unit: values.unit,
       quantity: Number(values.quantity),
       unitCost: Number(values.unitCost),
@@ -74,6 +78,7 @@ export function MaterialForm({
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(submit)}>
+      <MaterialImagePicker value={imageUrl} onChange={setImageUrl} />
       <Input placeholder="Material Name" error={errors.name?.message} {...register("name")} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Select {...register("unit")}>

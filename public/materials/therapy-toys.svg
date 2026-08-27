@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Speech Therapy Toys">
+  <rect width="160" height="160" rx="16" fill="#CCFBF1"/>
+  <circle cx="58" cy="58" r="22" fill="#F97316"/>
+  <rect x="86" y="36" width="42" height="42" rx="8" fill="#0F766E"/>
+  <path d="M56 96 L86 96 L86 126 L56 126 Z" fill="#ffffff" stroke="#0F766E" stroke-width="3"/>
+  <path d="M96 128 L118 90 L140 128 Z" fill="#14B8A6"/>
+  <circle cx="34" cy="112" r="16" fill="#ffffff" stroke="#0F766E" stroke-width="3"/>
+  <circle cx="34" cy="112" r="6" fill="#F97316"/>
+</svg>

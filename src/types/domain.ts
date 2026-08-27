@@ -174,6 +174,8 @@ export interface Material {
   id: string;
   name: string;
   code: string; // e.g. MAT-00001
+  /** Product photo. A path under /materials for seeded items, or a data URL for one uploaded through the form. */
+  imageUrl?: string;
   unit: MaterialUnit;
   quantity: number;
   unitCost: number;

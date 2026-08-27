@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Stationery Pack">
+  <rect width="160" height="160" rx="16" fill="#CCFBF1"/>
+  <rect x="36" y="46" width="56" height="84" rx="8" fill="#ffffff" stroke="#0F766E" stroke-width="3"/>
+  <rect x="50" y="66" width="28" height="5" rx="2.5" fill="#99F6E4"/>
+  <rect x="50" y="80" width="28" height="5" rx="2.5" fill="#99F6E4"/>
+  <rect x="50" y="94" width="18" height="5" rx="2.5" fill="#99F6E4"/>
+  <g transform="rotate(18 112 88)">
+    <rect x="102" y="44" width="20" height="70" rx="4" fill="#F97316"/>
+    <path d="M102 114 L112 132 L122 114 Z" fill="#FDBA74"/>
+    <path d="M108 126 L112 132 L116 126 Z" fill="#1F2937"/>
+    <rect x="102" y="56" width="20" height="8" fill="#0F766E"/>
+  </g>
+</svg>

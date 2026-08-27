@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { MaterialThumb } from "@/components/materials/MaterialThumb";
 import { formatCurrency } from "@/utils/currency";
 import type { Material } from "@/types/domain";
 
@@ -23,6 +24,9 @@ export function MaterialTable({
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-border text-text-secondary">
+            <th className="w-12 py-2 pr-3 font-medium">
+              <span className="sr-only">Photo</span>
+            </th>
             <th className="py-2 pr-4 font-medium">Code</th>
             <th className="py-2 pr-4 font-medium">Name</th>
             <th className="py-2 pr-4 font-medium">Unit</th>
@@ -38,6 +42,9 @@ export function MaterialTable({
             const isLow = material.quantity <= material.reorderLevel;
             return (
               <tr key={material.id} className="border-b border-border last:border-0">
+                <td className="w-12 py-2 pr-3">
+                  <MaterialThumb src={material.imageUrl} alt={material.name} />
+                </td>
                 <td className="py-2 pr-4 font-mono text-xs text-text-secondary">
                   {material.code}
                 </td>
