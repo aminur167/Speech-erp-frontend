@@ -1,4 +1,5 @@
-import type { Material, MaterialMovement, MaterialMovementType, MaterialUnit } from "@/types/domain";
+import { createPayment } from "@/lib/api/payments";
+import type { Material, MaterialMovement, MaterialMovementType, MaterialUnit, Payment, PaymentMethod } from "@/types/domain";
 
 /**
  * Mock implementation — matches the shape/signature this module will have
@@ -8,11 +9,11 @@ import type { Material, MaterialMovement, MaterialMovementType, MaterialUnit } f
  */
 
 let mockMaterials: Material[] = [
-  { id: "mat-1", name: "Flashcards Set", code: "MAT-00001", unit: "packet", quantity: 20, unitCost: 250, reorderLevel: 5, branchId: "branch-1", createdAt: "2026-06-01T09:00:00Z" },
-  { id: "mat-2", name: "Speech Therapy Toys", code: "MAT-00002", unit: "set", quantity: 15, unitCost: 500, reorderLevel: 4, branchId: "branch-1", createdAt: "2026-06-01T09:00:00Z" },
-  { id: "mat-3", name: "Assessment Kit", code: "MAT-00003", unit: "set", quantity: 5, unitCost: 2000, reorderLevel: 3, branchId: "branch-1", createdAt: "2026-06-15T09:00:00Z" },
-  { id: "mat-4", name: "Stationery Pack", code: "MAT-00004", unit: "packet", quantity: 2, unitCost: 150, reorderLevel: 5, branchId: "branch-1", createdAt: "2026-07-01T09:00:00Z" },
-  { id: "mat-5", name: "Hand Sanitizer", code: "MAT-00005", unit: "bottle", quantity: 30, unitCost: 120, reorderLevel: 10, branchId: "branch-1", createdAt: "2026-07-10T09:00:00Z" },
+  { id: "mat-1", name: "Flashcards Set", code: "MAT-00001", unit: "packet", quantity: 20, unitCost: 250, sellingPrice: 350, reorderLevel: 5, branchId: "branch-1", createdAt: "2026-06-01T09:00:00Z" },
+  { id: "mat-2", name: "Speech Therapy Toys", code: "MAT-00002", unit: "set", quantity: 15, unitCost: 500, sellingPrice: 700, reorderLevel: 4, branchId: "branch-1", createdAt: "2026-06-01T09:00:00Z" },
+  { id: "mat-3", name: "Assessment Kit", code: "MAT-00003", unit: "set", quantity: 5, unitCost: 2000, sellingPrice: 2500, reorderLevel: 3, branchId: "branch-1", createdAt: "2026-06-15T09:00:00Z" },
+  { id: "mat-4", name: "Stationery Pack", code: "MAT-00004", unit: "packet", quantity: 2, unitCost: 150, sellingPrice: 220, reorderLevel: 5, branchId: "branch-1", createdAt: "2026-07-01T09:00:00Z" },
+  { id: "mat-5", name: "Hand Sanitizer", code: "MAT-00005", unit: "bottle", quantity: 30, unitCost: 120, sellingPrice: 180, reorderLevel: 10, branchId: "branch-1", createdAt: "2026-07-10T09:00:00Z" },
 ];
 
 let mockMovements: MaterialMovement[] = [];
@@ -52,6 +53,7 @@ export interface MaterialInput {
   unit: MaterialUnit;
   quantity: number;
   unitCost: number;
+  sellingPrice: number;
   reorderLevel: number;
   branchId: string;
 }
@@ -131,4 +133,61 @@ export async function listMaterialMovements(materialId: string): Promise<Materia
   return mockMovements
     .filter((m) => m.materialId === materialId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export interface SellMaterialInput {
+  materialId: string;
+  quantity: number;
+  unitPrice: number;
+  patientId: string;
+  method: PaymentMethod;
+  branchId: string;
+  createdBy: string;
+}
+
+export interface MaterialSaleResult {
+  material: Material;
+  payment: Payment;
+}
+
+/** Sells stock to a patient: deducts inventory, logs the movement, and creates a Payment so it flows into revenue reporting. */
+export async function sellMaterial(input: SellMaterialInput): Promise<MaterialSaleResult> {
+  await delay(null, 250);
+  const index = mockMaterials.findIndex((m) => m.id === input.materialId);
+  if (index === -1) {
+    throw { message: "Material not found.", status: 404 };
+  }
+  const material = mockMaterials[index];
+  const nextQuantity = material.quantity - input.quantity;
+  if (nextQuantity < 0) {
+    throw { message: "Not enough stock for this sale.", status: 400 };
+  }
+
+  const payment = await createPayment({
+    patientId: input.patientId,
+    amount: input.quantity * input.unitPrice,
+    method: input.method,
+    category: "material_sale",
+    collectedBy: input.createdBy,
+    branchId: input.branchId,
+  });
+
+  const updated: Material = { ...material, quantity: nextQuantity };
+  mockMaterials = mockMaterials.map((m) => (m.id === input.materialId ? updated : m));
+
+  mockMovements = [
+    {
+      id: `mov-${Date.now()}`,
+      materialId: input.materialId,
+      type: "out",
+      quantity: input.quantity,
+      note: `Sold — Payment ${payment.receiptNumber}`,
+      branchId: input.branchId,
+      createdBy: input.createdBy,
+      createdAt: new Date().toISOString(),
+    },
+    ...mockMovements,
+  ];
+
+  return { material: updated, payment };
 }

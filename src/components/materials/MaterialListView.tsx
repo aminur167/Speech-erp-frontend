@@ -12,6 +12,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { MaterialTable } from "@/components/materials/MaterialTable";
 import { MaterialForm } from "@/components/materials/MaterialForm";
 import { AdjustStockModal } from "@/components/materials/AdjustStockModal";
+import { SellMaterialModal } from "@/components/materials/SellMaterialModal";
 import { useMaterials } from "@/hooks/materials/useMaterials";
 import { useMaterialsSummary } from "@/hooks/materials/useMaterialsSummary";
 import { useCreateMaterial } from "@/hooks/materials/useCreateMaterial";
@@ -38,6 +39,7 @@ export function MaterialListView() {
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [deletingMaterial, setDeletingMaterial] = useState<Material | null>(null);
   const [adjustingMaterial, setAdjustingMaterial] = useState<Material | null>(null);
+  const [sellingMaterial, setSellingMaterial] = useState<Material | null>(null);
 
   const handleCreate = (input: Omit<MaterialInput, "branchId">) => {
     createMaterial.mutate({ ...input, branchId }, { onSuccess: () => setIsAddOpen(false) });
@@ -105,6 +107,7 @@ export function MaterialListView() {
         {!isLoading && materials && materials.length > 0 && (
           <MaterialTable
             materials={materials}
+            onSell={setSellingMaterial}
             onAdjustStock={setAdjustingMaterial}
             onEdit={setEditingMaterial}
             onDelete={setDeletingMaterial}
@@ -146,6 +149,8 @@ export function MaterialListView() {
         onSubmit={handleAdjust}
         isSubmitting={adjustStockMutation.isPending}
       />
+
+      <SellMaterialModal material={sellingMaterial} onClose={() => setSellingMaterial(null)} />
 
       <ConfirmDialog
         open={Boolean(deletingMaterial)}

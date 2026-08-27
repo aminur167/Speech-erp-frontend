@@ -20,6 +20,10 @@ const materialSchema = z.object({
     .string()
     .min(1, "Unit cost is required.")
     .refine((value) => Number(value) >= 0, "Enter a valid cost."),
+  sellingPrice: z
+    .string()
+    .min(1, "Selling price is required.")
+    .refine((value) => Number(value) >= 0, "Enter a valid price."),
   reorderLevel: z
     .string()
     .min(1, "Reorder level is required.")
@@ -51,6 +55,7 @@ export function MaterialForm({
           unit: initialValues.unit,
           quantity: String(initialValues.quantity),
           unitCost: String(initialValues.unitCost),
+          sellingPrice: String(initialValues.sellingPrice),
           reorderLevel: String(initialValues.reorderLevel),
         }
       : { unit: "piece", quantity: "0", reorderLevel: "5" },
@@ -62,6 +67,7 @@ export function MaterialForm({
       unit: values.unit,
       quantity: Number(values.quantity),
       unitCost: Number(values.unitCost),
+      sellingPrice: Number(values.sellingPrice),
       reorderLevel: Number(values.reorderLevel),
     });
   };
@@ -95,11 +101,18 @@ export function MaterialForm({
         />
         <Input
           type="number"
-          placeholder="Reorder Level"
-          error={errors.reorderLevel?.message}
-          {...register("reorderLevel")}
+          step="0.01"
+          placeholder="Selling Price (BDT)"
+          error={errors.sellingPrice?.message}
+          {...register("sellingPrice")}
         />
       </div>
+      <Input
+        type="number"
+        placeholder="Reorder Level"
+        error={errors.reorderLevel?.message}
+        {...register("reorderLevel")}
+      />
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel

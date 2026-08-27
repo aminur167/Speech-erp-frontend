@@ -173,7 +173,7 @@ export async function getRevenueByCategory(
   const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
 
   const thisMonth = all.filter((item) => {
-    if (item.status !== "paid" || !item.category) return false;
+    if (item.status !== "paid" || !item.category || item.category === "material_sale") return false;
     const created = new Date(item.createdAt);
     return `${created.getFullYear()}-${created.getMonth()}` === monthKey;
   });

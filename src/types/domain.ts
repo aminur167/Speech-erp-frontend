@@ -61,6 +61,9 @@ export type PaymentMethod =
   | "online_payment"
   | "card";
 
+/** A Payment's category is usually a service category, but can also mark a retail material sale. */
+export type PaymentCategory = ServiceCategory | "material_sale";
+
 export interface Payment {
   id: string;
   transactionId: string;
@@ -71,8 +74,8 @@ export interface Payment {
   status: PaymentStatus;
   collectedBy: string;
   branchId: string;
-  /** Which service category this payment was collected for — powers revenue-by-category reporting. */
-  category?: ServiceCategory;
+  /** Which service category (or material sale) this payment was collected for — powers revenue reporting. */
+  category?: PaymentCategory;
   createdAt: string;
 }
 
@@ -174,6 +177,8 @@ export interface Material {
   unit: MaterialUnit;
   quantity: number;
   unitCost: number;
+  /** Retail price charged when this material is sold to a patient — separate from unitCost to allow markup. */
+  sellingPrice: number;
   reorderLevel: number;
   branchId: string;
   createdAt: string;

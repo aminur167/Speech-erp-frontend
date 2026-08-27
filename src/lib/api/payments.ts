@@ -1,4 +1,4 @@
-import type { Payment, PaymentMethod, PaymentStatus, ServiceCategory } from "@/types/domain";
+import type { Payment, PaymentCategory, PaymentMethod, PaymentStatus } from "@/types/domain";
 
 /**
  * Mock implementation — matches the exact shape/signature this module will have
@@ -47,7 +47,7 @@ export interface CreatePaymentInput {
   amount: number;
   method: PaymentMethod;
   status?: PaymentStatus;
-  category?: ServiceCategory;
+  category?: PaymentCategory;
   collectedBy: string;
   branchId: string;
 }
