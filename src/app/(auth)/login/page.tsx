@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +11,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import * as authApi from "@/lib/api/auth";
 import { useAuthStore } from "@/store/authStore";
+import { dashboardPathForRole } from "@/hooks/useAuthGuard";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email address."),
@@ -21,6 +23,13 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+  const currentUser = useAuthStore((state) => state.user);
+
+  useEffect(() => {
+    if (currentUser) {
+      router.replace(dashboardPathForRole(currentUser.role));
+    }
+  }, [currentUser, router]);
 
   const {
     register,
@@ -33,7 +42,7 @@ export default function LoginPage() {
     mutationFn: authApi.login,
     onSuccess: ({ user, accessToken }) => {
       login(user, accessToken);
-      router.push("/dashboard");
+      router.push(dashboardPathForRole(user.role));
     },
     onError: (error: { message: string; fieldErrors?: Record<string, string[]> }) => {
       if (error.fieldErrors) {
