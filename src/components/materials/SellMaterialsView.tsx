@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { Check, Minus, Plus, Search, ShoppingCart, Trash2, PackageSearch, UserPlus } from "lucide-react";
 import { clsx } from "clsx";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -44,7 +43,6 @@ const UNIT_LABELS: Record<MaterialUnit, string> = {
 };
 
 export function SellMaterialsView() {
-  const searchParams = useSearchParams();
   const user = useAuthStore((state) => state.user);
   const branchId = user?.branchId ?? "branch-1";
 
@@ -72,8 +70,6 @@ export function SellMaterialsView() {
     pageSize: 5,
   });
 
-  const [handledAddId, setHandledAddId] = useState<string | null>(null);
-
   const addToCart = (material: Material) => {
     setCart((prev) => {
       const existing = prev.find((line) => line.materialId === material.id);
@@ -98,23 +94,12 @@ export function SellMaterialsView() {
     });
   };
 
-  /** Add + the transient "Added" confirmation on the button. Click-only — see the ?add= path below. */
+  /** Add + the transient "Added" confirmation on the button. */
   const handleAddClick = (material: Material) => {
     addToCart(material);
     setJustAddedId(material.id);
     setTimeout(() => setJustAddedId((current) => (current === material.id ? null : current)), 1200);
   };
-
-  // Deep link from the Materials table's per-row "Sell": seed the cart and show it.
-  const addId = searchParams.get("add");
-  if (materials && addId && addId !== handledAddId) {
-    const material = materials.find((m) => m.id === addId);
-    if (material && material.quantity > 0) {
-      addToCart(material);
-      setIsCartOpen(true);
-    }
-    setHandledAddId(addId);
-  }
 
   const availableUnits = useMemo(() => {
     const units = new Set<MaterialUnit>();
@@ -306,19 +291,28 @@ export function SellMaterialsView() {
               <div
                 key={material.id}
                 className={clsx(
-                  "group relative flex flex-col overflow-hidden rounded-xl border bg-surface transition-all",
+                  "group relative flex flex-col overflow-hidden rounded-2xl border bg-surface transition-all duration-200",
                   isOutOfStock
                     ? "border-border opacity-60"
-                    : "border-border hover:border-primary/40 hover:shadow-md",
+                    : "border-border hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg",
                 )}
               >
                 {inCart && (
-                  <span className="absolute right-3 top-3 z-10 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-white shadow-sm">
+                  <span className="absolute right-3 top-3 z-10 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-white shadow-sm ring-2 ring-surface">
                     {inCart.quantity}
                   </span>
                 )}
 
-                <div className="flex h-32 items-center justify-center bg-background p-4">
+                <div className="relative flex h-36 items-center justify-center border-b border-border bg-background p-5">
+                  {(isOutOfStock || isLowStock) && (
+                    <span className="absolute left-3 top-3">
+                      {isOutOfStock ? (
+                        <Badge tone="danger" label="Out of stock" />
+                      ) : (
+                        <Badge tone="warning" label="Low stock" />
+                      )}
+                    </span>
+                  )}
                   <MaterialThumb
                     src={material.imageUrl}
                     alt={material.name}
@@ -328,24 +322,19 @@ export function SellMaterialsView() {
                   />
                 </div>
 
-                <div className="flex flex-1 flex-col gap-2 p-4">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-md bg-background px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-text-secondary">
+                <div className="flex flex-1 flex-col gap-3 p-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="w-fit rounded-md bg-primary-light px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-dark">
                       {UNIT_LABELS[material.unit]}
                     </span>
-                    {isOutOfStock && <Badge tone="danger" label="Out of stock" />}
-                    {isLowStock && <Badge tone="warning" label="Low stock" />}
-                  </div>
-
-                  <div className="flex flex-col gap-0.5">
                     <h3 className="font-semibold leading-tight text-text-primary">
                       {material.name}
                     </h3>
                     <p className="font-mono text-[11px] text-text-secondary">{material.code}</p>
                   </div>
 
-                  <div className="mt-auto flex items-end justify-between pt-2">
-                    <span className="text-lg font-bold text-primary-dark">
+                  <div className="mt-auto flex items-center justify-between border-t border-border/60 pt-3">
+                    <span className="text-xl font-bold text-primary-dark">
                       {formatCurrency(material.sellingPrice)}
                     </span>
                     <span className="text-xs text-text-secondary">
@@ -357,7 +346,7 @@ export function SellMaterialsView() {
                     onClick={() => handleAddClick(material)}
                     disabled={isOutOfStock || isMaxed}
                     variant={justAdded ? "secondary" : "primary"}
-                    className="mt-2 w-full justify-center"
+                    className="w-full justify-center"
                   >
                     {justAdded ? (
                       <>

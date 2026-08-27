@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Plus, Boxes, AlertTriangle, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -25,7 +24,6 @@ import type { Material, MaterialMovementType } from "@/types/domain";
 import type { MaterialInput } from "@/lib/api/materials";
 
 export function MaterialListView() {
-  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const branchId = user?.branchId ?? "branch-1";
 
@@ -107,7 +105,6 @@ export function MaterialListView() {
         {!isLoading && materials && materials.length > 0 && (
           <MaterialTable
             materials={materials}
-            onSell={(material) => router.push(`/manager/materials/sell?add=${material.id}`)}
             onAdjustStock={setAdjustingMaterial}
             onEdit={setEditingMaterial}
             onDelete={setDeletingMaterial}

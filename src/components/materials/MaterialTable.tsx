@@ -6,18 +6,16 @@ import type { Material } from "@/types/domain";
 
 export function MaterialTable({
   materials,
-  onSell,
   onAdjustStock,
   onEdit,
   onDelete,
 }: {
   materials: Material[];
-  onSell?: (material: Material) => void;
   onAdjustStock?: (material: Material) => void;
   onEdit?: (material: Material) => void;
   onDelete?: (material: Material) => void;
 }) {
-  const hasActions = Boolean(onSell || onAdjustStock || onEdit || onDelete);
+  const hasActions = Boolean(onAdjustStock || onEdit || onDelete);
 
   return (
     <div className="overflow-x-auto">
@@ -61,15 +59,6 @@ export function MaterialTable({
                 {hasActions && (
                   <td className="py-2 pr-4">
                     <div className="flex flex-wrap gap-2">
-                      {onSell && (
-                        <Button
-                          variant="secondary"
-                          onClick={() => onSell(material)}
-                          disabled={material.quantity === 0}
-                        >
-                          Sell
-                        </Button>
-                      )}
                       {onAdjustStock && (
                         <Button variant="secondary" onClick={() => onAdjustStock(material)}>
                           Adjust
