@@ -6,5 +6,5 @@ export default async function AdminPatientProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <PatientProfileView patientId={id} />;
+  return <PatientProfileView patientId={id} homeHref="/admin/dashboard" roleLabel="Admin" />;
 }

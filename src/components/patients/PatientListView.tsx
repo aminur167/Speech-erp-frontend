@@ -1,27 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 import { Pagination } from "@/components/ui/Pagination";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { PatientSearchInput } from "@/components/patients/PatientSearchInput";
 import { PatientTable } from "@/components/patients/PatientTable";
+import { PatientRegistrationForm } from "@/components/patients/PatientRegistrationForm";
 import { usePatients } from "@/hooks/patients/usePatients";
+import { useAuthStore } from "@/store/authStore";
 
 const PAGE_SIZE = 10;
 
 export function PatientListView({
   basePath,
-  canRegister,
+  homeHref,
+  roleLabel,
 }: {
   basePath: string;
-  canRegister: boolean;
+  homeHref: string;
+  roleLabel: string;
 }) {
+  const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const canRegister = user?.role === "manager";
+
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data, isLoading, isError, refetch } = usePatients({
     search,
@@ -30,18 +41,21 @@ export function PatientListView({
   });
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold text-text-primary">Patients</h1>
-        {canRegister && (
-          <Link href={`${basePath}/new`}>
-            <Button>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        homeHref={homeHref}
+        breadcrumb={[roleLabel, "Patients"]}
+        title="Patients"
+        subtitle="Manage patient records, registrations and profiles."
+        action={
+          canRegister && (
+            <Button onClick={() => setIsModalOpen(true)}>
               <Plus className="h-4 w-4" />
               Register Patient
             </Button>
-          </Link>
-        )}
-      </div>
+          )
+        }
+      />
 
       <Card>
         <PatientSearchInput
@@ -70,6 +84,23 @@ export function PatientListView({
           )}
         </div>
       </Card>
+
+      {canRegister && (
+        <Modal
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title="Register Patient"
+          description="Enter the patient's details below. A unique Patient ID is generated automatically."
+        >
+          <PatientRegistrationForm
+            onSuccess={(patient) => {
+              setIsModalOpen(false);
+              router.push(`${basePath}/${patient.id}`);
+            }}
+            onCancel={() => setIsModalOpen(false)}
+          />
+        </Modal>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/Card";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/states";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { usePatient } from "@/hooks/patients/usePatient";
 
 function Field({ label, value }: { label: string; value: string }) {
@@ -13,7 +14,15 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function PatientProfileView({ patientId }: { patientId: string }) {
+export function PatientProfileView({
+  patientId,
+  homeHref,
+  roleLabel,
+}: {
+  patientId: string;
+  homeHref: string;
+  roleLabel: string;
+}) {
   const { data: patient, isLoading, isError, refetch } = usePatient(patientId);
 
   if (isLoading) return <LoadingState label="Loading patient…" />;
@@ -23,9 +32,12 @@ export function PatientProfileView({ patientId }: { patientId: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold text-text-primary">{patient.name}</h1>
-        <p className="font-mono text-sm text-text-secondary">{patient.patientCode}</p>
+      <div className="flex flex-col gap-3 border-b border-border pb-5">
+        <Breadcrumb homeHref={homeHref} items={[roleLabel, "Patients", patient.name]} />
+        <div>
+          <h1 className="text-2xl font-semibold text-text-primary">{patient.name}</h1>
+          <p className="mt-1 font-mono text-sm text-text-secondary">{patient.patientCode}</p>
+        </div>
       </div>
 
       <Card>

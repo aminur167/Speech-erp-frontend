@@ -3,14 +3,13 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
-import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { useCreatePatient } from "@/hooks/patients/useCreatePatient";
 import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/types/api";
+import type { Patient } from "@/types/domain";
 
 const patientSchema = z.object({
   name: z.string().min(2, "Full name is required."),
@@ -24,8 +23,13 @@ const patientSchema = z.object({
 
 type PatientFormValues = z.infer<typeof patientSchema>;
 
-export function PatientRegistrationForm({ basePath }: { basePath: string }) {
-  const router = useRouter();
+export function PatientRegistrationForm({
+  onSuccess,
+  onCancel,
+}: {
+  onSuccess: (patient: Patient) => void;
+  onCancel: () => void;
+}) {
   const user = useAuthStore((state) => state.user);
   const createPatient = useCreatePatient();
 
@@ -45,9 +49,7 @@ export function PatientRegistrationForm({ basePath }: { basePath: string }) {
         branchId: user?.branchId ?? "branch-1",
       },
       {
-        onSuccess: (patient) => {
-          router.push(`${basePath}/${patient.id}`);
-        },
+        onSuccess,
         onError: (error: ApiError) => {
           if (error.fieldErrors) {
             Object.entries(error.fieldErrors).forEach(([field, messages]) => {
@@ -60,29 +62,31 @@ export function PatientRegistrationForm({ basePath }: { basePath: string }) {
   };
 
   return (
-    <Card className="max-w-xl">
-      <h1 className="text-lg font-semibold text-text-primary">Register Patient</h1>
-      <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
-        <Input placeholder="Full Name *" error={errors.name?.message} {...register("name")} />
-        <Input placeholder="Phone *" error={errors.phone?.message} {...register("phone")} />
-        <Input
-          placeholder="Email (optional)"
-          error={errors.email?.message}
-          {...register("email")}
-        />
-        <Select defaultValue="" {...register("gender")}>
-          <option value="">Gender (optional)</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </Select>
-        <Input type="date" aria-label="Date of Birth" {...register("dateOfBirth")} />
-        <Input placeholder="Guardian Name (optional)" {...register("guardianName")} />
-        <Input placeholder="Address (optional)" {...register("address")} />
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+      <Input placeholder="Full Name *" error={errors.name?.message} {...register("name")} />
+      <Input placeholder="Phone *" error={errors.phone?.message} {...register("phone")} />
+      <Input
+        placeholder="Email (optional)"
+        error={errors.email?.message}
+        {...register("email")}
+      />
+      <Select defaultValue="" {...register("gender")}>
+        <option value="">Gender (optional)</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="other">Other</option>
+      </Select>
+      <Input type="date" aria-label="Date of Birth" {...register("dateOfBirth")} />
+      <Input placeholder="Guardian Name (optional)" {...register("guardianName")} />
+      <Input placeholder="Address (optional)" {...register("address")} />
+      <div className="flex justify-end gap-2 pt-2">
+        <Button type="button" variant="secondary" onClick={onCancel}>
+          Cancel
+        </Button>
         <Button type="submit" isLoading={createPatient.isPending}>
           Register Patient
         </Button>
-      </form>
-    </Card>
+      </div>
+    </form>
   );
 }

@@ -25,6 +25,7 @@ export function ExpenseTable({
             <th className="py-2 pr-4 font-medium">Date</th>
             <th className="py-2 pr-4 font-medium">Category</th>
             <th className="py-2 pr-4 font-medium">Description</th>
+            <th className="py-2 pr-4 font-medium">Paid To</th>
             <th className="py-2 pr-4 font-medium">Amount</th>
             <th className="py-2 pr-4 font-medium">Status</th>
             {canApprove && <th className="py-2 pr-4 font-medium">Actions</th>}
@@ -41,6 +42,7 @@ export function ExpenseTable({
               </td>
               <td className="py-2 pr-4 capitalize">{expense.category}</td>
               <td className="py-2 pr-4">{expense.description}</td>
+              <td className="py-2 pr-4 text-text-secondary">{expense.paidTo}</td>
               <td className="py-2 pr-4 font-medium">{formatCurrency(expense.amount)}</td>
               <td className="py-2 pr-4">
                 <ExpenseStatusBadge status={expense.status} />

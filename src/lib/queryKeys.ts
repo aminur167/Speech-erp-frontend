@@ -18,6 +18,7 @@ export const queryKeys = {
   expenses: {
     all: ["expenses"] as const,
     list: (params?: object) => ["expenses", "list", params] as const,
+    summary: (branchId?: string) => ["expenses", "summary", branchId] as const,
   },
   auth: {
     currentUser: ["auth", "current-user"] as const,

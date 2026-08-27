@@ -83,12 +83,18 @@ export type ExpenseCategory =
 
 export type ExpenseStatus = "pending" | "approved" | "rejected";
 
+export type ExpensePaymentMethod = PaymentMethod;
+
 export interface Expense {
   id: string;
   expenseCode: string; // e.g. EXP-2026-00042
   category: ExpenseCategory;
   amount: number;
   description: string;
+  paidTo: string;
+  paymentMethod: ExpensePaymentMethod;
+  remarks?: string;
+  isRecurring: boolean;
   branchId: string;
   submittedBy: string;
   status: ExpenseStatus;
