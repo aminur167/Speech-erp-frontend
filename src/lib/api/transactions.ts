@@ -78,6 +78,7 @@ export interface TransactionsSummary {
   totalCollected: number;
   transactionCount: number;
   todayCollected: number;
+  byMethod: { method: PaymentMethod; amount: number }[];
 }
 
 export async function getTransactionsSummary(branchId?: string): Promise<TransactionsSummary> {
@@ -85,7 +86,15 @@ export async function getTransactionsSummary(branchId?: string): Promise<Transac
   const now = new Date();
   const todayKey = now.toDateString();
 
+  const byMethodMap = new Map<PaymentMethod, number>();
+  for (const item of all) {
+    byMethodMap.set(item.method, (byMethodMap.get(item.method) ?? 0) + item.amount);
+  }
+
   return {
+    byMethod: Array.from(byMethodMap.entries())
+      .map(([method, amount]) => ({ method, amount }))
+      .sort((a, b) => b.amount - a.amount),
     totalCollected: all.reduce((sum, item) => sum + item.amount, 0),
     transactionCount: all.length,
     todayCollected: all
