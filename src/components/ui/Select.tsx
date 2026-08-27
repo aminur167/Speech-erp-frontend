@@ -3,12 +3,14 @@ import { clsx } from "clsx";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   error?: string;
+  /** Width class for the wrapping div — defaults to "w-full". Pass "w-auto" for inline toolbar use. */
+  containerClassName?: string;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, error, children, ...props }, ref) => {
+  ({ className, error, containerClassName = "w-full", children, ...props }, ref) => {
     return (
-      <div className="w-full">
+      <div className={containerClassName}>
         <select
           ref={ref}
           className={clsx(

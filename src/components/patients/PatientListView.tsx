@@ -215,13 +215,14 @@ export function PatientListView({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-nowrap items-center gap-3 overflow-x-auto pb-1">
             <Select
               value={paymentType}
               onChange={(event) => {
                 setPaymentType(event.target.value);
                 setPage(1);
               }}
+              containerClassName="w-auto shrink-0"
               className="w-auto"
             >
               <option value="">All payment types</option>
@@ -234,6 +235,7 @@ export function PatientListView({
                 setGender(event.target.value as Gender | "");
                 setPage(1);
               }}
+              containerClassName="w-auto shrink-0"
               className="w-auto"
             >
               <option value="">All genders</option>
@@ -247,6 +249,7 @@ export function PatientListView({
                 setTimeRange(event.target.value as PatientTimeRange);
                 setPage(1);
               }}
+              containerClassName="w-auto shrink-0"
               className="w-auto"
             >
               <option value="">All time</option>
@@ -257,7 +260,7 @@ export function PatientListView({
               <button
                 type="button"
                 onClick={resetFilters}
-                className="text-sm font-medium text-primary hover:underline"
+                className="shrink-0 text-sm font-medium text-primary hover:underline"
               >
                 Reset
               </button>
