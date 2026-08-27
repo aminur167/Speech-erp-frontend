@@ -19,6 +19,7 @@ export interface TransactionListParams {
   method?: PaymentMethod;
   status?: PaymentStatus;
   branchId?: string;
+  patientId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -43,7 +44,7 @@ async function joinTransactions(branchId?: string): Promise<TransactionItem[]> {
 export async function listTransactions(
   params: TransactionListParams = {},
 ): Promise<PaginatedResponse<TransactionItem>> {
-  const { search = "", method, status, branchId, page = 1, pageSize = 10 } = params;
+  const { search = "", method, status, branchId, patientId, page = 1, pageSize = 10 } = params;
   const query = search.trim().toLowerCase();
 
   const all = await joinTransactions(branchId);
@@ -52,6 +53,7 @@ export async function listTransactions(
   );
 
   const filtered = sorted.filter((item) => {
+    if (patientId && item.patientId !== patientId) return false;
     if (method && item.method !== method) return false;
     if (status && item.status !== status) return false;
     if (!query) return true;

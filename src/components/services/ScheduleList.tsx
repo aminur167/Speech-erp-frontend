@@ -22,7 +22,7 @@ export function ScheduleList({
   isMutating,
 }: {
   items: ScheduleItem[];
-  onCollectPayment: (key: string) => void;
+  onCollectPayment?: (key: string) => void;
   isMutating?: boolean;
 }) {
   return (
@@ -35,7 +35,7 @@ export function ScheduleList({
           </div>
           <div className="flex items-center gap-3">
             <Badge tone={statusTone[item.status]} label={item.status} />
-            {item.status === "due" && (
+            {item.status === "due" && onCollectPayment && (
               <Button onClick={() => onCollectPayment(item.key)} disabled={isMutating}>
                 Collect Payment
               </Button>

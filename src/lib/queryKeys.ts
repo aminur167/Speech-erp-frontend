@@ -6,6 +6,7 @@ export const queryKeys = {
     directory: (params?: object) => ["patients", "directory", params] as const,
     directorySummary: (branchId?: string) =>
       ["patients", "directory-summary", branchId] as const,
+    activeServices: (patientId: string) => ["patients", "active-services", patientId] as const,
   },
   services: {
     all: ["services"] as const,
