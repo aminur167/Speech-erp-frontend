@@ -7,7 +7,7 @@ import type { Branch } from "@/types/domain";
  * once it calls the real Django/DRF `/branches/` endpoints.
  */
 
-const branches: Branch[] = [
+let branches: Branch[] = [
   {
     id: "branch-1",
     name: "Dhaka Main Branch",
@@ -69,6 +69,37 @@ function delay<T>(value: T, ms = 200): Promise<T> {
 export async function listBranches(): Promise<Branch[]> {
   await delay(null);
   return branches;
+}
+
+export interface BranchInput {
+  name: string;
+  code: string;
+  status: Branch["status"];
+  address: string;
+  phone: string;
+  managerName: string;
+  managerCode: string;
+  therapistCount: number;
+  supportCount: number;
+  openedAt: string;
+}
+
+export async function createBranch(input: BranchInput): Promise<Branch> {
+  await delay(null);
+  const newBranch: Branch = { id: `branch-${Date.now()}`, ...input };
+  branches = [...branches, newBranch];
+  return newBranch;
+}
+
+export async function updateBranch(id: string, input: BranchInput): Promise<Branch> {
+  await delay(null);
+  const index = branches.findIndex((b) => b.id === id);
+  if (index === -1) {
+    throw { message: "Branch not found.", status: 404 };
+  }
+  const updated: Branch = { ...branches[index], ...input };
+  branches = branches.map((b) => (b.id === id ? updated : b));
+  return updated;
 }
 
 export interface BranchOverview {

@@ -14,6 +14,8 @@ import {
   Phone,
   Calendar,
   ChevronRight,
+  Plus,
+  Pencil,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -25,11 +27,14 @@ import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { BranchForm } from "@/components/branches/BranchForm";
 import { useBranchesOverview } from "@/hooks/branches/useBranchesOverview";
+import { useCreateBranch } from "@/hooks/branches/useCreateBranch";
+import { useUpdateBranch } from "@/hooks/branches/useUpdateBranch";
 import { formatCurrency } from "@/utils/currency";
 import { exportToCsv } from "@/utils/exportCsv";
 import type { BranchStatus } from "@/types/domain";
-import type { BranchOverview } from "@/lib/api/branches";
+import type { BranchInput, BranchOverview } from "@/lib/api/branches";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -37,9 +42,13 @@ function formatDate(iso: string) {
 
 export function BranchesView() {
   const { data: overview, isLoading, isFetching, refetch } = useBranchesOverview();
+  const createBranch = useCreateBranch();
+  const updateBranch = useUpdateBranch();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<BranchStatus | "">("");
   const [viewingBranch, setViewingBranch] = useState<BranchOverview | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const totals = useMemo(() => {
     const list = overview ?? [];
@@ -70,6 +79,28 @@ export function BranchesView() {
 
   const hasFilters = Boolean(search || statusFilter);
 
+  const handleCreate = (input: BranchInput) => {
+    createBranch.mutate(input, { onSuccess: () => setIsCreateOpen(false) });
+  };
+
+  const handleUpdate = (input: BranchInput) => {
+    if (!viewingBranch) return;
+    updateBranch.mutate(
+      { id: viewingBranch.branch.id, input },
+      {
+        onSuccess: (updated) => {
+          setViewingBranch({ ...viewingBranch, branch: updated });
+          setIsEditing(false);
+        },
+      },
+    );
+  };
+
+  const closeManageModal = () => {
+    setViewingBranch(null);
+    setIsEditing(false);
+  };
+
   const handleExport = () => {
     exportToCsv(
       "branches.csv",
@@ -96,10 +127,16 @@ export function BranchesView() {
         title="Branch Management"
         subtitle="Manage all organization branches from one place."
         action={
-          <Button variant="secondary" onClick={handleExport} disabled={filtered.length === 0}>
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={handleExport} disabled={filtered.length === 0}>
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Create Branch
+            </Button>
+          </div>
         }
       />
 
@@ -268,11 +305,19 @@ export function BranchesView() {
 
       <Modal
         open={Boolean(viewingBranch)}
-        onClose={() => setViewingBranch(null)}
-        title={viewingBranch?.branch.name ?? ""}
+        onClose={closeManageModal}
+        title={isEditing ? "Edit Branch" : (viewingBranch?.branch.name ?? "")}
         description={viewingBranch?.branch.code}
       >
-        {viewingBranch && (
+        {viewingBranch && isEditing && (
+          <BranchForm
+            initialValues={viewingBranch.branch}
+            onSubmit={handleUpdate}
+            onCancel={() => setIsEditing(false)}
+            isSubmitting={updateBranch.isPending}
+          />
+        )}
+        {viewingBranch && !isEditing && (
           <div className="flex flex-col gap-4">
             <dl className="flex flex-col gap-3 text-sm">
               <div className="flex items-center justify-between">
@@ -334,11 +379,30 @@ export function BranchesView() {
               </div>
             </div>
 
-            <Button variant="secondary" onClick={() => setViewingBranch(null)} className="w-full justify-center">
-              Close
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={closeManageModal} className="flex-1 justify-center">
+                Close
+              </Button>
+              <Button onClick={() => setIsEditing(true)} className="flex-1 justify-center">
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+            </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        title="Create Branch"
+        description="Add a new branch to the organization."
+      >
+        <BranchForm
+          onSubmit={handleCreate}
+          onCancel={() => setIsCreateOpen(false)}
+          isSubmitting={createBranch.isPending}
+        />
       </Modal>
     </div>
   );
