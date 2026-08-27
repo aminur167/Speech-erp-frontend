@@ -8,8 +8,14 @@ import { clsx } from "clsx";
 import { isNavGroup, type NavGroup, type NavItem } from "@/config/navigation";
 import { useUiStore } from "@/store/uiStore";
 
-function isActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
+function collectHrefs(items: NavItem[]): string[] {
+  return items.flatMap((item) => (isNavGroup(item) ? item.children.map((child) => child.href) : item.href));
+}
+
+/** Of all nav hrefs, the longest one that matches the current path "wins" — so a more specific route (e.g. /materials/sell) doesn't also light up its parent (/materials). */
+function findActiveHref(pathname: string, hrefs: string[]): string | undefined {
+  const matches = hrefs.filter((href) => pathname === href || pathname.startsWith(`${href}/`));
+  return matches.sort((a, b) => b.length - a.length)[0];
 }
 
 function NavLinkRow({
@@ -51,18 +57,18 @@ function NavLinkRow({
 
 function NavGroupRow({
   item,
-  pathname,
+  activeHref,
   collapsed,
   onExpandSidebar,
   onNavigate,
 }: {
   item: NavGroup;
-  pathname: string;
+  activeHref: string | undefined;
   collapsed: boolean;
   onExpandSidebar: () => void;
   onNavigate: () => void;
 }) {
-  const groupIsActive = item.children.some((child) => isActive(pathname, child.href));
+  const groupIsActive = item.children.some((child) => child.href === activeHref);
   const [isOpen, setIsOpen] = useState(groupIsActive);
   const Icon = item.icon;
 
@@ -97,7 +103,7 @@ function NavGroupRow({
               key={child.href}
               href={child.href}
               label={child.label}
-              active={isActive(pathname, child.href)}
+              active={child.href === activeHref}
               collapsed={false}
               onNavigate={onNavigate}
             />
@@ -115,6 +121,7 @@ export function Sidebar({ items }: { items: NavItem[] }) {
   const toggleCollapsed = useUiStore((state) => state.toggleSidebarCollapsed);
   const expandSidebar = useUiStore((state) => state.expandSidebar);
   const closeMobileSidebar = useUiStore((state) => state.closeMobileSidebar);
+  const activeHref = findActiveHref(pathname, collectHrefs(items));
 
   return (
     <>
@@ -148,7 +155,7 @@ export function Sidebar({ items }: { items: NavItem[] }) {
               <NavGroupRow
                 key={item.label}
                 item={item}
-                pathname={pathname}
+                activeHref={activeHref}
                 collapsed={isCollapsed}
                 onExpandSidebar={expandSidebar}
                 onNavigate={closeMobileSidebar}
@@ -159,7 +166,7 @@ export function Sidebar({ items }: { items: NavItem[] }) {
                 href={item.href}
                 label={item.label}
                 icon={item.icon}
-                active={isActive(pathname, item.href)}
+                active={item.href === activeHref}
                 collapsed={isCollapsed}
                 onNavigate={closeMobileSidebar}
               />
