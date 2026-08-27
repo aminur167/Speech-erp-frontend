@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, ShoppingCart, Boxes, AlertTriangle, Wallet } from "lucide-react";
+import { Plus, Boxes, AlertTriangle, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -76,16 +76,10 @@ export function MaterialListView() {
         title="Materials"
         subtitle="Track therapy materials and equipment stock for your branch."
         action={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => router.push("/manager/materials/sell")}>
-              <ShoppingCart className="h-4 w-4" />
-              Sell
-            </Button>
-            <Button onClick={() => setIsAddOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Add Material
-            </Button>
-          </div>
+          <Button onClick={() => setIsAddOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Add Material
+          </Button>
         }
       />
 

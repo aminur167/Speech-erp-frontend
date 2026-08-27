@@ -12,6 +12,7 @@ import {
   History,
   Package,
   Boxes,
+  ShoppingCart,
 } from "lucide-react";
 
 export interface NavLink {
@@ -37,6 +38,7 @@ export const managerNav: NavItem[] = [
   { label: "Patients", href: "/manager/patients", icon: UserPlus },
   { label: "Packages", href: "/manager/packages", icon: Package },
   { label: "Materials", href: "/manager/materials", icon: Boxes },
+  { label: "Sell", href: "/manager/materials/sell", icon: ShoppingCart },
   {
     label: "Enroll Service",
     icon: ClipboardList,
