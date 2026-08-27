@@ -1,0 +1,208 @@
+"use client";
+
+import { useState } from "react";
+import { clsx } from "clsx";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { LoadingState, EmptyState } from "@/components/ui/states";
+import { ServiceCard } from "@/components/services/ServiceCard";
+import { PatientSearchInput } from "@/components/patients/PatientSearchInput";
+import { PaymentMethodSelector } from "@/components/payments/PaymentMethodSelector";
+import { PaymentSummary } from "@/components/payments/PaymentSummary";
+import { Receipt } from "@/components/payments/Receipt";
+import { useServices } from "@/hooks/services/useServices";
+import { usePatients } from "@/hooks/patients/usePatients";
+import { useCreatePayment } from "@/hooks/payments/useCreatePayment";
+import { useAuthStore } from "@/store/authStore";
+import type { Patient, Service, PaymentMethod, Payment } from "@/types/domain";
+
+type Step = "service" | "patient" | "confirm" | "payment" | "receipt";
+
+const STEP_ORDER: Step[] = ["service", "patient", "confirm", "payment", "receipt"];
+const STEP_LABELS: Record<Step, string> = {
+  service: "Select Service",
+  patient: "Search Patient",
+  confirm: "Confirm Patient",
+  payment: "Payment",
+  receipt: "Receipt",
+};
+
+export function DailyServiceEnrollment() {
+  const user = useAuthStore((state) => state.user);
+  const [step, setStep] = useState<Step>("service");
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [search, setSearch] = useState("");
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [method, setMethod] = useState<PaymentMethod>("cash");
+  const [payment, setPayment] = useState<Payment | null>(null);
+
+  const { data: services, isLoading: servicesLoading } = useServices("daily");
+  const { data: patientResults, isLoading: patientsLoading } = usePatients({
+    search,
+    pageSize: 5,
+  });
+  const createPayment = useCreatePayment();
+
+  const stepIndex = STEP_ORDER.indexOf(step);
+
+  const handleCollectPayment = () => {
+    if (!selectedService || !selectedPatient || !user) return;
+    createPayment.mutate(
+      {
+        patientId: selectedPatient.id,
+        amount: selectedService.fee,
+        method,
+        collectedBy: user.name,
+        branchId: user.branchId ?? "branch-1",
+      },
+      {
+        onSuccess: (createdPayment) => {
+          setPayment(createdPayment);
+          setStep("receipt");
+        },
+      },
+    );
+  };
+
+  const reset = () => {
+    setStep("service");
+    setSelectedService(null);
+    setSearch("");
+    setSelectedPatient(null);
+    setMethod("cash");
+    setPayment(null);
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-2 text-sm">
+        {STEP_ORDER.map((s, index) => (
+          <div
+            key={s}
+            className={clsx(
+              "flex items-center gap-2",
+              index <= stepIndex ? "font-medium text-primary-dark" : "text-text-secondary",
+            )}
+          >
+            <span
+              className={clsx(
+                "flex h-6 w-6 items-center justify-center rounded-full text-xs",
+                index <= stepIndex ? "bg-primary text-white" : "bg-border text-text-secondary",
+              )}
+            >
+              {index + 1}
+            </span>
+            {STEP_LABELS[s]}
+            {index < STEP_ORDER.length - 1 && <span className="mx-1 text-border">→</span>}
+          </div>
+        ))}
+      </div>
+
+      <Card>
+        {step === "service" && (
+          <div className="flex flex-col gap-4">
+            <h2 className="text-sm font-medium text-text-secondary">
+              Choose a daily service
+            </h2>
+            {servicesLoading && <LoadingState label="Loading services…" />}
+            {!servicesLoading && (!services || services.length === 0) && (
+              <EmptyState label="No daily services available." />
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {services?.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  service={service}
+                  selected={selectedService?.id === service.id}
+                  onSelect={(s) => {
+                    setSelectedService(s);
+                    setStep("patient");
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === "patient" && (
+          <div className="flex flex-col gap-4">
+            <h2 className="text-sm font-medium text-text-secondary">
+              Search for the patient
+            </h2>
+            <PatientSearchInput onSearch={setSearch} />
+            {patientsLoading && <LoadingState label="Searching…" />}
+            {!patientsLoading && search && patientResults?.results.length === 0 && (
+              <EmptyState label="No matching patients." />
+            )}
+            <div className="flex flex-col gap-2">
+              {patientResults?.results.map((patient) => (
+                <button
+                  key={patient.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedPatient(patient);
+                    setStep("confirm");
+                  }}
+                  className="flex items-center justify-between rounded-lg border border-border px-4 py-2 text-left text-sm transition-colors hover:border-primary/40 hover:bg-primary-light/40"
+                >
+                  <span className="font-medium text-text-primary">{patient.name}</span>
+                  <span className="font-mono text-xs text-text-secondary">
+                    {patient.patientCode}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div>
+              <Button variant="secondary" onClick={() => setStep("service")}>
+                ← Back
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === "confirm" && selectedPatient && selectedService && (
+          <div className="flex flex-col gap-4">
+            <h2 className="text-sm font-medium text-text-secondary">Confirm details</h2>
+            <PaymentSummary patient={selectedPatient} service={selectedService} />
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setStep("patient")}>
+                ← Back
+              </Button>
+              <Button onClick={() => setStep("payment")}>Continue to Payment</Button>
+            </div>
+          </div>
+        )}
+
+        {step === "payment" && selectedPatient && selectedService && (
+          <div className="flex flex-col gap-4">
+            <h2 className="text-sm font-medium text-text-secondary">Collect payment</h2>
+            <PaymentSummary patient={selectedPatient} service={selectedService} />
+            <PaymentMethodSelector value={method} onChange={setMethod} />
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setStep("confirm")}>
+                ← Back
+              </Button>
+              <Button onClick={handleCollectPayment} isLoading={createPayment.isPending}>
+                Confirm Payment
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === "receipt" && payment && selectedPatient && selectedService && (
+          <div className="flex flex-col gap-4">
+            <Receipt
+              payment={payment}
+              patientName={selectedPatient.name}
+              serviceName={selectedService.name}
+              branchName="Main Branch"
+            />
+            <div>
+              <Button onClick={reset}>Start New Enrollment</Button>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}

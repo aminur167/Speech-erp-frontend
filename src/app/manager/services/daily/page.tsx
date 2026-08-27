@@ -1,12 +1,16 @@
-import { PagePlaceholder } from "@/components/layout/PagePlaceholder";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { DailyServiceEnrollment } from "@/components/services/DailyServiceEnrollment";
 
 export default function DailyServicesPage() {
   return (
-    <PagePlaceholder
-      homeHref="/manager/dashboard"
-      roleLabel="Branch Manager"
-      title="Daily Services"
-      subtitle="Enroll patients into single-visit services like consultations and sessions."
-    />
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        homeHref="/manager/dashboard"
+        breadcrumb={["Branch Manager", "Daily Services"]}
+        title="Daily Services"
+        subtitle="Enroll a patient into a single-visit service and collect payment."
+      />
+      <DailyServiceEnrollment />
+    </div>
   );
 }
