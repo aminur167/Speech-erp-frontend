@@ -164,3 +164,30 @@ export interface DailyClosing {
   submittedBy: string;
   submittedAt: string;
 }
+
+export type MaterialUnit = "piece" | "box" | "packet" | "set" | "bottle" | "other";
+
+export interface Material {
+  id: string;
+  name: string;
+  code: string; // e.g. MAT-00001
+  unit: MaterialUnit;
+  quantity: number;
+  unitCost: number;
+  reorderLevel: number;
+  branchId: string;
+  createdAt: string;
+}
+
+export type MaterialMovementType = "in" | "out";
+
+export interface MaterialMovement {
+  id: string;
+  materialId: string;
+  type: MaterialMovementType;
+  quantity: number;
+  note?: string;
+  branchId: string;
+  createdBy: string;
+  createdAt: string;
+}

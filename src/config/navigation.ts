@@ -10,6 +10,8 @@ import {
   CalendarCheck,
   Receipt,
   History,
+  Package,
+  Boxes,
 } from "lucide-react";
 
 export interface NavLink {
@@ -33,6 +35,8 @@ export function isNavGroup(item: NavItem): item is NavGroup {
 export const managerNav: NavItem[] = [
   { label: "Dashboard", href: "/manager/dashboard", icon: LayoutDashboard },
   { label: "Patients", href: "/manager/patients", icon: UserPlus },
+  { label: "Packages", href: "/manager/packages", icon: Package },
+  { label: "Materials", href: "/manager/materials", icon: Boxes },
   {
     label: "Enroll Service",
     icon: ClipboardList,

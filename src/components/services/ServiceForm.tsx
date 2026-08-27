@@ -7,8 +7,16 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
-import type { Service } from "@/types/domain";
+import { Badge } from "@/components/ui/Badge";
+import type { Service, ServiceCategory } from "@/types/domain";
 import type { ServiceInput } from "@/lib/api/services";
+
+const CATEGORY_LABELS: Record<ServiceCategory, string> = {
+  daily: "Daily",
+  monthly: "Monthly",
+  installment: "Installment",
+  online: "Online",
+};
 
 const serviceSchema = z.object({
   name: z.string().min(2, "Service name is required."),
@@ -26,15 +34,22 @@ type ServiceFormValues = z.infer<typeof serviceSchema>;
 
 export function ServiceForm({
   initialValues,
+  fixedCategory,
+  submitLabel,
   onSubmit,
   onCancel,
   isSubmitting,
 }: {
   initialValues?: Service;
+  /** When set, the category is locked to this value (shown read-only) instead of a picker. */
+  fixedCategory?: ServiceCategory;
+  submitLabel?: string;
   onSubmit: (input: ServiceInput) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
 }) {
+  const lockedCategory = fixedCategory ?? initialValues?.category;
+
   const {
     register,
     handleSubmit,
@@ -50,14 +65,14 @@ export function ServiceForm({
           isOnline: initialValues.isOnline,
           description: initialValues.description ?? "",
         }
-      : { category: "daily", isOnline: false },
+      : { category: fixedCategory ?? "daily", isOnline: false },
   });
 
   const submit = (values: ServiceFormValues) => {
     onSubmit({
       name: values.name,
       code: values.code,
-      category: values.category,
+      category: lockedCategory ?? values.category,
       fee: Number(values.fee),
       isOnline: Boolean(values.isOnline),
       description: values.description || undefined,
@@ -77,12 +92,19 @@ export function ServiceForm({
           {...register("fee")}
         />
       </div>
-      <Select {...register("category")}>
-        <option value="daily">Daily</option>
-        <option value="monthly">Monthly</option>
-        <option value="installment">Installment</option>
-        <option value="online">Online</option>
-      </Select>
+      {lockedCategory ? (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-text-secondary">Category:</span>
+          <Badge tone="info" label={CATEGORY_LABELS[lockedCategory]} />
+        </div>
+      ) : (
+        <Select {...register("category")}>
+          <option value="daily">Daily</option>
+          <option value="monthly">Monthly</option>
+          <option value="installment">Installment</option>
+          <option value="online">Online</option>
+        </Select>
+      )}
       <label className="flex items-center gap-2 text-sm text-text-secondary">
         <input
           type="checkbox"
@@ -97,7 +119,7 @@ export function ServiceForm({
           Cancel
         </Button>
         <Button type="submit" isLoading={isSubmitting}>
-          {initialValues ? "Save Changes" : "Add Service"}
+          {submitLabel ?? (initialValues ? "Save Changes" : "Add Service")}
         </Button>
       </div>
     </form>
