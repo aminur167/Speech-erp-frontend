@@ -13,8 +13,11 @@ export const queryKeys = {
   },
   payments: {
     all: ["payments"] as const,
-    transactions: (params?: object) =>
-      ["payments", "transactions", params] as const,
+  },
+  transactions: {
+    all: ["transactions"] as const,
+    list: (params?: object) => ["transactions", "list", params] as const,
+    summary: (branchId?: string) => ["transactions", "summary", branchId] as const,
   },
   duePayments: {
     all: ["due-payments"] as const,

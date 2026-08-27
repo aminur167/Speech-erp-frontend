@@ -9,6 +9,7 @@ import {
   BarChart3,
   CalendarCheck,
   Receipt,
+  History,
 } from "lucide-react";
 
 export interface NavLink {
@@ -44,6 +45,7 @@ export const managerNav: NavItem[] = [
   },
   { label: "Due Payment Collection", href: "/manager/due-payments", icon: Wallet },
   { label: "Expenses", href: "/manager/expenses", icon: Receipt },
+  { label: "Transactions", href: "/manager/transactions", icon: History },
   { label: "Daily Closing", href: "/manager/daily-closing", icon: CalendarCheck },
   { label: "Settings", href: "/manager/settings", icon: Settings },
 ];
@@ -54,6 +56,7 @@ export const adminNav: NavItem[] = [
   { label: "Patients", href: "/admin/patients", icon: UserPlus },
   { label: "Services", href: "/admin/services", icon: ClipboardList },
   { label: "Expenses", href: "/admin/expenses", icon: Receipt },
+  { label: "Transactions", href: "/admin/transactions", icon: History },
   { label: "Reports", href: "/admin/reports", icon: BarChart3 },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];

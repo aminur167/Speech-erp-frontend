@@ -12,10 +12,21 @@ function hoursAgo(hours: number): string {
   return date.toISOString();
 }
 
+function daysAgo(days: number, hour: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  date.setHours(hour, 0, 0, 0);
+  return date.toISOString();
+}
+
 let mockPayments: Payment[] = [
   { id: "pay-seed-1", transactionId: "TXN-seed-1", receiptNumber: "RCPT-2026-00000", patientId: "p-3", amount: 800, method: "cash", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: hoursAgo(5) },
   { id: "pay-seed-2", transactionId: "TXN-seed-2", receiptNumber: "RCPT-2026-00000", patientId: "p-5", amount: 1000, method: "bkash", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: hoursAgo(4) },
   { id: "pay-seed-3", transactionId: "TXN-seed-3", receiptNumber: "RCPT-2026-00000", patientId: "p-9", amount: 500, method: "cash", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: hoursAgo(2) },
+  { id: "pay-seed-4", transactionId: "TXN-seed-4", receiptNumber: "RCPT-2026-00000", patientId: "p-1", amount: 800, method: "bkash", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: daysAgo(1, 11) },
+  { id: "pay-seed-5", transactionId: "TXN-seed-5", receiptNumber: "RCPT-2026-00000", patientId: "p-2", amount: 1000, method: "cash", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: daysAgo(2, 15) },
+  { id: "pay-seed-6", transactionId: "TXN-seed-6", receiptNumber: "RCPT-2026-00000", patientId: "p-8", amount: 300, method: "nagad", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: daysAgo(3, 10) },
+  { id: "pay-seed-7", transactionId: "TXN-seed-7", receiptNumber: "RCPT-2026-00000", patientId: "p-11", amount: 500, method: "card", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: daysAgo(5, 13) },
 ];
 let sequence = 0;
 
