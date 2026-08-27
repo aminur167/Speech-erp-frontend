@@ -18,26 +18,32 @@ function todayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
-const branchSchema = z.object({
-  name: z.string().min(2, "Branch name is required."),
-  code: z.string().min(2, "Branch code is required."),
-  status: z.enum(["active", "inactive"]),
-  managerName: z.string().min(2, "Manager name is required."),
-  managerCode: z.string().min(2, "Manager code is required."),
-  phone: z.string().min(5, "Phone number is required."),
-  address: z.string().min(5, "Address is required."),
-  therapistCount: z
-    .string()
-    .min(1, "Required.")
-    .refine((value) => Number(value) >= 0, "Enter a valid number."),
-  supportCount: z
-    .string()
-    .min(1, "Required.")
-    .refine((value) => Number(value) >= 0, "Enter a valid number."),
-  openedAt: z.string().min(1, "Opening date is required."),
-});
+function buildBranchSchema(isEditing: boolean) {
+  return z.object({
+    name: z.string().min(2, "Branch name is required."),
+    code: z.string().min(2, "Branch code is required."),
+    status: z.enum(["active", "inactive"]),
+    managerName: z.string().min(2, "Manager name is required."),
+    managerCode: z.string().min(2, "Manager code is required."),
+    managerEmail: z.string().email("Enter a valid email address."),
+    managerPassword: isEditing
+      ? z.string().optional()
+      : z.string().min(6, "Password must be at least 6 characters."),
+    phone: z.string().min(5, "Phone number is required."),
+    address: z.string().min(5, "Address is required."),
+    therapistCount: z
+      .string()
+      .min(1, "Required.")
+      .refine((value) => Number(value) >= 0, "Enter a valid number."),
+    supportCount: z
+      .string()
+      .min(1, "Required.")
+      .refine((value) => Number(value) >= 0, "Enter a valid number."),
+    openedAt: z.string().min(1, "Opening date is required."),
+  });
+}
 
-type BranchFormValues = z.infer<typeof branchSchema>;
+type BranchFormValues = z.infer<ReturnType<typeof buildBranchSchema>>;
 
 export function BranchForm({
   initialValues,
@@ -50,12 +56,13 @@ export function BranchForm({
   onCancel: () => void;
   isSubmitting?: boolean;
 }) {
+  const isEditing = Boolean(initialValues);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<BranchFormValues>({
-    resolver: zodResolver(branchSchema),
+    resolver: zodResolver(buildBranchSchema(isEditing)),
     defaultValues: initialValues
       ? {
           name: initialValues.name,
@@ -63,6 +70,8 @@ export function BranchForm({
           status: initialValues.status,
           managerName: initialValues.managerName,
           managerCode: initialValues.managerCode,
+          managerEmail: initialValues.managerEmail,
+          managerPassword: "",
           phone: initialValues.phone,
           address: initialValues.address,
           therapistCount: String(initialValues.therapistCount),
@@ -84,6 +93,8 @@ export function BranchForm({
       status: values.status,
       managerName: values.managerName,
       managerCode: values.managerCode,
+      managerEmail: values.managerEmail,
+      managerPassword: values.managerPassword || undefined,
       phone: values.phone,
       address: values.address,
       therapistCount: Number(values.therapistCount),
@@ -131,6 +142,30 @@ export function BranchForm({
         error={errors.address?.message}
         {...register("address")}
       />
+
+      <div className="flex flex-col gap-1 border-t border-border pt-4">
+        <p className="text-xs font-medium uppercase tracking-wide text-text-secondary">
+          Manager Login
+        </p>
+        <p className="text-xs text-text-secondary">
+          {isEditing
+            ? "Leave the password blank to keep the current one."
+            : "This is how the branch manager will sign in."}
+        </p>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Input
+          type="email"
+          placeholder="Manager Email"
+          error={errors.managerEmail?.message}
+          {...register("managerEmail")}
+        />
+        <Input
+          placeholder={isEditing ? "New Password (optional)" : "Password"}
+          error={errors.managerPassword?.message}
+          {...register("managerPassword")}
+        />
+      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input

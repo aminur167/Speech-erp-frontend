@@ -6,7 +6,7 @@ import type { AuthUser } from "@/types/domain";
  * Swap the body of each function for a real `apiClient` call later; callers never change.
  */
 
-const MOCK_USERS: Array<{ email: string; password: string; user: AuthUser }> = [
+let MOCK_USERS: Array<{ email: string; password: string; user: AuthUser }> = [
   {
     email: "admin@speechlab.test",
     password: "admin123",
@@ -23,10 +23,43 @@ const MOCK_USERS: Array<{ email: string; password: string; user: AuthUser }> = [
     password: "manager123",
     user: {
       id: "u-manager-1",
-      name: "Branch Manager",
+      name: "Farhana Rahman",
       email: "manager@speechlab.test",
       role: "manager",
       branchId: "branch-1",
+    },
+  },
+  {
+    email: "manager.ctg@speechlab.test",
+    password: "manager123",
+    user: {
+      id: "u-manager-2",
+      name: "Nusrat Jahan",
+      email: "manager.ctg@speechlab.test",
+      role: "manager",
+      branchId: "branch-2",
+    },
+  },
+  {
+    email: "manager.syl@speechlab.test",
+    password: "manager123",
+    user: {
+      id: "u-manager-3",
+      name: "Imran Hossain",
+      email: "manager.syl@speechlab.test",
+      role: "manager",
+      branchId: "branch-3",
+    },
+  },
+  {
+    email: "manager.ran@speechlab.test",
+    password: "manager123",
+    user: {
+      id: "u-manager-4",
+      name: "Kamrul Hasan",
+      email: "manager.ran@speechlab.test",
+      role: "manager",
+      branchId: "branch-4",
     },
   },
 ];
@@ -70,4 +103,38 @@ export async function updateProfile(input: UpdateProfileInput): Promise<AuthUser
   }
   match.user = { ...match.user, name: input.name };
   return match.user;
+}
+
+export interface UpsertManagerAccountInput {
+  branchId: string;
+  managerName: string;
+  email: string;
+  password: string;
+}
+
+/**
+ * Provisions or updates the manager login for a branch — called by branches.ts whenever
+ * Admin creates or edits a branch. A real backend would do this server-side as part of the
+ * same request; here it's a second in-memory store kept in sync explicitly.
+ */
+export async function upsertManagerAccount(input: UpsertManagerAccountInput): Promise<void> {
+  await delay(null, 100);
+  const index = MOCK_USERS.findIndex(
+    (u) => u.user.role === "manager" && u.user.branchId === input.branchId,
+  );
+  const account = {
+    email: input.email,
+    password: input.password,
+    user: {
+      id: index >= 0 ? MOCK_USERS[index].user.id : `u-manager-${Date.now()}`,
+      name: input.managerName,
+      email: input.email,
+      role: "manager" as const,
+      branchId: input.branchId,
+    },
+  };
+  MOCK_USERS =
+    index >= 0
+      ? MOCK_USERS.map((u, i) => (i === index ? account : u))
+      : [...MOCK_USERS, account];
 }

@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Plus,
   Pencil,
+  KeyRound,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -351,6 +352,25 @@ export function BranchesView() {
                 <dd className="text-text-primary">{formatDate(viewingBranch.branch.openedAt)}</dd>
               </div>
             </dl>
+
+            <div className="flex flex-col gap-2 rounded-lg border border-primary/20 bg-primary-light/30 p-3">
+              <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-primary-dark">
+                <KeyRound className="h-3.5 w-3.5" />
+                Manager Login
+              </p>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-secondary">Email</span>
+                <span className="font-mono text-text-primary">
+                  {viewingBranch.branch.managerEmail}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-secondary">Password</span>
+                <span className="font-mono text-text-primary">
+                  {viewingBranch.branch.managerPassword}
+                </span>
+              </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-3 border-t border-border pt-4">
               <div className="rounded-lg border border-border bg-background p-3">

@@ -19,6 +19,9 @@ export interface Branch {
   phone: string;
   managerName: string;
   managerCode: string; // e.g. MGR-DHK-001
+  /** Login used by this branch's manager account — set by Admin when creating/editing the branch. */
+  managerEmail: string;
+  managerPassword: string;
   therapistCount: number;
   supportCount: number;
   openedAt: string; // ISO date

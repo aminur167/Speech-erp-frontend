@@ -1,5 +1,6 @@
 import { getPatientDirectorySummary } from "@/lib/api/patientDirectory";
 import { getTransactionsSummary } from "@/lib/api/transactions";
+import { upsertManagerAccount } from "@/lib/api/auth";
 import type { Branch } from "@/types/domain";
 
 /**
@@ -17,6 +18,8 @@ let branches: Branch[] = [
     phone: "+880 2-9611230",
     managerName: "Farhana Rahman",
     managerCode: "MGR-DHK-001",
+    managerEmail: "manager@speechlab.test",
+    managerPassword: "manager123",
     therapistCount: 18,
     supportCount: 8,
     openedAt: "2023-02-10",
@@ -30,6 +33,8 @@ let branches: Branch[] = [
     phone: "+880 31-2556710",
     managerName: "Nusrat Jahan",
     managerCode: "MGR-CTG-001",
+    managerEmail: "manager.ctg@speechlab.test",
+    managerPassword: "manager123",
     therapistCount: 12,
     supportCount: 6,
     openedAt: "2023-12-19",
@@ -43,6 +48,8 @@ let branches: Branch[] = [
     phone: "+880 821-715522",
     managerName: "Imran Hossain",
     managerCode: "MGR-SYL-001",
+    managerEmail: "manager.syl@speechlab.test",
+    managerPassword: "manager123",
     therapistCount: 9,
     supportCount: 4,
     openedAt: "2024-06-01",
@@ -56,6 +63,8 @@ let branches: Branch[] = [
     phone: "+880 521-63340",
     managerName: "Kamrul Hasan",
     managerCode: "MGR-RAN-001",
+    managerEmail: "manager.ran@speechlab.test",
+    managerPassword: "manager123",
     therapistCount: 0,
     supportCount: 0,
     openedAt: "2025-01-15",
@@ -79,6 +88,9 @@ export interface BranchInput {
   phone: string;
   managerName: string;
   managerCode: string;
+  managerEmail: string;
+  /** Required when creating a branch; leave blank on edit to keep the current password. */
+  managerPassword?: string;
   therapistCount: number;
   supportCount: number;
   openedAt: string;
@@ -86,8 +98,18 @@ export interface BranchInput {
 
 export async function createBranch(input: BranchInput): Promise<Branch> {
   await delay(null);
-  const newBranch: Branch = { id: `branch-${Date.now()}`, ...input };
+  const newBranch: Branch = {
+    id: `branch-${Date.now()}`,
+    ...input,
+    managerPassword: input.managerPassword ?? "",
+  };
   branches = [...branches, newBranch];
+  await upsertManagerAccount({
+    branchId: newBranch.id,
+    managerName: newBranch.managerName,
+    email: newBranch.managerEmail,
+    password: newBranch.managerPassword,
+  });
   return newBranch;
 }
 
@@ -97,8 +119,19 @@ export async function updateBranch(id: string, input: BranchInput): Promise<Bran
   if (index === -1) {
     throw { message: "Branch not found.", status: 404 };
   }
-  const updated: Branch = { ...branches[index], ...input };
+  const existing = branches[index];
+  const updated: Branch = {
+    ...existing,
+    ...input,
+    managerPassword: input.managerPassword || existing.managerPassword,
+  };
   branches = branches.map((b) => (b.id === id ? updated : b));
+  await upsertManagerAccount({
+    branchId: updated.id,
+    managerName: updated.managerName,
+    email: updated.managerEmail,
+    password: updated.managerPassword,
+  });
   return updated;
 }
 
