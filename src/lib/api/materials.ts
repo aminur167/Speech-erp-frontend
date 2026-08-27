@@ -135,59 +135,70 @@ export async function listMaterialMovements(materialId: string): Promise<Materia
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-export interface SellMaterialInput {
+export interface SellMaterialsCartItem {
   materialId: string;
   quantity: number;
   unitPrice: number;
+}
+
+export interface SellMaterialsInput {
+  items: SellMaterialsCartItem[];
   patientId: string;
   method: PaymentMethod;
   branchId: string;
   createdBy: string;
 }
 
-export interface MaterialSaleResult {
-  material: Material;
+export interface MaterialsSaleResult {
+  materials: Material[];
   payment: Payment;
 }
 
-/** Sells stock to a patient: deducts inventory, logs the movement, and creates a Payment so it flows into revenue reporting. */
-export async function sellMaterial(input: SellMaterialInput): Promise<MaterialSaleResult> {
-  await delay(null, 250);
-  const index = mockMaterials.findIndex((m) => m.id === input.materialId);
-  if (index === -1) {
-    throw { message: "Material not found.", status: 404 };
-  }
-  const material = mockMaterials[index];
-  const nextQuantity = material.quantity - input.quantity;
-  if (nextQuantity < 0) {
-    throw { message: "Not enough stock for this sale.", status: 400 };
+/** Sells a cart of materials to a patient in one checkout: deducts inventory, logs a movement per line, and creates a single Payment so it flows into revenue reporting. */
+export async function sellMaterials(input: SellMaterialsInput): Promise<MaterialsSaleResult> {
+  await delay(null, 300);
+  if (input.items.length === 0) {
+    throw { message: "Cart is empty.", status: 400 };
   }
 
+  const updated = new Map<string, Material>();
+  for (const item of input.items) {
+    const material = mockMaterials.find((m) => m.id === item.materialId);
+    if (!material) {
+      throw { message: "Material not found.", status: 404 };
+    }
+    const nextQuantity = material.quantity - item.quantity;
+    if (nextQuantity < 0) {
+      throw { message: `Not enough stock for "${material.name}".`, status: 400 };
+    }
+    updated.set(item.materialId, { ...material, quantity: nextQuantity });
+  }
+
+  const amount = input.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   const payment = await createPayment({
     patientId: input.patientId,
-    amount: input.quantity * input.unitPrice,
+    amount,
     method: input.method,
     category: "material_sale",
     collectedBy: input.createdBy,
     branchId: input.branchId,
   });
 
-  const updated: Material = { ...material, quantity: nextQuantity };
-  mockMaterials = mockMaterials.map((m) => (m.id === input.materialId ? updated : m));
+  mockMaterials = mockMaterials.map((m) => updated.get(m.id) ?? m);
 
   mockMovements = [
-    {
-      id: `mov-${Date.now()}`,
-      materialId: input.materialId,
-      type: "out",
-      quantity: input.quantity,
+    ...input.items.map((item) => ({
+      id: `mov-${Date.now()}-${item.materialId}`,
+      materialId: item.materialId,
+      type: "out" as MaterialMovementType,
+      quantity: item.quantity,
       note: `Sold — Payment ${payment.receiptNumber}`,
       branchId: input.branchId,
       createdBy: input.createdBy,
       createdAt: new Date().toISOString(),
-    },
+    })),
     ...mockMovements,
   ];
 
-  return { material: updated, payment };
+  return { materials: Array.from(updated.values()), payment };
 }

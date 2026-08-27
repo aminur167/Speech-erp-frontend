@@ -1,13 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { sellMaterial, type MaterialSaleResult, type SellMaterialInput } from "@/lib/api/materials";
+import {
+  sellMaterials,
+  type MaterialsSaleResult,
+  type SellMaterialsInput,
+} from "@/lib/api/materials";
 import { queryKeys } from "@/lib/queryKeys";
 import type { ApiError } from "@/types/api";
 
-export function useSellMaterial() {
+export function useSellMaterials() {
   const queryClient = useQueryClient();
 
-  return useMutation<MaterialSaleResult, ApiError, SellMaterialInput>({
-    mutationFn: sellMaterial,
+  return useMutation<MaterialsSaleResult, ApiError, SellMaterialsInput>({
+    mutationFn: sellMaterials,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.materials.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });

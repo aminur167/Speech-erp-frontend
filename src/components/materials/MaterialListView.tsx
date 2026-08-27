@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Boxes, AlertTriangle, Wallet } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, ShoppingCart, Boxes, AlertTriangle, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -12,7 +13,6 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { MaterialTable } from "@/components/materials/MaterialTable";
 import { MaterialForm } from "@/components/materials/MaterialForm";
 import { AdjustStockModal } from "@/components/materials/AdjustStockModal";
-import { SellMaterialModal } from "@/components/materials/SellMaterialModal";
 import { useMaterials } from "@/hooks/materials/useMaterials";
 import { useMaterialsSummary } from "@/hooks/materials/useMaterialsSummary";
 import { useCreateMaterial } from "@/hooks/materials/useCreateMaterial";
@@ -25,6 +25,7 @@ import type { Material, MaterialMovementType } from "@/types/domain";
 import type { MaterialInput } from "@/lib/api/materials";
 
 export function MaterialListView() {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const branchId = user?.branchId ?? "branch-1";
 
@@ -39,7 +40,6 @@ export function MaterialListView() {
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [deletingMaterial, setDeletingMaterial] = useState<Material | null>(null);
   const [adjustingMaterial, setAdjustingMaterial] = useState<Material | null>(null);
-  const [sellingMaterial, setSellingMaterial] = useState<Material | null>(null);
 
   const handleCreate = (input: Omit<MaterialInput, "branchId">) => {
     createMaterial.mutate({ ...input, branchId }, { onSuccess: () => setIsAddOpen(false) });
@@ -76,10 +76,16 @@ export function MaterialListView() {
         title="Materials"
         subtitle="Track therapy materials and equipment stock for your branch."
         action={
-          <Button onClick={() => setIsAddOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Add Material
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => router.push("/manager/materials/sell")}>
+              <ShoppingCart className="h-4 w-4" />
+              Sell
+            </Button>
+            <Button onClick={() => setIsAddOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Add Material
+            </Button>
+          </div>
         }
       />
 
@@ -107,7 +113,7 @@ export function MaterialListView() {
         {!isLoading && materials && materials.length > 0 && (
           <MaterialTable
             materials={materials}
-            onSell={setSellingMaterial}
+            onSell={(material) => router.push(`/manager/materials/sell?add=${material.id}`)}
             onAdjustStock={setAdjustingMaterial}
             onEdit={setEditingMaterial}
             onDelete={setDeletingMaterial}
@@ -149,8 +155,6 @@ export function MaterialListView() {
         onSubmit={handleAdjust}
         isSubmitting={adjustStockMutation.isPending}
       />
-
-      <SellMaterialModal material={sellingMaterial} onClose={() => setSellingMaterial(null)} />
 
       <ConfirmDialog
         open={Boolean(deletingMaterial)}
