@@ -1,12 +1,16 @@
-import { PagePlaceholder } from "@/components/layout/PagePlaceholder";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { InstallmentServiceEnrollment } from "@/components/services/InstallmentServiceEnrollment";
 
 export default function InstallmentServicesPage() {
   return (
-    <PagePlaceholder
-      homeHref="/manager/dashboard"
-      roleLabel="Branch Manager"
-      title="Installment Services"
-      subtitle="Track installment plans and collect scheduled payments."
-    />
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        homeHref="/manager/dashboard"
+        breadcrumb={["Branch Manager", "Installment Services"]}
+        title="Installment Services"
+        subtitle="Set up an installment plan and collect scheduled payments."
+      />
+      <InstallmentServiceEnrollment />
+    </div>
   );
 }

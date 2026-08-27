@@ -100,3 +100,48 @@ export interface Expense {
   status: ExpenseStatus;
   createdAt: string;
 }
+
+export type BillStatus = "paid" | "due" | "upcoming";
+
+export interface MonthlyBill {
+  month: string; // e.g. "2026-08"
+  label: string; // e.g. "August 2026"
+  amount: number;
+  status: BillStatus;
+}
+
+export interface MonthlyEnrollment {
+  id: string;
+  patientId: string;
+  serviceId: string;
+  branchId: string;
+  bills: MonthlyBill[];
+}
+
+export interface Installment {
+  index: number;
+  label: string; // e.g. "1st Installment"
+  amount: number;
+  status: BillStatus;
+}
+
+export interface InstallmentPlan {
+  id: string;
+  patientId: string;
+  serviceId: string;
+  branchId: string;
+  totalAmount: number;
+  installments: Installment[];
+}
+
+export interface Booking {
+  id: string;
+  bookingCode: string; // e.g. BKG-2026-00001
+  patientId: string;
+  serviceId: string;
+  branchId: string;
+  date: string;
+  time: string;
+  advanceAmount: number;
+  status: "confirmed" | "cancelled";
+}
