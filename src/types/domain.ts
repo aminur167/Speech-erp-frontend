@@ -8,9 +8,20 @@ export interface AuthUser {
   branchId: string | null;
 }
 
+export type BranchStatus = "active" | "inactive";
+
 export interface Branch {
   id: string;
   name: string;
+  code: string; // e.g. BR-DHK-001
+  status: BranchStatus;
+  address: string;
+  phone: string;
+  managerName: string;
+  managerCode: string; // e.g. MGR-DHK-001
+  therapistCount: number;
+  supportCount: number;
+  openedAt: string; // ISO date
 }
 
 export type Gender = "male" | "female" | "other";
