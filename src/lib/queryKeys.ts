@@ -26,6 +26,11 @@ export const queryKeys = {
     list: (params?: object) => ["expenses", "list", params] as const,
     summary: (branchId?: string) => ["expenses", "summary", branchId] as const,
   },
+  dailyClosing: {
+    all: ["daily-closing"] as const,
+    todaySummary: (branchId?: string) => ["daily-closing", "today-summary", branchId] as const,
+    history: (branchId?: string) => ["daily-closing", "history", branchId] as const,
+  },
   auth: {
     currentUser: ["auth", "current-user"] as const,
   },

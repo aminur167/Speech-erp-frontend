@@ -148,3 +148,17 @@ export interface Booking {
   advanceAmount: number;
   status: "confirmed" | "cancelled";
 }
+
+export type DailyClosingStatus = "matched" | "over" | "short";
+
+export interface DailyClosing {
+  id: string;
+  branchId: string;
+  date: string; // e.g. "2026-08-27"
+  systemTotal: number;
+  actualTotal: number;
+  difference: number;
+  status: DailyClosingStatus;
+  submittedBy: string;
+  submittedAt: string;
+}

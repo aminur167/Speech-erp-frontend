@@ -6,7 +6,17 @@ import type { Payment, PaymentMethod, PaymentStatus } from "@/types/domain";
  * each function for a real `apiClient` call later; callers never change.
  */
 
-let mockPayments: Payment[] = [];
+function hoursAgo(hours: number): string {
+  const date = new Date();
+  date.setHours(date.getHours() - hours);
+  return date.toISOString();
+}
+
+let mockPayments: Payment[] = [
+  { id: "pay-seed-1", transactionId: "TXN-seed-1", receiptNumber: "RCPT-2026-00000", patientId: "p-3", amount: 800, method: "cash", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: hoursAgo(5) },
+  { id: "pay-seed-2", transactionId: "TXN-seed-2", receiptNumber: "RCPT-2026-00000", patientId: "p-5", amount: 1000, method: "bkash", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: hoursAgo(4) },
+  { id: "pay-seed-3", transactionId: "TXN-seed-3", receiptNumber: "RCPT-2026-00000", patientId: "p-9", amount: 500, method: "cash", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: hoursAgo(2) },
+];
 let sequence = 0;
 
 function delay<T>(value: T, ms = 400): Promise<T> {
@@ -49,4 +59,18 @@ export async function getPayment(id: string): Promise<Payment> {
     throw { message: "Payment not found.", status: 404 };
   }
   return payment;
+}
+
+export interface ListPaymentsParams {
+  branchId?: string;
+  since?: Date;
+}
+
+export async function listPayments(params: ListPaymentsParams = {}): Promise<Payment[]> {
+  await delay(null, 150);
+  return mockPayments.filter((payment) => {
+    if (params.branchId && payment.branchId !== params.branchId) return false;
+    if (params.since && new Date(payment.createdAt) < params.since) return false;
+    return true;
+  });
 }
