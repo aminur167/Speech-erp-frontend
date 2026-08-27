@@ -27,6 +27,8 @@ let mockPayments: Payment[] = [
   { id: "pay-seed-5", transactionId: "TXN-seed-5", receiptNumber: "RCPT-2026-00000", patientId: "p-2", amount: 1000, method: "cash", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: daysAgo(2, 15) },
   { id: "pay-seed-6", transactionId: "TXN-seed-6", receiptNumber: "RCPT-2026-00000", patientId: "p-8", amount: 300, method: "nagad", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: daysAgo(3, 10) },
   { id: "pay-seed-7", transactionId: "TXN-seed-7", receiptNumber: "RCPT-2026-00000", patientId: "p-11", amount: 500, method: "card", status: "paid", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: daysAgo(5, 13) },
+  { id: "pay-seed-8", transactionId: "TXN-seed-8", receiptNumber: "RCPT-2026-00000", patientId: "p-6", amount: 3000, method: "bkash", status: "refunded", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: daysAgo(4, 12) },
+  { id: "pay-seed-9", transactionId: "TXN-seed-9", receiptNumber: "RCPT-2026-00000", patientId: "p-10", amount: 800, method: "cash", status: "void", collectedBy: "Branch Manager", branchId: "branch-1", createdAt: daysAgo(6, 9) },
 ];
 let sequence = 0;
 

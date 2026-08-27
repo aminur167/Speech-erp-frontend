@@ -12,6 +12,8 @@ import { useExpenseSummary } from "@/hooks/expenses/useExpenseSummary";
 import { useDuePaymentsSummary } from "@/hooks/duePayments/useDuePaymentsSummary";
 import { usePatientDirectorySummary } from "@/hooks/patients/usePatientDirectorySummary";
 import { useDailyClosingHistory } from "@/hooks/dailyClosing/useDailyClosingHistory";
+import { useRefundsAndVoids } from "@/hooks/transactions/useRefundsAndVoids";
+import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { formatCurrency } from "@/utils/currency";
 
 export function AdminReportsView() {
@@ -20,6 +22,7 @@ export function AdminReportsView() {
   const { data: dues } = useDuePaymentsSummary();
   const { data: patients } = usePatientDirectorySummary();
   const { data: closings, isLoading: closingsLoading } = useDailyClosingHistory();
+  const { data: refundsAndVoids, isLoading: refundsLoading } = useRefundsAndVoids();
 
   const netRevenue = (transactions?.totalCollected ?? 0) - (expenses?.total ?? 0);
   const mismatches = closings?.filter((closing) => closing.status !== "matched") ?? [];
@@ -150,6 +153,25 @@ export function AdminReportsView() {
                 </tbody>
               </table>
             </div>
+          )}
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-text-secondary">Refunds &amp; Voids</h2>
+          <Badge
+            tone={(refundsAndVoids?.length ?? 0) > 0 ? "warning" : "success"}
+            label={`${refundsAndVoids?.length ?? 0} found`}
+          />
+        </div>
+        <div className="mt-3">
+          {refundsLoading && <LoadingState label="Loading refunds & voids…" />}
+          {!refundsLoading && (!refundsAndVoids || refundsAndVoids.length === 0) && (
+            <EmptyState label="No refunded or voided payments." />
+          )}
+          {!refundsLoading && refundsAndVoids && refundsAndVoids.length > 0 && (
+            <TransactionTable transactions={refundsAndVoids} />
           )}
         </div>
       </Card>

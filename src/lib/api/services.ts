@@ -6,7 +6,7 @@ import type { Service, ServiceCategory } from "@/types/domain";
  * each function for a real `apiClient` call later; callers never change.
  */
 
-const mockServices: Service[] = [
+let mockServices: Service[] = [
   { id: "s-1", name: "Consultation", code: "DLY-CONSULT", category: "daily", fee: 800, isOnline: false, description: "Initial or follow-up in-person consultation." },
   { id: "s-2", name: "Outdoor Session", code: "DLY-OUTDOOR", category: "daily", fee: 1000, isOnline: false, description: "Single outdoor therapy session." },
   { id: "s-3", name: "Materials / Equipment", code: "DLY-MATERIAL", category: "daily", fee: 500, isOnline: false, description: "Therapy materials or equipment fee." },
@@ -17,6 +17,8 @@ const mockServices: Service[] = [
   { id: "s-8", name: "Online Session", code: "ONL-SESSION", category: "online", fee: 1200, isOnline: true, description: "Live online therapy session." },
   { id: "s-9", name: "Online Consultation", code: "ONL-CONSULT", category: "online", fee: 900, isOnline: true, description: "Live online consultation." },
 ];
+
+let sequence = mockServices.length;
 
 function delay<T>(value: T, ms = 300): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
@@ -34,4 +36,37 @@ export async function getService(id: string): Promise<Service> {
     throw { message: "Service not found.", status: 404 };
   }
   return service;
+}
+
+export interface ServiceInput {
+  name: string;
+  code: string;
+  category: ServiceCategory;
+  fee: number;
+  isOnline: boolean;
+  description?: string;
+}
+
+export async function createService(input: ServiceInput): Promise<Service> {
+  await delay(null);
+  sequence += 1;
+  const newService: Service = { id: `s-${sequence}-${Date.now()}`, ...input };
+  mockServices = [...mockServices, newService];
+  return newService;
+}
+
+export async function updateService(id: string, input: ServiceInput): Promise<Service> {
+  await delay(null);
+  const index = mockServices.findIndex((s) => s.id === id);
+  if (index === -1) {
+    throw { message: "Service not found.", status: 404 };
+  }
+  const updated: Service = { id, ...input };
+  mockServices = mockServices.map((s) => (s.id === id ? updated : s));
+  return updated;
+}
+
+export async function deleteService(id: string): Promise<void> {
+  await delay(null, 200);
+  mockServices = mockServices.filter((s) => s.id !== id);
 }

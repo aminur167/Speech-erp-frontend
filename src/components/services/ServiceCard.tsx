@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { clsx } from "clsx";
 import { formatCurrency } from "@/utils/currency";
 import type { Service } from "@/types/domain";
@@ -6,10 +7,12 @@ export function ServiceCard({
   service,
   selected,
   onSelect,
+  actions,
 }: {
   service: Service;
   selected?: boolean;
   onSelect?: (service: Service) => void;
+  actions?: ReactNode;
 }) {
   const content = (
     <>
@@ -36,7 +39,12 @@ export function ServiceCard({
   );
 
   if (!onSelect) {
-    return <div className={className}>{content}</div>;
+    return (
+      <div className={className}>
+        {content}
+        {actions && <div className="mt-2 flex gap-2 border-t border-border pt-2">{actions}</div>}
+      </div>
+    );
   }
 
   return (

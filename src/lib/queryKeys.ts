@@ -23,6 +23,8 @@ export const queryKeys = {
     all: ["transactions"] as const,
     list: (params?: object) => ["transactions", "list", params] as const,
     summary: (branchId?: string) => ["transactions", "summary", branchId] as const,
+    refundsAndVoids: (branchId?: string) =>
+      ["transactions", "refunds-voids", branchId] as const,
   },
   duePayments: {
     all: ["due-payments"] as const,

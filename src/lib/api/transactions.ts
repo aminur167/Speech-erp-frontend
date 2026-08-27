@@ -85,11 +85,13 @@ export interface TransactionsSummary {
 
 export async function getTransactionsSummary(branchId?: string): Promise<TransactionsSummary> {
   const all = await joinTransactions(branchId);
+  // Refunded/void payments aren't real revenue — exclude them from the totals below.
+  const paid = all.filter((item) => item.status === "paid");
   const now = new Date();
   const todayKey = now.toDateString();
 
   const byMethodMap = new Map<PaymentMethod, number>();
-  for (const item of all) {
+  for (const item of paid) {
     byMethodMap.set(item.method, (byMethodMap.get(item.method) ?? 0) + item.amount);
   }
 
@@ -97,10 +99,17 @@ export async function getTransactionsSummary(branchId?: string): Promise<Transac
     byMethod: Array.from(byMethodMap.entries())
       .map(([method, amount]) => ({ method, amount }))
       .sort((a, b) => b.amount - a.amount),
-    totalCollected: all.reduce((sum, item) => sum + item.amount, 0),
+    totalCollected: paid.reduce((sum, item) => sum + item.amount, 0),
     transactionCount: all.length,
-    todayCollected: all
+    todayCollected: paid
       .filter((item) => new Date(item.createdAt).toDateString() === todayKey)
       .reduce((sum, item) => sum + item.amount, 0),
   };
+}
+
+export async function listRefundsAndVoids(branchId?: string): Promise<TransactionItem[]> {
+  const all = await joinTransactions(branchId);
+  return all
+    .filter((item) => item.status === "refunded" || item.status === "void")
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
