@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -38,8 +37,19 @@ const STEP_LABELS: Record<Step, string> = {
   receipt: "Receipt",
 };
 
-const TIME_SLOTS = ["10:00 AM", "11:30 AM", "2:00 PM", "4:00 PM", "6:00 PM"];
+/** Clinic's online-session booking window — the time input is constrained to this range. */
+const BOOKING_TIME_RANGE = { min: "10:00", max: "18:00" };
+const BOOKING_TIME_RANGE_LABEL = "10:00 AM – 6:00 PM";
 const ADVANCE_RATIO = 0.5;
+
+/** Converts a native time-input value ("HH:MM", 24-hour) into a friendly 12-hour label. */
+function formatTimeLabel(value: string): string {
+  const [hourStr, minuteStr] = value.split(":");
+  const hour = Number(hourStr);
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  return `${displayHour}:${minuteStr} ${period}`;
+}
 
 export function OnlineServiceEnrollment() {
   const user = useAuthStore((state) => state.user);
@@ -72,7 +82,7 @@ export function OnlineServiceEnrollment() {
         serviceId: selectedService.id,
         branchId: user.branchId ?? "branch-1",
         date,
-        time,
+        time: formatTimeLabel(time),
         advanceAmount,
       },
       {
@@ -186,22 +196,20 @@ export function OnlineServiceEnrollment() {
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-medium text-text-secondary">Select date &amp; time</h2>
             <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
-            <div className="flex flex-wrap gap-2">
-              {TIME_SLOTS.map((slot) => (
-                <button
-                  key={slot}
-                  type="button"
-                  onClick={() => setTime(slot)}
-                  className={clsx(
-                    "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-                    time === slot
-                      ? "border-primary bg-primary-light text-primary-dark"
-                      : "border-border text-text-secondary hover:border-primary/40",
-                  )}
-                >
-                  {slot}
-                </button>
-              ))}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-text-secondary">
+                Preferred time{" "}
+                <span className="font-normal text-text-secondary/70">
+                  (available {BOOKING_TIME_RANGE_LABEL})
+                </span>
+              </label>
+              <Input
+                type="time"
+                value={time ?? ""}
+                onChange={(event) => setTime(event.target.value)}
+                min={BOOKING_TIME_RANGE.min}
+                max={BOOKING_TIME_RANGE.max}
+              />
             </div>
             <div className="flex gap-2">
               <Button variant="secondary" onClick={() => setStep("patient")}>
