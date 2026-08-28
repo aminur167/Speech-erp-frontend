@@ -10,6 +10,7 @@ import {
   UserPlus,
   ClipboardCheck,
   ClipboardList,
+  Coins,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -54,6 +55,7 @@ export default function ManagerDashboardPage() {
 
   const todaysClosing = closings?.find((closing) => closing.date === todayDateString());
   const pendingApprovals = expenses?.pendingCount ?? 0;
+  const todayRevenue = (todayCollection?.total ?? 0) - (expenses?.todayTotal ?? 0);
 
   const actionItems: ActionItem[] = [
     {
@@ -99,15 +101,16 @@ export default function ManagerDashboardPage() {
             tone="success"
           />
           <StatCard
+            label="Today's Revenue"
+            value={formatCurrency(todayRevenue)}
+            icon={Coins}
+            tone={todayRevenue >= 0 ? "success" : "danger"}
+            hint="Collection minus expenses"
+          />
+          <StatCard
             label="Patients Seen Today"
             value={String(metrics?.todayPatientsSeen ?? 0)}
             icon={Users}
-          />
-          <StatCard
-            label="Due Collected Today"
-            value={formatCurrency(metrics?.todayDueCollected ?? 0)}
-            icon={ClipboardCheck}
-            tone="purple"
           />
           <StatCard
             label="Today's Expenses"
