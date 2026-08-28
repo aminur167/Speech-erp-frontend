@@ -95,3 +95,29 @@ body {
 *::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-text-secondary);
 }
+
+/*
+ * Print isolation: the app has no separate print route, so printing a receipt means
+ * printing the live page. This hides everything except the one element opted in via
+ * #print-area, so the sidebar/topbar/buttons never end up on paper.
+ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+
+  #print-area {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+}
