@@ -35,8 +35,10 @@ export async function getPatientActiveServices(
 
   const serviceById = new Map(services.map((service) => [service.id, service]));
 
-  const enrollment = enrollments.find((e) => e.patientId === patientId);
-  const plan = plans.find((p) => p.patientId === patientId);
+  const enrollment = enrollments.find(
+    (e) => e.patientId === patientId && e.status !== "terminated",
+  );
+  const plan = plans.find((p) => p.patientId === patientId && p.status !== "terminated");
 
   return {
     monthly: enrollment

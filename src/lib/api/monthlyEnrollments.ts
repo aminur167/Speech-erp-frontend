@@ -26,8 +26,8 @@ function seedBills(fee: number): MonthlyBill[] {
 }
 
 let enrollments: MonthlyEnrollment[] = [
-  { id: "menr-seed-1", patientId: "p-4", serviceId: "s-5", branchId: "branch-1", bills: seedBills(5000) },
-  { id: "menr-seed-2", patientId: "p-6", serviceId: "s-6", branchId: "branch-1", bills: seedBills(3000) },
+  { id: "menr-seed-1", patientId: "p-4", serviceId: "s-5", branchId: "branch-1", bills: seedBills(5000), status: "active" },
+  { id: "menr-seed-2", patientId: "p-6", serviceId: "s-6", branchId: "branch-1", bills: seedBills(3000), status: "active" },
 ];
 
 export async function listMonthlyEnrollments(): Promise<MonthlyEnrollment[]> {
@@ -52,6 +52,7 @@ export async function createMonthlyEnrollment(
     serviceId: input.serviceId,
     branchId: input.branchId,
     bills: seedBills(input.fee),
+    status: "active",
   };
   enrollments = [enrollment, ...enrollments];
   return enrollment;
@@ -75,4 +76,14 @@ export async function payMonthlyBill(
     enrollment.bills[billIndex + 1].status = "due";
   }
   return { ...enrollment, bills: [...enrollment.bills] };
+}
+
+export async function terminateMonthlyEnrollment(enrollmentId: string): Promise<MonthlyEnrollment> {
+  await delay(null, 250);
+  const enrollment = enrollments.find((e) => e.id === enrollmentId);
+  if (!enrollment) {
+    throw { message: "Enrollment not found.", status: 404 };
+  }
+  enrollment.status = "terminated";
+  return { ...enrollment };
 }

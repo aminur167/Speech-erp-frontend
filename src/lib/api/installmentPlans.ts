@@ -30,6 +30,7 @@ let plans: InstallmentPlan[] = [
     branchId: "branch-1",
     totalAmount: 6000,
     installments: buildInstallments(6000, 3),
+    status: "active",
   },
 ];
 
@@ -57,6 +58,7 @@ export async function createInstallmentPlan(
     branchId: input.branchId,
     totalAmount: input.totalAmount,
     installments: buildInstallments(input.totalAmount, input.numberOfInstallments),
+    status: "active",
   };
   plans = [plan, ...plans];
   return plan;
@@ -77,4 +79,14 @@ export async function payInstallment(planId: string, index: number): Promise<Ins
     plan.installments[i + 1].status = "due";
   }
   return { ...plan, installments: [...plan.installments] };
+}
+
+export async function terminateInstallmentPlan(planId: string): Promise<InstallmentPlan> {
+  await delay(null, 250);
+  const plan = plans.find((p) => p.id === planId);
+  if (!plan) {
+    throw { message: "Installment plan not found.", status: 404 };
+  }
+  plan.status = "terminated";
+  return { ...plan };
 }

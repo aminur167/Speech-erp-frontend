@@ -61,8 +61,12 @@ async function buildDirectory(): Promise<PatientDirectoryItem[]> {
   const serviceById = new Map(services.map((service) => [service.id, service]));
 
   return patientsPage.results.map((patient) => {
-    const monthlyEnrollment = monthlyEnrollments.find((e) => e.patientId === patient.id);
-    const installmentPlan = installmentPlans.find((p) => p.patientId === patient.id);
+    const monthlyEnrollment = monthlyEnrollments.find(
+      (e) => e.patientId === patient.id && e.status !== "terminated",
+    );
+    const installmentPlan = installmentPlans.find(
+      (p) => p.patientId === patient.id && p.status !== "terminated",
+    );
 
     let therapyType = "—";
     let paymentType = "—";

@@ -132,12 +132,15 @@ export interface MonthlyBill {
   status: BillStatus;
 }
 
+export type EnrollmentStatus = "active" | "terminated";
+
 export interface MonthlyEnrollment {
   id: string;
   patientId: string;
   serviceId: string;
   branchId: string;
   bills: MonthlyBill[];
+  status: EnrollmentStatus;
 }
 
 export interface Installment {
@@ -154,6 +157,7 @@ export interface InstallmentPlan {
   branchId: string;
   totalAmount: number;
   installments: Installment[];
+  status: EnrollmentStatus;
 }
 
 export interface Booking {

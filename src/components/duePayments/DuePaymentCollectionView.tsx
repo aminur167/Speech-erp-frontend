@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Pagination } from "@/components/ui/Pagination";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -13,6 +14,7 @@ import { DuePaymentTable } from "@/components/duePayments/DuePaymentTable";
 import { CollectDuePaymentModal } from "@/components/duePayments/CollectDuePaymentModal";
 import { useDuePayments } from "@/hooks/duePayments/useDuePayments";
 import { useDuePaymentsSummary } from "@/hooks/duePayments/useDuePaymentsSummary";
+import { useTerminateService } from "@/hooks/duePayments/useTerminateService";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import type { DuePaymentItem, DuePaymentType } from "@/lib/api/duePayments";
@@ -39,6 +41,7 @@ export function DuePaymentCollectionView({
   const [type, setType] = useState<DuePaymentType | "">("");
   const [page, setPage] = useState(1);
   const [selectedItem, setSelectedItem] = useState<DuePaymentItem | null>(null);
+  const [terminatingItem, setTerminatingItem] = useState<DuePaymentItem | null>(null);
 
   const { data, isLoading, isError, refetch } = useDuePayments({
     search,
@@ -48,6 +51,15 @@ export function DuePaymentCollectionView({
     pageSize: PAGE_SIZE,
   });
   const { data: summary } = useDuePaymentsSummary(branchId);
+  const terminateService = useTerminateService();
+
+  const handleConfirmTerminate = () => {
+    if (!terminatingItem) return;
+    terminateService.mutate(
+      { type: terminatingItem.type, refId: terminatingItem.refId },
+      { onSuccess: () => setTerminatingItem(null) },
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -115,6 +127,7 @@ export function DuePaymentCollectionView({
               <DuePaymentTable
                 items={data.results}
                 onCollectPayment={readOnly ? undefined : setSelectedItem}
+                onTerminate={readOnly ? undefined : setTerminatingItem}
               />
               <Pagination
                 page={page}
@@ -128,6 +141,21 @@ export function DuePaymentCollectionView({
       </Card>
 
       <CollectDuePaymentModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+
+      <ConfirmDialog
+        open={Boolean(terminatingItem)}
+        onClose={() => setTerminatingItem(null)}
+        onConfirm={handleConfirmTerminate}
+        title="Terminate this service?"
+        description={
+          terminatingItem
+            ? `${terminatingItem.patientName}'s ${terminatingItem.serviceName} (${terminatingItem.type}) will stop generating due bills. This can't be undone.`
+            : undefined
+        }
+        confirmLabel="Terminate"
+        danger
+        isLoading={terminateService.isPending}
+      />
     </div>
   );
 }

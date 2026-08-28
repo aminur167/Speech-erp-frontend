@@ -6,10 +6,15 @@ import type { DuePaymentItem } from "@/lib/api/duePayments";
 export function DuePaymentTable({
   items,
   onCollectPayment,
+  onTerminate,
 }: {
   items: DuePaymentItem[];
   onCollectPayment?: (item: DuePaymentItem) => void;
+  /** Lets the manager end a patient's monthly enrollment or installment plan. */
+  onTerminate?: (item: DuePaymentItem) => void;
 }) {
+  const showActions = Boolean(onCollectPayment || onTerminate);
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
@@ -20,7 +25,7 @@ export function DuePaymentTable({
             <th className="py-2 pr-4 font-medium">Service</th>
             <th className="py-2 pr-4 font-medium">Due</th>
             <th className="py-2 pr-4 font-medium">Amount</th>
-            {onCollectPayment && <th className="py-2 pr-4 font-medium">Action</th>}
+            {showActions && <th className="py-2 pr-4 font-medium">Action</th>}
           </tr>
         </thead>
         <tbody>
@@ -36,9 +41,18 @@ export function DuePaymentTable({
               <td className="py-2 pr-4">{item.serviceName}</td>
               <td className="py-2 pr-4">{item.label}</td>
               <td className="py-2 pr-4 font-medium">{formatCurrency(item.amount)}</td>
-              {onCollectPayment && (
+              {showActions && (
                 <td className="py-2 pr-4">
-                  <Button onClick={() => onCollectPayment(item)}>Collect Payment</Button>
+                  <div className="flex gap-2">
+                    {onCollectPayment && (
+                      <Button onClick={() => onCollectPayment(item)}>Collect Payment</Button>
+                    )}
+                    {onTerminate && (
+                      <Button variant="danger" onClick={() => onTerminate(item)}>
+                        Terminate
+                      </Button>
+                    )}
+                  </div>
                 </td>
               )}
             </tr>

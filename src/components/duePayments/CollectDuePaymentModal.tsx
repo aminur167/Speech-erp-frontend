@@ -56,11 +56,40 @@ export function CollectDuePaymentModal({
     >
       {item && !payment && (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-between rounded-lg border border-border bg-background p-4 text-sm">
-            <span className="text-text-secondary">Amount Due</span>
-            <span className="text-lg font-semibold text-primary-dark">
-              {formatCurrency(item.amount)}
-            </span>
+          <div className="flex flex-col gap-2 rounded-lg border border-border bg-background p-4 text-sm">
+            <div className="flex justify-between">
+              <span className="text-text-secondary">Service</span>
+              <span className="font-medium text-text-primary">{item.serviceName}</span>
+            </div>
+            {item.type === "monthly" && (
+              <div className="flex justify-between">
+                <span className="text-text-secondary">Billing Month</span>
+                <span className="font-medium text-text-primary">{item.label}</span>
+              </div>
+            )}
+            {item.type === "installment" && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Installment</span>
+                  <span className="font-medium text-text-primary">
+                    {item.label} ({item.installmentIndex} of {item.installmentsTotal})
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Remaining After This</span>
+                  <span className="font-medium text-text-primary">
+                    {item.installmentsRemaining}{" "}
+                    {item.installmentsRemaining === 1 ? "installment" : "installments"}
+                  </span>
+                </div>
+              </>
+            )}
+            <div className="flex justify-between border-t border-border pt-2">
+              <span className="text-text-secondary">Amount Due</span>
+              <span className="text-lg font-semibold text-primary-dark">
+                {formatCurrency(item.amount)}
+              </span>
+            </div>
           </div>
           <PaymentMethodSelector value={method} onChange={setMethod} />
           <div className="flex justify-end gap-2">

@@ -1,5 +1,13 @@
-import { listMonthlyEnrollments, payMonthlyBill } from "@/lib/api/monthlyEnrollments";
-import { listInstallmentPlans, payInstallment } from "@/lib/api/installmentPlans";
+import {
+  listMonthlyEnrollments,
+  payMonthlyBill,
+  terminateMonthlyEnrollment,
+} from "@/lib/api/monthlyEnrollments";
+import {
+  listInstallmentPlans,
+  payInstallment,
+  terminateInstallmentPlan,
+} from "@/lib/api/installmentPlans";
 import { listPatients } from "@/lib/api/patients";
 import { listServices } from "@/lib/api/services";
 import { createPayment, type CreatePaymentInput } from "@/lib/api/payments";
@@ -27,6 +35,10 @@ export interface DuePaymentItem {
   amount: number;
   refId: string;
   refKey: string;
+  /** Installment-only: this due installment's position and how many remain in the plan. */
+  installmentIndex?: number;
+  installmentsTotal?: number;
+  installmentsRemaining?: number;
 }
 
 async function collectDueItems(branchId?: string): Promise<DuePaymentItem[]> {
@@ -43,6 +55,7 @@ async function collectDueItems(branchId?: string): Promise<DuePaymentItem[]> {
   const items: DuePaymentItem[] = [];
 
   for (const enrollment of enrollments) {
+    if (enrollment.status === "terminated") continue;
     if (branchId && enrollment.branchId !== branchId) continue;
     const due = enrollment.bills.find((bill) => bill.status === "due");
     if (!due) continue;
@@ -65,6 +78,7 @@ async function collectDueItems(branchId?: string): Promise<DuePaymentItem[]> {
   }
 
   for (const plan of plans) {
+    if (plan.status === "terminated") continue;
     if (branchId && plan.branchId !== branchId) continue;
     const due = plan.installments.find((installment) => installment.status === "due");
     if (!due) continue;
@@ -83,6 +97,9 @@ async function collectDueItems(branchId?: string): Promise<DuePaymentItem[]> {
       amount: due.amount,
       refId: plan.id,
       refKey: String(due.index),
+      installmentIndex: due.index,
+      installmentsTotal: plan.installments.length,
+      installmentsRemaining: plan.installments.length - due.index,
     });
   }
 
@@ -155,4 +172,15 @@ export async function collectDuePayment(input: CollectDuePaymentInput): Promise<
     await payInstallment(input.item.refId, Number(input.item.refKey));
   }
   return createdPayment;
+}
+
+/** Ends a patient's monthly enrollment or installment plan — it stops generating due bills/installments. */
+export async function terminateDuePaymentService(
+  item: Pick<DuePaymentItem, "type" | "refId">,
+): Promise<void> {
+  if (item.type === "monthly") {
+    await terminateMonthlyEnrollment(item.refId);
+  } else {
+    await terminateInstallmentPlan(item.refId);
+  }
 }
