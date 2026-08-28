@@ -10,6 +10,7 @@ import { Stepper } from "@/components/ui/Stepper";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { ServiceCard } from "@/components/services/ServiceCard";
 import { PatientSearchInput } from "@/components/patients/PatientSearchInput";
+import { PatientSearchResultList } from "@/components/patients/PatientSearchResultList";
 import { PaymentMethodSelector } from "@/components/payments/PaymentMethodSelector";
 import { Receipt } from "@/components/payments/Receipt";
 import { useServices } from "@/hooks/services/useServices";
@@ -167,28 +168,15 @@ export function OnlineServiceEnrollment() {
               Search for the patient
             </h2>
             <PatientSearchInput onSearch={setSearch} />
-            {patientsLoading && <LoadingState label="Searching…" />}
-            {!patientsLoading && search && patientResults?.results.length === 0 && (
-              <EmptyState label="No matching patients." />
-            )}
-            <div className="flex flex-col gap-2">
-              {patientResults?.results.map((patient) => (
-                <button
-                  key={patient.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedPatient(patient);
-                    setStep("datetime");
-                  }}
-                  className="flex items-center justify-between rounded-lg border border-border px-4 py-2 text-left text-sm transition-colors hover:border-primary/40 hover:bg-primary-light/40"
-                >
-                  <span className="font-medium text-text-primary">{patient.name}</span>
-                  <span className="font-mono text-xs text-text-secondary">
-                    {patient.patientCode}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <PatientSearchResultList
+              results={patientResults?.results}
+              isLoading={patientsLoading}
+              search={search}
+              onSelect={(patient) => {
+                setSelectedPatient(patient);
+                setStep("datetime");
+              }}
+            />
             <div>
               <Button variant="secondary" onClick={() => setStep("service")}>
                 ← Back
