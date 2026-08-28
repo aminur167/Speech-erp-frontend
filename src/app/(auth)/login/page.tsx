@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Info } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Info, ShieldCheck, UserCog } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import * as authApi from "@/lib/api/auth";
@@ -20,6 +20,11 @@ const loginSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
+
+const DEMO_ACCOUNTS = [
+  { role: "Admin", icon: ShieldCheck, email: "admin@speechlab.test", password: "admin123" },
+  { role: "Manager", icon: UserCog, email: "manager@speechlab.test", password: "manager123" },
+] as const;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,8 +44,14 @@ export default function LoginPage() {
     register,
     handleSubmit,
     setError,
+    setValue,
     formState: { errors },
   } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
+
+  const fillDemoAccount = (account: (typeof DEMO_ACCOUNTS)[number]) => {
+    setValue("email", account.email, { shouldValidate: true });
+    setValue("password", account.password, { shouldValidate: true });
+  };
 
   const loginMutation = useMutation({
     mutationFn: authApi.login,
@@ -70,17 +81,17 @@ export default function LoginPage() {
         className="object-cover"
       />
 
-      <div className="relative z-10 w-full max-w-sm">
-        <div className="mb-6 flex flex-col items-center gap-2 text-center">
+      <div className="relative z-10 w-full max-w-lg lg:translate-x-[6vw]">
+        <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <Image
             src="/logo.png"
             alt="Speech Therapy Lab"
-            width={56}
-            height={56}
+            width={88}
+            height={88}
             className="rounded-full shadow-[0_1px_2px_rgba(15,23,42,0.06),0_8px_16px_rgba(15,23,42,0.12)]"
             priority
           />
-          <p className="text-sm font-semibold text-text-primary">Speech Therapy Lab</p>
+          <p className="text-2xl font-bold text-text-primary">Speech Therapy Lab</p>
         </div>
 
         <div className="rounded-2xl border border-white/60 bg-white/90 p-8 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_1px_6px_rgba(15,23,42,0.04),0_24px_48px_rgba(15,23,42,0.14)] backdrop-blur-md sm:p-10">
@@ -170,10 +181,21 @@ export default function LoginPage() {
         <div className="mt-5 rounded-xl border border-white/60 bg-white/90 px-4 py-3 text-xs text-text-secondary shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_12px_rgba(15,23,42,0.08)] backdrop-blur-md">
           <p className="flex items-center gap-1.5 font-medium text-text-primary">
             <Info className="h-3.5 w-3.5 text-primary" />
-            Demo access
+            Demo access — tap to autofill
           </p>
-          <p className="mt-1.5 font-mono">admin@speechlab.test / admin123</p>
-          <p className="font-mono">manager@speechlab.test / manager123</p>
+          <div className="mt-2.5 flex gap-2">
+            {DEMO_ACCOUNTS.map((account) => (
+              <button
+                key={account.role}
+                type="button"
+                onClick={() => fillDemoAccount(account)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-white px-3 py-2 text-xs font-medium text-text-primary transition-colors hover:border-primary/40 hover:bg-primary-light/40"
+              >
+                <account.icon className="h-3.5 w-3.5 text-primary" />
+                {account.role}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </main>
