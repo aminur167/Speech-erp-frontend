@@ -65,7 +65,7 @@ export function StatCard({
 
   if (!onClick) {
     return (
-      <Card className="flex flex-col gap-3" style={accentStyle}>
+      <Card padding="sm" className="flex flex-col gap-2" style={accentStyle}>
         {content}
       </Card>
     );
@@ -73,8 +73,9 @@ export function StatCard({
 
   return (
     <Card
+      padding="sm"
       className={clsx(
-        "flex flex-col gap-3 text-left transition-shadow",
+        "flex flex-col gap-2 text-left transition-shadow",
         "cursor-pointer hover:shadow-md",
         selected && "ring-2 ring-primary",
       )}

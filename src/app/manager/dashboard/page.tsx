@@ -79,7 +79,7 @@ export default function ManagerDashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <PageHeader
         homeHref="/manager/dashboard"
         breadcrumb={["Branch Manager", "Dashboard"]}
