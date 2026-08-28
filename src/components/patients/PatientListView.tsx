@@ -22,8 +22,9 @@ import { usePatientDirectory } from "@/hooks/patients/usePatientDirectory";
 import { usePatientDirectorySummary } from "@/hooks/patients/usePatientDirectorySummary";
 import { useAuthStore } from "@/store/authStore";
 import { exportToCsv } from "@/utils/exportCsv";
+import { PAYMENT_METHOD_OPTIONS } from "@/utils/paymentMethod";
 import type { PatientCareStatus, PatientTimeRange } from "@/lib/api/patientDirectory";
-import type { Gender, ServiceCategory } from "@/types/domain";
+import type { Gender, PaymentMethod, ServiceCategory } from "@/types/domain";
 
 const SERVICE_CATEGORY_LABELS: Record<ServiceCategory, string> = {
   daily: "Daily Services",
@@ -40,6 +41,7 @@ const DEFAULT_COLUMNS: PatientTableColumns = {
   guardian: true,
   phone: true,
   therapyType: true,
+  serviceType: true,
   paymentType: true,
   status: true,
   branch: true,
@@ -70,6 +72,7 @@ export function PatientListView({
   const [statusFilter, setStatusFilter] = useState<PatientCareStatus | "">("");
   const [gender, setGender] = useState<Gender | "">("");
   const [serviceCategory, setServiceCategory] = useState<ServiceCategory | "">("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
   const [timeRange, setTimeRange] = useState<PatientTimeRange>("");
   const [date, setDate] = useState("");
   const [page, setPage] = useState(1);
@@ -81,6 +84,7 @@ export function PatientListView({
     status: statusFilter || undefined,
     gender: gender || undefined,
     serviceCategory: serviceCategory || undefined,
+    paymentType: paymentMethod || undefined,
     timeRange: timeRange || undefined,
     date: date || undefined,
     branchId,
@@ -90,7 +94,14 @@ export function PatientListView({
   const { data: summary } = usePatientDirectorySummary(branchId);
 
   const hasFilters = Boolean(
-    search || statusFilter || gender || serviceCategory || timeRange || date || selectedBranch,
+    search ||
+      statusFilter ||
+      gender ||
+      serviceCategory ||
+      paymentMethod ||
+      timeRange ||
+      date ||
+      selectedBranch,
   );
 
   const resetFilters = () => {
@@ -98,6 +109,7 @@ export function PatientListView({
     setStatusFilter("");
     setGender("");
     setServiceCategory("");
+    setPaymentMethod("");
     setTimeRange("");
     setDate("");
     setSelectedBranch("");
@@ -121,6 +133,9 @@ export function PatientListView({
         Phone: patient.phone,
         Branch: patient.branchName,
         "Therapy Type": patient.therapyType,
+        "Service Type": patient.serviceCategories
+          .map((category) => SERVICE_CATEGORY_LABELS[category])
+          .join(", "),
         "Payment Type": patient.paymentType,
         Status: patient.status,
       })),
@@ -203,6 +218,21 @@ export function PatientListView({
           {(Object.keys(SERVICE_CATEGORY_LABELS) as ServiceCategory[]).map((category) => (
             <option key={category} value={category}>
               {SERVICE_CATEGORY_LABELS[category]}
+            </option>
+          ))}
+        </Select>
+        <Select
+          value={paymentMethod}
+          onChange={(event) => {
+            setPaymentMethod(event.target.value as PaymentMethod | "");
+            setPage(1);
+          }}
+          containerClassName={FILTER_FIELD_WIDTH}
+        >
+          <option value="">All payment types</option>
+          {PAYMENT_METHOD_OPTIONS.map((method) => (
+            <option key={method.value} value={method.value}>
+              {method.label}
             </option>
           ))}
         </Select>
@@ -298,6 +328,7 @@ export function PatientListView({
                   { key: "guardian", label: "Guardian" },
                   { key: "phone", label: "Phone" },
                   { key: "therapyType", label: "Therapy Type" },
+                  { key: "serviceType", label: "Service Type" },
                   { key: "paymentType", label: "Payment Type" },
                   { key: "status", label: "Status" },
                   { key: "branch", label: "Branch" },

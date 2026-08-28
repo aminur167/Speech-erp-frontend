@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import type { PatientDirectoryItem } from "@/lib/api/patientDirectory";
+import type { ServiceCategory } from "@/types/domain";
+
+const SERVICE_CATEGORY_LABELS: Record<ServiceCategory, string> = {
+  daily: "Daily",
+  monthly: "Monthly",
+  installment: "Installment",
+  online: "Online",
+};
 
 function getInitials(name: string): string {
   return name
@@ -30,6 +38,7 @@ export interface PatientTableColumns {
   guardian: boolean;
   phone: boolean;
   therapyType: boolean;
+  serviceType: boolean;
   paymentType: boolean;
   status: boolean;
   branch: boolean;
@@ -56,6 +65,7 @@ export function PatientTable({
             {columns.guardian && <th className="py-2 pr-4 font-medium">Guardian</th>}
             {columns.phone && <th className="py-2 pr-4 font-medium">Phone</th>}
             {columns.therapyType && <th className="py-2 pr-4 font-medium">Therapy Type</th>}
+            {columns.serviceType && <th className="py-2 pr-4 font-medium">Service Type</th>}
             {columns.paymentType && <th className="py-2 pr-4 font-medium">Payment Type</th>}
             {columns.status && <th className="py-2 pr-4 font-medium">Status</th>}
           </tr>
@@ -106,6 +116,15 @@ export function PatientTable({
               )}
               {columns.phone && <td className="py-2 pr-4">{patient.phone}</td>}
               {columns.therapyType && <td className="py-2 pr-4">{patient.therapyType}</td>}
+              {columns.serviceType && (
+                <td className="py-2 pr-4">
+                  {patient.serviceCategories.length > 0
+                    ? patient.serviceCategories
+                        .map((category) => SERVICE_CATEGORY_LABELS[category])
+                        .join(", ")
+                    : "—"}
+                </td>
+              )}
               {columns.paymentType && <td className="py-2 pr-4">{patient.paymentType}</td>}
               {columns.status && (
                 <td className="py-2 pr-4">

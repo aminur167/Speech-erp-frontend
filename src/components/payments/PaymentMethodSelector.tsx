@@ -1,15 +1,8 @@
 import { clsx } from "clsx";
+import { PAYMENT_METHOD_OPTIONS } from "@/utils/paymentMethod";
 import type { PaymentMethod } from "@/types/domain";
 
-const methods: { value: PaymentMethod; label: string }[] = [
-  { value: "cash", label: "Cash" },
-  { value: "bkash", label: "bKash" },
-  { value: "nagad", label: "Nagad" },
-  { value: "rocket", label: "Rocket" },
-  { value: "bank_transfer", label: "Bank Transfer" },
-  { value: "online_payment", label: "Online Payment" },
-  { value: "card", label: "Card" },
-];
+const methods = PAYMENT_METHOD_OPTIONS;
 
 export function PaymentMethodSelector({
   value,

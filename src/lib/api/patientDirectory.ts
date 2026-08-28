@@ -4,8 +4,9 @@ import { listMonthlyEnrollments } from "@/lib/api/monthlyEnrollments";
 import { listInstallmentPlans } from "@/lib/api/installmentPlans";
 import { listBranches } from "@/lib/api/branches";
 import { listPayments } from "@/lib/api/payments";
+import { PAYMENT_METHOD_LABELS } from "@/utils/paymentMethod";
 import type { PaginatedResponse } from "@/types/api";
-import type { Gender, Patient, ServiceCategory } from "@/types/domain";
+import type { Gender, Patient, PaymentMethod, ServiceCategory } from "@/types/domain";
 
 /**
  * Denormalized "patient directory" view — joins patient records with their
@@ -30,10 +31,13 @@ export interface PatientDirectoryItem {
   branchId: string;
   branchName: string;
   therapyType: string;
+  /** Label of the patient's most recent payment method (e.g. "Cash", "bKash") — "—" if never paid. */
   paymentType: string;
   status: PatientCareStatus;
-  /** Every service category this patient has ever been billed for — powers the service-type filter. */
+  /** Every service category this patient has ever been billed for — powers the service-type filter/column. */
   serviceCategories: ServiceCategory[];
+  /** Every payment method this patient has ever paid with — powers the payment-type filter. */
+  paymentMethods: PaymentMethod[];
   createdAt: string;
 }
 
@@ -72,6 +76,13 @@ async function buildDirectory(): Promise<PatientDirectoryItem[]> {
     categoriesByPatient.set(payment.patientId, categories);
   }
 
+  const paymentsByPatient = new Map<string, typeof payments>();
+  for (const payment of payments) {
+    const list = paymentsByPatient.get(payment.patientId) ?? [];
+    list.push(payment);
+    paymentsByPatient.set(payment.patientId, list);
+  }
+
   return patientsPage.results.map((patient) => {
     const monthlyEnrollment = monthlyEnrollments.find(
       (e) => e.patientId === patient.id && e.status !== "terminated",
@@ -81,18 +92,22 @@ async function buildDirectory(): Promise<PatientDirectoryItem[]> {
     );
 
     let therapyType = "—";
-    let paymentType = "—";
     let status: PatientCareStatus = "action-needed";
 
     if (monthlyEnrollment) {
       therapyType = serviceById.get(monthlyEnrollment.serviceId)?.name ?? "—";
-      paymentType = "Monthly";
       status = "active-care";
     } else if (installmentPlan) {
       therapyType = serviceById.get(installmentPlan.serviceId)?.name ?? "—";
-      paymentType = "Installment";
       status = "in-progress";
     }
+
+    const patientPayments = paymentsByPatient.get(patient.id) ?? [];
+    const latestPayment = [...patientPayments].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )[0];
+    const paymentType = latestPayment ? PAYMENT_METHOD_LABELS[latestPayment.method] : "—";
+    const paymentMethods = Array.from(new Set(patientPayments.map((p) => p.method)));
 
     return {
       id: patient.id,
@@ -109,6 +124,7 @@ async function buildDirectory(): Promise<PatientDirectoryItem[]> {
       paymentType,
       status,
       serviceCategories: Array.from(categoriesByPatient.get(patient.id) ?? []),
+      paymentMethods,
       createdAt: patient.createdAt,
     };
   });
@@ -146,7 +162,8 @@ export async function getPatientDirectorySummary(
 export interface PatientDirectoryListParams {
   search?: string;
   status?: PatientCareStatus;
-  paymentType?: string;
+  /** Filters to patients ever paid via this method (cash/bkash/nagad/...). */
+  paymentType?: PaymentMethod;
   gender?: Gender;
   /** Filters to patients ever billed under this service category (daily/monthly/installment/online). */
   serviceCategory?: ServiceCategory;
@@ -181,7 +198,7 @@ export async function listPatientDirectory(
   const filtered = directory.filter((patient) => {
     if (branchId && patient.branchId !== branchId) return false;
     if (status && patient.status !== status) return false;
-    if (paymentType && patient.paymentType !== paymentType) return false;
+    if (paymentType && !patient.paymentMethods.includes(paymentType)) return false;
     if (gender && patient.gender !== gender) return false;
     if (serviceCategory && !patient.serviceCategories.includes(serviceCategory)) return false;
     if (date) {
