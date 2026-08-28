@@ -26,8 +26,8 @@ function seedBills(fee: number): MonthlyBill[] {
 }
 
 let enrollments: MonthlyEnrollment[] = [
-  { id: "menr-seed-1", patientId: "p-4", serviceId: "s-5", branchId: "branch-1", bills: seedBills(5000), status: "active" },
-  { id: "menr-seed-2", patientId: "p-6", serviceId: "s-6", branchId: "branch-1", bills: seedBills(3000), status: "active" },
+  { id: "menr-seed-1", patientId: "p-4", serviceId: "s-5", branchId: "branch-1", bills: seedBills(5000), status: "active", createdAt: "2026-07-15T09:00:00Z" },
+  { id: "menr-seed-2", patientId: "p-6", serviceId: "s-6", branchId: "branch-1", bills: seedBills(3000), status: "active", createdAt: "2026-08-01T09:00:00Z" },
 ];
 
 export async function listMonthlyEnrollments(): Promise<MonthlyEnrollment[]> {
@@ -53,6 +53,7 @@ export async function createMonthlyEnrollment(
     branchId: input.branchId,
     bills: seedBills(input.fee),
     status: "active",
+    createdAt: new Date().toISOString(),
   };
   enrollments = [enrollment, ...enrollments];
   return enrollment;

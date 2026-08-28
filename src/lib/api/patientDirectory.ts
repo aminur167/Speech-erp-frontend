@@ -2,6 +2,7 @@ import { listPatients } from "@/lib/api/patients";
 import { listServices } from "@/lib/api/services";
 import { listMonthlyEnrollments } from "@/lib/api/monthlyEnrollments";
 import { listInstallmentPlans } from "@/lib/api/installmentPlans";
+import { listBranches } from "@/lib/api/branches";
 import type { PaginatedResponse } from "@/types/api";
 import type { Gender, Patient } from "@/types/domain";
 
@@ -12,10 +13,6 @@ import type { Gender, Patient } from "@/types/domain";
  * `patients.ts` stays the lean CRUD module used elsewhere (registration,
  * enrollment wizards' patient search).
  */
-
-const BRANCH_NAMES: Record<string, string> = {
-  "branch-1": "Dhaka Main Branch",
-};
 
 export type PatientCareStatus = "active-care" | "in-progress" | "action-needed";
 export type PatientTimeRange = "today" | "week" | "month" | "";
@@ -37,7 +34,7 @@ export interface PatientDirectoryItem {
   createdAt: string;
 }
 
-function calculateAge(dateOfBirth?: string): number | null {
+export function calculateAge(dateOfBirth?: string): number | null {
   if (!dateOfBirth) return null;
   const birth = new Date(dateOfBirth);
   if (Number.isNaN(birth.getTime())) return null;
@@ -51,14 +48,17 @@ function calculateAge(dateOfBirth?: string): number | null {
 }
 
 async function buildDirectory(): Promise<PatientDirectoryItem[]> {
-  const [patientsPage, services, monthlyEnrollments, installmentPlans] = await Promise.all([
-    listPatients({ pageSize: 1000 }),
-    listServices(),
-    listMonthlyEnrollments(),
-    listInstallmentPlans(),
-  ]);
+  const [patientsPage, services, monthlyEnrollments, installmentPlans, branches] =
+    await Promise.all([
+      listPatients({ pageSize: 1000 }),
+      listServices(),
+      listMonthlyEnrollments(),
+      listInstallmentPlans(),
+      listBranches(),
+    ]);
 
   const serviceById = new Map(services.map((service) => [service.id, service]));
+  const branchById = new Map(branches.map((branch) => [branch.id, branch]));
 
   return patientsPage.results.map((patient) => {
     const monthlyEnrollment = monthlyEnrollments.find(
@@ -92,7 +92,7 @@ async function buildDirectory(): Promise<PatientDirectoryItem[]> {
       guardianRelation: patient.guardianRelation,
       phone: patient.phone,
       branchId: patient.branchId,
-      branchName: BRANCH_NAMES[patient.branchId] ?? patient.branchId,
+      branchName: branchById.get(patient.branchId)?.name ?? patient.branchId,
       therapyType,
       paymentType,
       status,

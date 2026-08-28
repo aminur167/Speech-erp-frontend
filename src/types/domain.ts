@@ -151,6 +151,7 @@ export interface MonthlyEnrollment {
   branchId: string;
   bills: MonthlyBill[];
   status: EnrollmentStatus;
+  createdAt: string;
 }
 
 export interface Installment {
@@ -168,6 +169,7 @@ export interface InstallmentPlan {
   totalAmount: number;
   installments: Installment[];
   status: EnrollmentStatus;
+  createdAt: string;
 }
 
 export interface Booking {

@@ -31,6 +31,17 @@ let plans: InstallmentPlan[] = [
     totalAmount: 18500,
     installments: buildInstallments(18500, 3),
     status: "active",
+    createdAt: "2026-07-20T09:00:00Z",
+  },
+  {
+    id: "plan-seed-2",
+    patientId: "p-4",
+    serviceId: "s-10",
+    branchId: "branch-1",
+    totalAmount: 4000,
+    installments: buildInstallments(4000, 2),
+    status: "active",
+    createdAt: "2026-08-10T09:00:00Z",
   },
 ];
 
@@ -59,6 +70,7 @@ export async function createInstallmentPlan(
     totalAmount: input.totalAmount,
     installments: buildInstallments(input.totalAmount, input.numberOfInstallments),
     status: "active",
+    createdAt: new Date().toISOString(),
   };
   plans = [plan, ...plans];
   return plan;
