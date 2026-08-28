@@ -17,6 +17,8 @@ import {
   Wallet,
   ShieldCheck,
   ArrowRight,
+  Info,
+  Zap,
 } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -36,6 +38,12 @@ const FEATURES = [
   { icon: Users, label: "Complete patient & therapy records" },
   { icon: Wallet, label: "Real-time billing and collections" },
   { icon: ShieldCheck, label: "Role-based access for Admin and Managers" },
+];
+
+const TRUST_BADGES = [
+  { icon: ShieldCheck, label: "Role-based access control" },
+  { icon: Building2, label: "Built for multi-branch clinics" },
+  { icon: Zap, label: "Real-time, always in sync" },
 ];
 
 export default function LoginPage() {
@@ -150,109 +158,129 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="relative z-10 text-xs text-text-secondary">
-          © {new Date().getFullYear()} Speech Therapy Lab. All rights reserved.
-        </p>
+        <div className="relative z-10 flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-black/5 pt-6">
+            {TRUST_BADGES.map((badge) => (
+              <span
+                key={badge.label}
+                className="flex items-center gap-1.5 text-xs font-medium text-text-secondary"
+              >
+                <badge.icon className="h-3.5 w-3.5 text-primary" />
+                {badge.label}
+              </span>
+            ))}
+          </div>
+          <p className="text-xs text-text-secondary">
+            © {new Date().getFullYear()} Speech Therapy Lab. All rights reserved.
+          </p>
+        </div>
       </div>
 
       {/* Form panel */}
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 sm:px-8">
+      <div className="flex flex-1 flex-col items-center justify-center bg-background px-4 py-12 sm:px-8">
         <div className="w-full max-w-sm">
           <div className="flex flex-col items-center gap-2 text-center lg:hidden">
             <Image src="/logo.png" alt="Speech Therapy Lab" width={56} height={56} priority />
             <p className="text-sm font-semibold text-text-primary">Speech Therapy Lab</p>
           </div>
 
-          <div className="mt-8 lg:mt-0">
-            <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
+          <div className="mt-6 rounded-2xl border border-border bg-surface p-8 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_1px_6px_rgba(15,23,42,0.04),0_24px_48px_rgba(15,23,42,0.10)] sm:p-10 lg:mt-0">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+              Sign In
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-text-primary">
               Welcome back
             </h1>
             <p className="mt-1 text-sm text-text-secondary">
               Sign in to manage your branch and patients.
             </p>
-          </div>
 
-          <form
-            className="mt-8 flex flex-col gap-4"
-            onSubmit={handleSubmit((values) => loginMutation.mutate(values))}
-          >
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
-                <Input
-                  type="email"
-                  placeholder="you@speechlab.test"
-                  error={errors.email?.message}
-                  className="pl-9"
-                  {...register("email")}
-                />
+            <form
+              className="mt-7 flex flex-col gap-4"
+              onSubmit={handleSubmit((values) => loginMutation.mutate(values))}
+            >
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-secondary">
+                  Email
+                </label>
+                <div className="group relative">
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
+                  <Input
+                    type="email"
+                    placeholder="you@speechlab.test"
+                    error={errors.email?.message}
+                    className="pl-9"
+                    {...register("email")}
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  error={errors.password?.message}
-                  className="pl-9 pr-9"
-                  {...register("password")}
-                />
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-text-secondary">
+                  Password
+                </label>
+                <div className="group relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary" />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    error={errors.password?.message}
+                    className="pl-9 pr-9"
+                    {...register("password")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary transition-colors hover:text-text-primary"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <label className="flex select-none items-center gap-2 text-xs text-text-secondary">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(event) => setRememberMe(event.target.checked)}
+                    className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-2 focus:ring-primary/30"
+                  />
+                  Remember me
+                </label>
                 <button
                   type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary transition-colors hover:text-text-primary"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowForgotNote((prev) => !prev)}
+                  className="text-xs font-medium text-primary hover:underline"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  Forgot password?
                 </button>
               </div>
-            </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex select-none items-center gap-2 text-xs text-text-secondary">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(event) => setRememberMe(event.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-2 focus:ring-primary/30"
-                />
-                Remember me
-              </label>
-              <button
-                type="button"
-                onClick={() => setShowForgotNote((prev) => !prev)}
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                Forgot password?
-              </button>
-            </div>
+              {showForgotNote && (
+                <p className="-mt-2 rounded-lg bg-primary-light/60 px-3 py-2 text-xs text-primary-dark">
+                  Password resets are handled by your organization administrator.
+                </p>
+              )}
 
-            {showForgotNote && (
-              <p className="-mt-2 rounded-lg bg-primary-light/60 px-3 py-2 text-xs text-primary-dark">
-                Password resets are handled by your organization administrator.
+              <Button type="submit" isLoading={loginMutation.isPending} className="group mt-2">
+                Sign In
+                <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+              </Button>
+
+              <p className="flex items-center justify-center gap-1.5 text-xs text-text-secondary">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Protected by role-based access control
               </p>
-            )}
+            </form>
+          </div>
 
-            <Button
-              type="submit"
-              isLoading={loginMutation.isPending}
-              className="group mt-2"
-            >
-              Sign In
-              <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
-            </Button>
-          </form>
-
-          <div className="mt-6 rounded-lg border border-border bg-surface px-4 py-3 text-xs text-text-secondary">
-            <p className="font-medium text-text-primary">Demo access</p>
+          <div className="mt-5 rounded-xl border border-border bg-surface px-4 py-3 text-xs text-text-secondary">
+            <p className="flex items-center gap-1.5 font-medium text-text-primary">
+              <Info className="h-3.5 w-3.5 text-primary" />
+              Demo access
+            </p>
             <p className="mt-1.5 font-mono">admin@speechlab.test / admin123</p>
             <p className="font-mono">manager@speechlab.test / manager123</p>
           </div>
