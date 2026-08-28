@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
@@ -139,10 +140,21 @@ export function Sidebar({ items }: { items: NavItem[] }) {
           isMobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="flex h-16 shrink-0 items-center border-b border-border px-5">
-          {isCollapsed ? (
-            <span className="text-base font-bold text-primary-dark">STL</span>
-          ) : (
+        <div
+          className={clsx(
+            "flex h-16 shrink-0 items-center gap-2.5 border-b border-border",
+            isCollapsed ? "justify-center px-2" : "px-5",
+          )}
+        >
+          <Image
+            src="/logo.png"
+            alt="Therapy Lab"
+            width={36}
+            height={36}
+            className="shrink-0 rounded-full"
+            priority
+          />
+          {!isCollapsed && (
             <span className="truncate text-base font-semibold text-primary-dark">
               Speech Therapy Lab
             </span>

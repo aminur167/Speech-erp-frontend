@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -58,8 +59,11 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-sm">
-        <h1 className="text-lg font-semibold text-text-primary">Speech Therapy Lab</h1>
-        <p className="mt-1 text-sm text-text-secondary">Sign in to your account</p>
+        <div className="flex flex-col items-center text-center">
+          <Image src="/logo.png" alt="Therapy Lab" width={72} height={72} priority />
+          <h1 className="mt-3 text-lg font-semibold text-text-primary">Speech Therapy Lab</h1>
+          <p className="mt-1 text-sm text-text-secondary">Sign in to your account</p>
+        </div>
 
         <form
           className="mt-6 flex flex-col gap-4"
