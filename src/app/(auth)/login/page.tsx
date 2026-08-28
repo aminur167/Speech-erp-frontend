@@ -23,7 +23,6 @@ import { Button } from "@/components/ui/Button";
 import * as authApi from "@/lib/api/auth";
 import { useAuthStore } from "@/store/authStore";
 import { dashboardPathForRole } from "@/hooks/useAuthGuard";
-import { formatCurrency } from "@/utils/currency";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email address."),
@@ -38,8 +37,6 @@ const FEATURES = [
   { icon: Wallet, label: "Real-time billing and collections" },
   { icon: ShieldCheck, label: "Role-based access for Admin and Managers" },
 ];
-
-const PREVIEW_BARS = [40, 65, 50, 80, 60, 95, 75];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -85,35 +82,35 @@ export default function LoginPage() {
       <div
         className="relative hidden w-[55%] shrink-0 overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-12 xl:p-16"
         style={{
-          backgroundColor: "#134e4a",
+          backgroundColor: "#f0fdfa",
           backgroundImage: [
-            "radial-gradient(ellipse 80% 60% at 15% 0%, rgba(45,212,191,0.35), transparent 60%)",
-            "radial-gradient(ellipse 70% 60% at 100% 100%, rgba(249,115,22,0.22), transparent 55%)",
-            "linear-gradient(135deg, #134e4a 0%, #0f766e 55%, #0d9488 100%)",
+            "radial-gradient(ellipse 70% 55% at 10% 0%, rgba(204,251,241,0.9), transparent 60%)",
+            "radial-gradient(ellipse 60% 55% at 100% 100%, rgba(249,115,22,0.08), transparent 55%)",
+            "linear-gradient(135deg, #f8fafc 0%, #f0fdfa 55%, #ecfeff 100%)",
           ].join(", "),
         }}
       >
         {/* Subtle dot-grid texture for depth */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.15]"
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
           style={{
             backgroundImage:
-              "radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px)",
+              "radial-gradient(rgba(15,118,110,0.18) 1px, transparent 1px)",
             backgroundSize: "22px 22px",
           }}
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white/10 blur-3xl"
+          className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-primary/10 blur-3xl"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-accent/25 blur-3xl"
+          className="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-accent/10 blur-3xl"
         />
 
         <div className="relative z-10 flex items-center gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 p-1.5 shadow-lg shadow-black/10 ring-1 ring-white/20 backdrop-blur-sm">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-black/5">
             <Image
               src="/logo.png"
               alt="Speech Therapy Lab"
@@ -124,19 +121,19 @@ export default function LoginPage() {
             />
           </span>
           <div>
-            <p className="text-base font-semibold text-white">Speech Therapy Lab</p>
-            <p className="text-xs text-white/70">Perfect Therapeutic Medicine</p>
+            <p className="text-base font-semibold text-text-primary">Speech Therapy Lab</p>
+            <p className="text-xs text-text-secondary">Perfect Therapeutic Medicine</p>
           </div>
         </div>
 
         <div className="relative z-10">
-          <h2 className="max-w-md text-3xl font-semibold leading-[1.15] tracking-tight text-white xl:text-[2.75rem]">
+          <h2 className="max-w-md text-3xl font-semibold leading-[1.15] tracking-tight text-text-primary xl:text-[2.75rem]">
             Everything your clinic needs,{" "}
-            <span className="bg-gradient-to-r from-emerald-200 to-white bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
               in one place.
             </span>
           </h2>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-white/75">
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-text-secondary">
             Manage patients, packages, payments and every branch from a single,
             real-time dashboard built for modern speech therapy clinics.
           </p>
@@ -144,42 +141,16 @@ export default function LoginPage() {
           <div className="mt-9 flex flex-col gap-4">
             {FEATURES.map((feature) => (
               <div key={feature.label} className="flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white ring-1 ring-white/10">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-primary shadow-sm ring-1 ring-black/5">
                   <feature.icon className="h-4 w-4" />
                 </span>
-                <span className="text-sm text-white/90">{feature.label}</span>
+                <span className="text-sm text-text-primary">{feature.label}</span>
               </div>
             ))}
           </div>
-
-          {/* Illustrative live-dashboard preview card */}
-          <div className="mt-9 w-full max-w-xs rounded-2xl border border-white/15 bg-white/10 p-4 shadow-2xl shadow-black/20 backdrop-blur-md">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-white/15 text-white">
-                  <Wallet className="h-3.5 w-3.5" />
-                </span>
-                <span className="text-xs font-medium text-white/80">Today&apos;s Collection</span>
-              </div>
-              <span className="flex items-center gap-1 rounded-full bg-emerald-400/20 px-2 py-0.5 text-[10px] font-medium text-emerald-200">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" />
-                Live
-              </span>
-            </div>
-            <p className="mt-2 text-2xl font-semibold text-white">{formatCurrency(2300)}</p>
-            <div className="mt-3 flex items-end gap-1.5">
-              {PREVIEW_BARS.map((height, index) => (
-                <div
-                  key={index}
-                  className="flex-1 rounded-sm bg-gradient-to-t from-emerald-300/40 to-emerald-200/80"
-                  style={{ height: `${height * 0.32}px` }}
-                />
-              ))}
-            </div>
-          </div>
         </div>
 
-        <p className="relative z-10 text-xs text-white/50">
+        <p className="relative z-10 text-xs text-text-secondary">
           © {new Date().getFullYear()} Speech Therapy Lab. All rights reserved.
         </p>
       </div>
