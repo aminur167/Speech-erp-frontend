@@ -96,21 +96,40 @@ export function TransactionHistoryView({
       <Card>
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-3">
-            <Input
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Search patient, receipt or transaction ID…"
-              className="max-w-xs"
-            />
+            <div className="min-w-[220px] flex-1">
+              <Input
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search patient, receipt or transaction ID…"
+              />
+            </div>
+            <div className="ml-auto flex gap-2">
+              <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
+                <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
+                Refresh
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleExport}
+                disabled={!data || data.results.length === 0}
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-nowrap items-center gap-3 overflow-x-auto pb-1">
             <Select
               value={method}
               onChange={(event) => {
                 setMethod(event.target.value as PaymentMethod | "");
                 setPage(1);
               }}
+              containerClassName="w-auto shrink-0"
               className="w-auto"
             >
               <option value="">All methods</option>
@@ -128,6 +147,7 @@ export function TransactionHistoryView({
                 setStatus(event.target.value as PaymentStatus | "");
                 setPage(1);
               }}
+              containerClassName="w-auto shrink-0"
               className="w-auto"
             >
               <option value="">All statuses</option>
@@ -136,21 +156,6 @@ export function TransactionHistoryView({
               <option value="refunded">Refunded</option>
               <option value="void">Void</option>
             </Select>
-
-            <div className="ml-auto flex gap-2">
-              <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
-                <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
-                Refresh
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={handleExport}
-                disabled={!data || data.results.length === 0}
-              >
-                <Download className="h-4 w-4" />
-                Export
-              </Button>
-            </div>
           </div>
 
           {isLoading && <LoadingState label="Loading transactions…" />}

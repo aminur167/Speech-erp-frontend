@@ -129,21 +129,40 @@ export function ExpenseListView({
       <Card>
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-3">
-            <Input
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Search voucher, description or payee…"
-              className="max-w-xs"
-            />
+            <div className="min-w-[220px] flex-1">
+              <Input
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search voucher, description or payee…"
+              />
+            </div>
+            <div className="ml-auto flex gap-2">
+              <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
+                <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
+                Refresh
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleExport}
+                disabled={!data || data.results.length === 0}
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-nowrap items-center gap-3 overflow-x-auto pb-1">
             <Select
               value={category}
               onChange={(event) => {
                 setCategory(event.target.value as ExpenseCategory | "");
                 setPage(1);
               }}
+              containerClassName="w-auto shrink-0"
               className="w-auto"
             >
               <option value="">All categories</option>
@@ -162,6 +181,7 @@ export function ExpenseListView({
                 setStatus(event.target.value as ExpenseStatus | "");
                 setPage(1);
               }}
+              containerClassName="w-auto shrink-0"
               className="w-auto"
             >
               <option value="">All statuses</option>
@@ -173,26 +193,11 @@ export function ExpenseListView({
               <button
                 type="button"
                 onClick={clearFilters}
-                className="text-sm font-medium text-primary hover:underline"
+                className="shrink-0 text-sm font-medium text-primary hover:underline"
               >
                 Clear
               </button>
             )}
-
-            <div className="ml-auto flex gap-2">
-              <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
-                <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
-                Refresh
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={handleExport}
-                disabled={!data || data.results.length === 0}
-              >
-                <Download className="h-4 w-4" />
-                Export
-              </Button>
-            </div>
           </div>
 
           {isLoading && <LoadingState label="Loading expenses…" />}
