@@ -3,8 +3,9 @@ import { listServices } from "@/lib/api/services";
 import { listMonthlyEnrollments } from "@/lib/api/monthlyEnrollments";
 import { listInstallmentPlans } from "@/lib/api/installmentPlans";
 import { listBranches } from "@/lib/api/branches";
+import { listPayments } from "@/lib/api/payments";
 import type { PaginatedResponse } from "@/types/api";
-import type { Gender, Patient } from "@/types/domain";
+import type { Gender, Patient, ServiceCategory } from "@/types/domain";
 
 /**
  * Denormalized "patient directory" view — joins patient records with their
@@ -31,6 +32,8 @@ export interface PatientDirectoryItem {
   therapyType: string;
   paymentType: string;
   status: PatientCareStatus;
+  /** Every service category this patient has ever been billed for — powers the service-type filter. */
+  serviceCategories: ServiceCategory[];
   createdAt: string;
 }
 
@@ -48,17 +51,26 @@ export function calculateAge(dateOfBirth?: string): number | null {
 }
 
 async function buildDirectory(): Promise<PatientDirectoryItem[]> {
-  const [patientsPage, services, monthlyEnrollments, installmentPlans, branches] =
+  const [patientsPage, services, monthlyEnrollments, installmentPlans, branches, payments] =
     await Promise.all([
       listPatients({ pageSize: 1000 }),
       listServices(),
       listMonthlyEnrollments(),
       listInstallmentPlans(),
       listBranches(),
+      listPayments(),
     ]);
 
   const serviceById = new Map(services.map((service) => [service.id, service]));
   const branchById = new Map(branches.map((branch) => [branch.id, branch]));
+
+  const categoriesByPatient = new Map<string, Set<ServiceCategory>>();
+  for (const payment of payments) {
+    if (!payment.category || payment.category === "material_sale") continue;
+    const categories = categoriesByPatient.get(payment.patientId) ?? new Set<ServiceCategory>();
+    categories.add(payment.category);
+    categoriesByPatient.set(payment.patientId, categories);
+  }
 
   return patientsPage.results.map((patient) => {
     const monthlyEnrollment = monthlyEnrollments.find(
@@ -96,6 +108,7 @@ async function buildDirectory(): Promise<PatientDirectoryItem[]> {
       therapyType,
       paymentType,
       status,
+      serviceCategories: Array.from(categoriesByPatient.get(patient.id) ?? []),
       createdAt: patient.createdAt,
     };
   });
@@ -135,6 +148,8 @@ export interface PatientDirectoryListParams {
   status?: PatientCareStatus;
   paymentType?: string;
   gender?: Gender;
+  /** Filters to patients ever billed under this service category (daily/monthly/installment/online). */
+  serviceCategory?: ServiceCategory;
   timeRange?: PatientTimeRange;
   branchId?: string;
   /** Exact calendar date (ISO "YYYY-MM-DD") from a date picker — overrides `timeRange` when set. */
@@ -151,6 +166,7 @@ export async function listPatientDirectory(
     status,
     paymentType,
     gender,
+    serviceCategory,
     timeRange,
     branchId,
     date,
@@ -167,6 +183,7 @@ export async function listPatientDirectory(
     if (status && patient.status !== status) return false;
     if (paymentType && patient.paymentType !== paymentType) return false;
     if (gender && patient.gender !== gender) return false;
+    if (serviceCategory && !patient.serviceCategories.includes(serviceCategory)) return false;
     if (date) {
       if (new Date(patient.createdAt).toDateString() !== new Date(date).toDateString())
         return false;

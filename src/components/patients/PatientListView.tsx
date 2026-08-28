@@ -23,7 +23,14 @@ import { usePatientDirectorySummary } from "@/hooks/patients/usePatientDirectory
 import { useAuthStore } from "@/store/authStore";
 import { exportToCsv } from "@/utils/exportCsv";
 import type { PatientCareStatus, PatientTimeRange } from "@/lib/api/patientDirectory";
-import type { Gender } from "@/types/domain";
+import type { Gender, ServiceCategory } from "@/types/domain";
+
+const SERVICE_CATEGORY_LABELS: Record<ServiceCategory, string> = {
+  daily: "Daily Services",
+  monthly: "Monthly Services",
+  installment: "Installment Services",
+  online: "Online Services",
+};
 
 const PAGE_SIZE = 10;
 
@@ -62,6 +69,7 @@ export function PatientListView({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PatientCareStatus | "">("");
   const [gender, setGender] = useState<Gender | "">("");
+  const [serviceCategory, setServiceCategory] = useState<ServiceCategory | "">("");
   const [timeRange, setTimeRange] = useState<PatientTimeRange>("");
   const [date, setDate] = useState("");
   const [page, setPage] = useState(1);
@@ -72,6 +80,7 @@ export function PatientListView({
     search,
     status: statusFilter || undefined,
     gender: gender || undefined,
+    serviceCategory: serviceCategory || undefined,
     timeRange: timeRange || undefined,
     date: date || undefined,
     branchId,
@@ -81,13 +90,14 @@ export function PatientListView({
   const { data: summary } = usePatientDirectorySummary(branchId);
 
   const hasFilters = Boolean(
-    search || statusFilter || gender || timeRange || date || selectedBranch,
+    search || statusFilter || gender || serviceCategory || timeRange || date || selectedBranch,
   );
 
   const resetFilters = () => {
     setSearch("");
     setStatusFilter("");
     setGender("");
+    setServiceCategory("");
     setTimeRange("");
     setDate("");
     setSelectedBranch("");
@@ -180,6 +190,21 @@ export function PatientListView({
           <option value="male">Male</option>
           <option value="female">Female</option>
           <option value="other">Other</option>
+        </Select>
+        <Select
+          value={serviceCategory}
+          onChange={(event) => {
+            setServiceCategory(event.target.value as ServiceCategory | "");
+            setPage(1);
+          }}
+          containerClassName={FILTER_FIELD_WIDTH}
+        >
+          <option value="">All service types</option>
+          {(Object.keys(SERVICE_CATEGORY_LABELS) as ServiceCategory[]).map((category) => (
+            <option key={category} value={category}>
+              {SERVICE_CATEGORY_LABELS[category]}
+            </option>
+          ))}
         </Select>
         <Select
           value={timeRange}
