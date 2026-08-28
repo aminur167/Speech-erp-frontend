@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
+import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -75,10 +76,20 @@ export function AdminReportsView() {
         subtitle="Revenue, service and payment-type reports across the organization."
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-xs font-medium uppercase tracking-wide text-text-secondary">
-          Filter
-        </span>
+      <FilterBar
+        dateSlot={
+          <Input
+            type="date"
+            value={date}
+            onChange={(event) => {
+              setDate(event.target.value);
+              setPeriod("");
+            }}
+            containerClassName={FILTER_FIELD_WIDTH}
+            max={new Date().toISOString().slice(0, 10)}
+          />
+        }
+      >
         <BranchFilterSelect value={branchId} onChange={setBranchId} />
         <Select
           value={period}
@@ -86,25 +97,13 @@ export function AdminReportsView() {
             setPeriod(event.target.value as SummaryPeriod);
             setDate("");
           }}
-          containerClassName="w-auto shrink-0"
-          className="w-auto"
+          containerClassName={FILTER_FIELD_WIDTH}
         >
           <option value="">All time</option>
           <option value="today">Today</option>
           <option value="month">This month</option>
         </Select>
-        <Input
-          type="date"
-          value={date}
-          onChange={(event) => {
-            setDate(event.target.value);
-            setPeriod("");
-          }}
-          containerClassName="w-auto shrink-0"
-          className="w-auto"
-          max={new Date().toISOString().slice(0, 10)}
-        />
-      </div>
+      </FilterBar>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard

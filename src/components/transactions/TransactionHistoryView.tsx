@@ -12,6 +12,7 @@ import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
+import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { useTransactions } from "@/hooks/transactions/useTransactions";
 import { useTransactionsSummary } from "@/hooks/transactions/useTransactionsSummary";
@@ -87,6 +88,76 @@ export function TransactionHistoryView({
         subtitle="Every payment collected, searchable and exportable."
       />
 
+      <FilterBar
+        dateSlot={
+          <Input
+            type="date"
+            value={date}
+            onChange={(event) => {
+              setDate(event.target.value);
+              setPeriod("");
+              setPage(1);
+            }}
+            containerClassName={FILTER_FIELD_WIDTH}
+            max={new Date().toISOString().slice(0, 10)}
+          />
+        }
+      >
+        {canPickBranch && (
+          <BranchFilterSelect
+            value={selectedBranch}
+            onChange={(value) => {
+              setSelectedBranch(value);
+              setPage(1);
+            }}
+          />
+        )}
+        <Select
+          value={period}
+          onChange={(event) => {
+            setPeriod(event.target.value as SummaryPeriod);
+            setDate("");
+            setPage(1);
+          }}
+          containerClassName={FILTER_FIELD_WIDTH}
+        >
+          <option value="">All time</option>
+          <option value="today">Today</option>
+          <option value="month">This month</option>
+        </Select>
+        <Select
+          value={method}
+          onChange={(event) => {
+            setMethod(event.target.value as PaymentMethod | "");
+            setPage(1);
+          }}
+          containerClassName={FILTER_FIELD_WIDTH}
+        >
+          <option value="">All methods</option>
+          <option value="cash">Cash</option>
+          <option value="bkash">bKash</option>
+          <option value="nagad">Nagad</option>
+          <option value="rocket">Rocket</option>
+          <option value="bank_transfer">Bank Transfer</option>
+          <option value="online_payment">Online Payment</option>
+          <option value="card">Card</option>
+        </Select>
+        <Select
+          value={status}
+          onChange={(event) => {
+            setStatus(event.target.value as PaymentStatus | "");
+            setPage(1);
+          }}
+          containerClassName={FILTER_FIELD_WIDTH}
+        >
+          <option value="">All statuses</option>
+          <option value="paid">Paid</option>
+          <option value="due">Due</option>
+          <option value="refunded">Refunded</option>
+          <option value="void">Void</option>
+        </Select>
+      </FilterBar>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Total Collected"
@@ -112,77 +183,6 @@ export function TransactionHistoryView({
           icon={Receipt}
           tone="primary"
         />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        {canPickBranch && (
-          <BranchFilterSelect
-            value={selectedBranch}
-            onChange={(value) => {
-              setSelectedBranch(value);
-              setPage(1);
-            }}
-          />
-        )}
-        <Select
-          value={period}
-          onChange={(event) => {
-            setPeriod(event.target.value as SummaryPeriod);
-            setDate("");
-            setPage(1);
-          }}
-          containerClassName="w-auto shrink-0"
-          className="w-auto"
-        >
-          <option value="">All time</option>
-          <option value="today">Today</option>
-          <option value="month">This month</option>
-        </Select>
-        <Input
-          type="date"
-          value={date}
-          onChange={(event) => {
-            setDate(event.target.value);
-            setPeriod("");
-            setPage(1);
-          }}
-          containerClassName="w-auto shrink-0"
-          className="w-auto"
-          max={new Date().toISOString().slice(0, 10)}
-        />
-        <Select
-          value={method}
-          onChange={(event) => {
-            setMethod(event.target.value as PaymentMethod | "");
-            setPage(1);
-          }}
-          containerClassName="w-auto shrink-0"
-          className="w-auto"
-        >
-          <option value="">All methods</option>
-          <option value="cash">Cash</option>
-          <option value="bkash">bKash</option>
-          <option value="nagad">Nagad</option>
-          <option value="rocket">Rocket</option>
-          <option value="bank_transfer">Bank Transfer</option>
-          <option value="online_payment">Online Payment</option>
-          <option value="card">Card</option>
-        </Select>
-        <Select
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value as PaymentStatus | "");
-            setPage(1);
-          }}
-          containerClassName="w-auto shrink-0"
-          className="w-auto"
-        >
-          <option value="">All statuses</option>
-          <option value="paid">Paid</option>
-          <option value="due">Due</option>
-          <option value="refunded">Refunded</option>
-          <option value="void">Void</option>
-        </Select>
       </div>
 
       <Card>

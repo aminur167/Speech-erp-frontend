@@ -1,6 +1,7 @@
 "use client";
 
 import { Select } from "@/components/ui/Select";
+import { FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
 import { useBranches } from "@/hooks/branches/useBranches";
 
 /** Branch picker for Admin-only views — lets Admin scope a page's data to one branch or "All branches". */
@@ -17,8 +18,7 @@ export function BranchFilterSelect({
     <Select
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      containerClassName="w-auto shrink-0"
-      className="w-auto"
+      containerClassName={FILTER_FIELD_WIDTH}
     >
       <option value="">All branches</option>
       {branches?.map((branch) => (

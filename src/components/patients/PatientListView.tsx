@@ -15,6 +15,7 @@ import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
+import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
 import { PatientTable, type PatientTableColumns } from "@/components/patients/PatientTable";
 import { PatientRegistrationForm } from "@/components/patients/PatientRegistrationForm";
 import { usePatientDirectory } from "@/hooks/patients/usePatientDirectory";
@@ -60,7 +61,6 @@ export function PatientListView({
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PatientCareStatus | "">("");
-  const [paymentType, setPaymentType] = useState("");
   const [gender, setGender] = useState<Gender | "">("");
   const [timeRange, setTimeRange] = useState<PatientTimeRange>("");
   const [date, setDate] = useState("");
@@ -71,7 +71,6 @@ export function PatientListView({
   const { data, isLoading, isFetching, isError, refetch } = usePatientDirectory({
     search,
     status: statusFilter || undefined,
-    paymentType: paymentType || undefined,
     gender: gender || undefined,
     timeRange: timeRange || undefined,
     date: date || undefined,
@@ -82,13 +81,12 @@ export function PatientListView({
   const { data: summary } = usePatientDirectorySummary(branchId);
 
   const hasFilters = Boolean(
-    search || statusFilter || paymentType || gender || timeRange || date || selectedBranch,
+    search || statusFilter || gender || timeRange || date || selectedBranch,
   );
 
   const resetFilters = () => {
     setSearch("");
     setStatusFilter("");
-    setPaymentType("");
     setGender("");
     setTimeRange("");
     setDate("");
@@ -146,6 +144,68 @@ export function PatientListView({
         }
       />
 
+      <FilterBar
+        dateSlot={
+          <Input
+            type="date"
+            value={date}
+            onChange={(event) => {
+              setDate(event.target.value);
+              setTimeRange("");
+              setPage(1);
+            }}
+            containerClassName={FILTER_FIELD_WIDTH}
+            max={new Date().toISOString().slice(0, 10)}
+          />
+        }
+      >
+        {canPickBranch && (
+          <BranchFilterSelect
+            value={selectedBranch}
+            onChange={(value) => {
+              setSelectedBranch(value);
+              setPage(1);
+            }}
+          />
+        )}
+        <Select
+          value={gender}
+          onChange={(event) => {
+            setGender(event.target.value as Gender | "");
+            setPage(1);
+          }}
+          containerClassName={FILTER_FIELD_WIDTH}
+        >
+          <option value="">All genders</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </Select>
+        <Select
+          value={timeRange}
+          onChange={(event) => {
+            setTimeRange(event.target.value as PatientTimeRange);
+            setDate("");
+            setPage(1);
+          }}
+          containerClassName={FILTER_FIELD_WIDTH}
+        >
+          <option value="">All time</option>
+          <option value="today">Today</option>
+          <option value="week">This week</option>
+          <option value="month">This month</option>
+        </Select>
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="shrink-0 text-sm font-medium text-primary hover:underline"
+          >
+            Reset
+          </button>
+        )}
+      </FilterBar>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="All Patients"
@@ -186,81 +246,6 @@ export function PatientListView({
           selected={statusFilter === "action-needed"}
           onClick={() => toggleStatCard("action-needed")}
         />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        {canPickBranch && (
-          <BranchFilterSelect
-            value={selectedBranch}
-            onChange={(value) => {
-              setSelectedBranch(value);
-              setPage(1);
-            }}
-          />
-        )}
-        <Select
-          value={paymentType}
-          onChange={(event) => {
-            setPaymentType(event.target.value);
-            setPage(1);
-          }}
-          containerClassName="w-auto shrink-0"
-          className="w-auto"
-        >
-          <option value="">All payment types</option>
-          <option value="Monthly">Monthly</option>
-          <option value="Installment">Installment</option>
-        </Select>
-        <Select
-          value={gender}
-          onChange={(event) => {
-            setGender(event.target.value as Gender | "");
-            setPage(1);
-          }}
-          containerClassName="w-auto shrink-0"
-          className="w-auto"
-        >
-          <option value="">All genders</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </Select>
-        <Select
-          value={timeRange}
-          onChange={(event) => {
-            setTimeRange(event.target.value as PatientTimeRange);
-            setDate("");
-            setPage(1);
-          }}
-          containerClassName="w-auto shrink-0"
-          className="w-auto"
-        >
-          <option value="">All time</option>
-          <option value="today">Today</option>
-          <option value="week">This week</option>
-          <option value="month">This month</option>
-        </Select>
-        <Input
-          type="date"
-          value={date}
-          onChange={(event) => {
-            setDate(event.target.value);
-            setTimeRange("");
-            setPage(1);
-          }}
-          containerClassName="w-auto shrink-0"
-          className="w-auto"
-          max={new Date().toISOString().slice(0, 10)}
-        />
-        {hasFilters && (
-          <button
-            type="button"
-            onClick={resetFilters}
-            className="shrink-0 text-sm font-medium text-primary hover:underline"
-          >
-            Reset
-          </button>
-        )}
       </div>
 
       <Card>
