@@ -37,9 +37,6 @@ export function isNavGroup(item: NavItem): item is NavGroup {
 export const managerNav: NavItem[] = [
   { label: "Dashboard", href: "/manager/dashboard", icon: LayoutDashboard },
   { label: "Patients", href: "/manager/patients", icon: UserPlus },
-  { label: "Packages", href: "/manager/packages", icon: Package },
-  { label: "Materials", href: "/manager/materials", icon: Boxes },
-  { label: "Sell", href: "/manager/materials/sell", icon: ShoppingCart },
   {
     label: "Enroll Service",
     icon: ClipboardList,
@@ -50,6 +47,9 @@ export const managerNav: NavItem[] = [
       { label: "Online Services", href: "/manager/services/online" },
     ],
   },
+  { label: "Packages", href: "/manager/packages", icon: Package },
+  { label: "Materials", href: "/manager/materials", icon: Boxes },
+  { label: "Sell", href: "/manager/materials/sell", icon: ShoppingCart },
   { label: "Due Payment Collection", href: "/manager/due-payments", icon: Wallet },
   { label: "Expenses", href: "/manager/expenses", icon: Receipt },
   { label: "Transactions", href: "/manager/transactions", icon: History },
