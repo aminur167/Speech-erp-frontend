@@ -12,12 +12,15 @@ import {
   Receipt,
   ClipboardList,
   ChevronRight,
+  BarChart3,
+  History,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { StatCard } from "@/components/dashboard/StatCard";
+import { StatCard, toneAccentColor } from "@/components/dashboard/StatCard";
 import { TrendFooter } from "@/components/dashboard/TrendFooter";
+import { Sparkline } from "@/components/dashboard/Sparkline";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { RevenueTrendChart } from "@/components/dashboard/RevenueTrendChart";
 import { RevenueByMethodChart } from "@/components/dashboard/RevenueByMethodChart";
@@ -32,9 +35,49 @@ import { useRevenueTrend } from "@/hooks/transactions/useRevenueTrend";
 import { useMonthlyRevenueByMethod } from "@/hooks/transactions/useMonthlyRevenueByMethod";
 import { useRevenueByCategory } from "@/hooks/transactions/useRevenueByCategory";
 import { useBranchesOverview } from "@/hooks/branches/useBranchesOverview";
+import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+const QUICK_ACTIONS = [
+  {
+    href: "/admin/branches",
+    label: "Manage Branches",
+    hint: "Add or edit locations",
+    icon: Building2,
+    tone: "primary" as const,
+  },
+  {
+    href: "/admin/expenses",
+    label: "Review Expenses",
+    hint: "Approve or reject vouchers",
+    icon: ClipboardList,
+    tone: "warning" as const,
+  },
+  {
+    href: "/admin/transactions",
+    label: "View Transactions",
+    hint: "Every payment, all branches",
+    icon: History,
+    tone: "info" as const,
+  },
+  {
+    href: "/admin/reports",
+    label: "View Reports",
+    hint: "Deeper performance analysis",
+    icon: BarChart3,
+    tone: "purple" as const,
+  },
+];
+
 export default function AdminDashboardPage() {
+  const user = useAuthStore((state) => state.user);
   const { data: overview, isLoading: branchesLoading } = useBranchesOverview();
   const { data: todayCollection } = useTodaySystemCollection();
   const { data: metrics } = useBranchDashboardMetrics();
@@ -57,15 +100,52 @@ export default function AdminDashboardPage() {
   }).length;
 
   const topBranches = [...branches].sort((a, b) => b.monthlyRevenue - a.monthlyRevenue).slice(0, 5);
+  const maxBranchRevenue = Math.max(...topBranches.map((item) => item.monthlyRevenue), 1);
+
+  const todayDateLabel = now.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
         homeHref="/admin/dashboard"
         breadcrumb={["Admin", "Dashboard"]}
-        title="Dashboard"
-        subtitle="Real-time overview of performance across all branches."
+        title={`${getGreeting()}, ${user?.name ?? "Admin"}`}
+        subtitle={`${todayDateLabel} · Real-time overview across all branches`}
+        action={
+          <div className="flex items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-medium text-success">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
+            Live
+          </div>
+        }
       />
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {QUICK_ACTIONS.map((action) => (
+          <Link
+            key={action.href}
+            href={action.href}
+            className="flex items-center gap-3 rounded-xl border border-border bg-surface p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+          >
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+              style={{
+                backgroundColor: `${toneAccentColor[action.tone]}1a`,
+                color: toneAccentColor[action.tone],
+              }}
+            >
+              <action.icon className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-text-primary">{action.label}</p>
+              <p className="truncate text-xs text-text-secondary">{action.hint}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -105,6 +185,11 @@ export default function AdminDashboardPage() {
           value={formatCurrency(todayCollection?.total ?? 0)}
           icon={Wallet}
           tone="success"
+          chart={
+            trend && trend.length > 1 ? (
+              <Sparkline data={trend.map((point) => point.amount)} color={toneAccentColor.success} />
+            ) : undefined
+          }
           footer={<TrendFooter trend="Live" context="Real-time from all branches" />}
         />
       </div>
@@ -137,7 +222,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {(expenses?.pendingCount ?? 0) > 0 && (
-        <Card className="flex items-center justify-between gap-4">
+        <Card className="flex items-center justify-between gap-4 border-l-4 border-l-warning">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-warning/10 p-2 text-warning">
               <ClipboardList className="h-4 w-4" />
@@ -180,35 +265,43 @@ export default function AdminDashboardPage() {
           )}
           {!branchesLoading && topBranches.length > 0 && (
             <div className="flex flex-col divide-y divide-border">
-              {topBranches.map((item) => (
-                <div
-                  key={item.branch.id}
-                  className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
-                      <Building2 className="h-4 w-4" />
+              {topBranches.map((item) => {
+                const share = Math.round((item.monthlyRevenue / maxBranchRevenue) * 100);
+                return (
+                  <div key={item.branch.id} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
+                          <Building2 className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-text-primary">
+                            {item.branch.name}
+                          </p>
+                          <p className="text-xs text-text-secondary">
+                            {item.patientCount} patients
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <Badge
+                          tone={item.branch.status === "active" ? "success" : "warning"}
+                          label={item.branch.status === "active" ? "Active" : "Inactive"}
+                        />
+                        <span className="w-24 text-right text-sm font-semibold text-text-primary">
+                          {formatCurrency(item.monthlyRevenue)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-text-primary">
-                        {item.branch.name}
-                      </p>
-                      <p className="text-xs text-text-secondary">
-                        {item.patientCount} patients
-                      </p>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-background">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all"
+                        style={{ width: `${Math.max(share, item.monthlyRevenue > 0 ? 3 : 0)}%` }}
+                      />
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    <Badge
-                      tone={item.branch.status === "active" ? "success" : "warning"}
-                      label={item.branch.status === "active" ? "Active" : "Inactive"}
-                    />
-                    <span className="w-24 text-right text-sm font-semibold text-text-primary">
-                      {formatCurrency(item.monthlyRevenue)}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </Card>

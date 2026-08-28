@@ -14,7 +14,7 @@ const toneStyles: Record<Tone, string> = {
   success: "bg-success/10 text-success",
 };
 
-const toneAccentColor: Record<Tone, string> = {
+export const toneAccentColor: Record<Tone, string> = {
   primary: "#0F766E",
   danger: "#DC2626",
   warning: "#D97706",
@@ -29,6 +29,7 @@ export function StatCard({
   icon: Icon,
   tone = "primary",
   hint,
+  chart,
   footer,
   selected,
   onClick,
@@ -38,6 +39,7 @@ export function StatCard({
   icon?: LucideIcon;
   tone?: Tone;
   hint?: string;
+  chart?: ReactNode;
   footer?: ReactNode;
   selected?: boolean;
   onClick?: () => void;
@@ -54,6 +56,7 @@ export function StatCard({
       </div>
       <p className="text-2xl font-semibold text-text-primary">{value}</p>
       {hint && <p className="text-xs text-text-secondary">{hint}</p>}
+      {chart}
       {footer}
     </>
   );
