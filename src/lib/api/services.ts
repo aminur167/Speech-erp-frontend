@@ -9,10 +9,10 @@ import type { Service, ServiceCategory } from "@/types/domain";
 let mockServices: Service[] = [
   { id: "s-1", name: "Outdoor Session", code: "DLY-OUTDOOR", category: "daily", fee: 3000, isOnline: false, description: "Single outdoor therapy session at the patient's preferred location.", durationLabel: "60 mins / visit" },
   { id: "s-2", name: "Consultation Fee", code: "DLY-CONSULT", category: "daily", fee: 2000, isOnline: false, description: "Initial or follow-up in-person consultation.", durationLabel: "45 mins / consultation" },
-  { id: "s-5", name: "Individual Therapy", code: "MON-INDIV", category: "monthly", fee: 5000, isOnline: false, description: "Monthly individual speech therapy package." },
-  { id: "s-6", name: "Group Therapy", code: "MON-GROUP", category: "monthly", fee: 3000, isOnline: false, description: "Monthly group therapy package." },
-  { id: "s-8", name: "Online Session", code: "ONL-SESSION", category: "online", fee: 1200, isOnline: true, description: "Live online therapy session." },
-  { id: "s-9", name: "Online Consultation", code: "ONL-CONSULT", category: "online", fee: 900, isOnline: true, description: "Live online consultation." },
+  { id: "s-5", name: "Individual Therapy", code: "MON-INDIV", category: "monthly", fee: 5000, isOnline: false, description: "Monthly individual speech therapy package.", durationLabel: "1 Month (auto-renew)" },
+  { id: "s-6", name: "Group Therapy", code: "MON-GROUP", category: "monthly", fee: 3000, isOnline: false, description: "Monthly group therapy package.", durationLabel: "1 Month (auto-renew)" },
+  { id: "s-8", name: "Online Session", code: "ONL-SESSION", category: "online", fee: 1200, isOnline: true, description: "Live online therapy session.", durationLabel: "Live / Per Session" },
+  { id: "s-9", name: "Online Consultation", code: "ONL-CONSULT", category: "online", fee: 900, isOnline: true, description: "Live online consultation.", durationLabel: "Live / Per Consultation" },
   {
     id: "s-10",
     name: "Screening",
