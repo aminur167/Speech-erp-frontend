@@ -23,9 +23,18 @@ import { formatCurrency } from "@/utils/currency";
 import type { Material, MaterialMovementType } from "@/types/domain";
 import type { MaterialInput } from "@/lib/api/materials";
 
-export function MaterialListView() {
+export function MaterialListView({
+  branchId: branchIdOverride,
+  homeHref = "/manager/dashboard",
+  roleLabel = "Branch Manager",
+}: {
+  /** Scopes the view to one branch regardless of the logged-in user — used when Admin is browsing a specific branch. */
+  branchId?: string;
+  homeHref?: string;
+  roleLabel?: string;
+} = {}) {
   const user = useAuthStore((state) => state.user);
-  const branchId = user?.branchId ?? "branch-1";
+  const branchId = branchIdOverride ?? user?.branchId ?? "branch-1";
 
   const { data: materials, isLoading } = useMaterials(branchId);
   const { data: summary } = useMaterialsSummary(branchId);
@@ -69,10 +78,10 @@ export function MaterialListView() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref="/manager/dashboard"
-        breadcrumb={["Branch Manager", "Materials"]}
+        homeHref={homeHref}
+        breadcrumb={[roleLabel, "Materials"]}
         title="Materials"
-        subtitle="Track therapy materials and equipment stock for your branch."
+        subtitle="Track therapy materials and equipment stock for this branch."
         action={
           <Button onClick={() => setIsAddOpen(true)}>
             <Plus className="h-4 w-4" />

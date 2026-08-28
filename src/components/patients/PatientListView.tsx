@@ -40,16 +40,19 @@ export function PatientListView({
   basePath,
   homeHref,
   roleLabel,
+  branchId: branchIdOverride,
 }: {
   basePath: string;
   homeHref: string;
   roleLabel: string;
+  /** Scopes the view to one branch regardless of role — used when Admin is browsing a specific branch. */
+  branchId?: string;
 }) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const canRegister = user?.role === "manager";
   const isAdmin = user?.role === "admin";
-  const branchId = isAdmin ? undefined : (user?.branchId ?? undefined);
+  const branchId = branchIdOverride ?? (isAdmin ? undefined : (user?.branchId ?? undefined));
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PatientCareStatus | "">("");
@@ -139,7 +142,7 @@ export function PatientListView({
           value={String(summary?.total ?? 0)}
           icon={Users}
           tone="primary"
-          hint="Across all branches"
+          hint={branchId ? "For this branch" : "Across all branches"}
           selected={statusFilter === ""}
           onClick={() => {
             setStatusFilter("");

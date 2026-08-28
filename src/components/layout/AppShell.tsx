@@ -9,16 +9,22 @@ import { useUiStore } from "@/store/uiStore";
 
 export function AppShell({
   navItems,
+  contextLabel,
+  banner,
   children,
 }: {
   navItems: NavItem[];
+  /** Overrides the sidebar's branch-name subtitle — used when Admin is browsing a specific branch. */
+  contextLabel?: string;
+  /** Optional strip rendered above page content, e.g. an "Admin viewing X" notice. */
+  banner?: ReactNode;
   children: ReactNode;
 }) {
   const isCollapsed = useUiStore((state) => state.isSidebarCollapsed);
 
   return (
     <div className="h-screen overflow-hidden bg-background">
-      <Sidebar items={navItems} />
+      <Sidebar items={navItems} contextLabel={contextLabel} />
       <div
         className={clsx(
           "flex h-full min-w-0 flex-col transition-[margin] duration-200",
@@ -26,6 +32,7 @@ export function AppShell({
         )}
       >
         <Topbar />
+        {banner}
         <main className="flex-1 overflow-y-auto p-4 md:p-8">{children}</main>
       </div>
     </div>

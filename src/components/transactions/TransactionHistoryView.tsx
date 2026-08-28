@@ -24,12 +24,16 @@ const PAGE_SIZE = 10;
 export function TransactionHistoryView({
   homeHref,
   roleLabel,
+  branchId: branchIdOverride,
 }: {
   homeHref: string;
   roleLabel: string;
+  /** Scopes the view to one branch regardless of role — used when Admin is browsing a specific branch. */
+  branchId?: string;
 }) {
   const user = useAuthStore((state) => state.user);
-  const branchId = user?.role === "manager" ? (user.branchId ?? undefined) : undefined;
+  const branchId =
+    branchIdOverride ?? (user?.role === "manager" ? (user.branchId ?? undefined) : undefined);
 
   const [search, setSearch] = useState("");
   const [method, setMethod] = useState<PaymentMethod | "">("");

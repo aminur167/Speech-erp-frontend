@@ -8,7 +8,7 @@ export function DuePaymentTable({
   onCollectPayment,
 }: {
   items: DuePaymentItem[];
-  onCollectPayment: (item: DuePaymentItem) => void;
+  onCollectPayment?: (item: DuePaymentItem) => void;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -20,7 +20,7 @@ export function DuePaymentTable({
             <th className="py-2 pr-4 font-medium">Service</th>
             <th className="py-2 pr-4 font-medium">Due</th>
             <th className="py-2 pr-4 font-medium">Amount</th>
-            <th className="py-2 pr-4 font-medium">Action</th>
+            {onCollectPayment && <th className="py-2 pr-4 font-medium">Action</th>}
           </tr>
         </thead>
         <tbody>
@@ -36,9 +36,11 @@ export function DuePaymentTable({
               <td className="py-2 pr-4">{item.serviceName}</td>
               <td className="py-2 pr-4">{item.label}</td>
               <td className="py-2 pr-4 font-medium">{formatCurrency(item.amount)}</td>
-              <td className="py-2 pr-4">
-                <Button onClick={() => onCollectPayment(item)}>Collect Payment</Button>
-              </td>
+              {onCollectPayment && (
+                <td className="py-2 pr-4">
+                  <Button onClick={() => onCollectPayment(item)}>Collect Payment</Button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

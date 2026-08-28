@@ -29,9 +29,21 @@ const statusLabel: Record<DailyClosingStatus, string> = {
   short: "SHORT",
 };
 
-export function DailyClosingView() {
+export function DailyClosingView({
+  branchId: branchIdOverride,
+  homeHref = "/manager/dashboard",
+  roleLabel = "Branch Manager",
+  readOnly = false,
+}: {
+  /** Scopes the view to one branch regardless of the logged-in user — used when Admin is browsing a specific branch. */
+  branchId?: string;
+  homeHref?: string;
+  roleLabel?: string;
+  /** Hides the submission form — Admin can review closings but shouldn't submit one on a branch's behalf. */
+  readOnly?: boolean;
+} = {}) {
   const user = useAuthStore((state) => state.user);
-  const branchId = user?.branchId ?? "branch-1";
+  const branchId = branchIdOverride ?? user?.branchId ?? "branch-1";
 
   const [actualTotal, setActualTotal] = useState("");
 
@@ -60,10 +72,14 @@ export function DailyClosingView() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref="/manager/dashboard"
-        breadcrumb={["Branch Manager", "Daily Closing"]}
+        homeHref={homeHref}
+        breadcrumb={[roleLabel, "Daily Closing"]}
         title="Daily Closing"
-        subtitle="Review today's collection and submit the branch closing report."
+        subtitle={
+          readOnly
+            ? "Review this branch's collection and closing history."
+            : "Review today's collection and submit the branch closing report."
+        }
       />
 
       <Card>
@@ -154,7 +170,7 @@ export function DailyClosingView() {
             </div>
           </dl>
         </Card>
-      ) : (
+      ) : !readOnly ? (
         <Card>
           <h2 className="text-sm font-medium text-text-secondary">Enter Actual Collection</h2>
           <div className="mt-3 flex flex-col gap-4">
@@ -208,6 +224,10 @@ export function DailyClosingView() {
               </Button>
             </div>
           </div>
+        </Card>
+      ) : (
+        <Card>
+          <EmptyState label="This branch hasn't submitted today's closing yet." />
         </Card>
       )}
 

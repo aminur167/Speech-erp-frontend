@@ -13,6 +13,7 @@ import {
   Package,
   Boxes,
   ShoppingCart,
+  ArrowLeft,
 } from "lucide-react";
 
 export interface NavLink {
@@ -55,6 +56,27 @@ export const managerNav: NavItem[] = [
   { label: "Daily Closing", href: "/manager/daily-closing", icon: CalendarCheck },
   { label: "Settings", href: "/manager/settings", icon: Settings },
 ];
+
+/**
+ * Sidebar shown while Admin is drilled into a single branch (/admin/branches/[id]/...).
+ * Mirrors managerNav's structure so it feels like "browsing that branch's own space", but
+ * deliberately omits the money-moving action flows (Sell, Enroll Service, Daily Closing
+ * submission) — Admin can view everything, not perform branch-manager-only transactions.
+ */
+export function branchNav(branchId: string): NavItem[] {
+  const base = `/admin/branches/${branchId}`;
+  return [
+    { label: "All Branches", href: "/admin/branches", icon: ArrowLeft },
+    { label: "Overview", href: base, icon: LayoutDashboard },
+    { label: "Patients", href: `${base}/patients`, icon: UserPlus },
+    { label: "Packages", href: `${base}/packages`, icon: Package },
+    { label: "Materials", href: `${base}/materials`, icon: Boxes },
+    { label: "Due Payments", href: `${base}/due-payments`, icon: Wallet },
+    { label: "Expenses", href: `${base}/expenses`, icon: Receipt },
+    { label: "Transactions", href: `${base}/transactions`, icon: History },
+    { label: "Daily Closing", href: `${base}/daily-closing`, icon: CalendarCheck },
+  ];
+}
 
 export const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },

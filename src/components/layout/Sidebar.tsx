@@ -117,7 +117,14 @@ function NavGroupRow({
   );
 }
 
-export function Sidebar({ items }: { items: NavItem[] }) {
+export function Sidebar({
+  items,
+  contextLabel,
+}: {
+  items: NavItem[];
+  /** Overrides the branch-name subtitle under the logo — used when Admin is browsing a specific branch. */
+  contextLabel?: string;
+}) {
   const pathname = usePathname();
   const isCollapsed = useUiStore((state) => state.isSidebarCollapsed);
   const isMobileOpen = useUiStore((state) => state.isMobileSidebarOpen);
@@ -129,7 +136,10 @@ export function Sidebar({ items }: { items: NavItem[] }) {
   const user = useAuthStore((state) => state.user);
   const isManager = user?.role === "manager";
   const { data: branches } = useBranches(isManager);
-  const branchName = isManager ? branches?.find((b) => b.id === user?.branchId)?.name : undefined;
+  const managerBranchName = isManager
+    ? branches?.find((b) => b.id === user?.branchId)?.name
+    : undefined;
+  const branchName = contextLabel ?? managerBranchName;
 
   return (
     <>

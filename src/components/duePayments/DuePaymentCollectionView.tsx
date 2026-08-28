@@ -19,9 +19,21 @@ import type { DuePaymentItem, DuePaymentType } from "@/lib/api/duePayments";
 
 const PAGE_SIZE = 10;
 
-export function DuePaymentCollectionView() {
+export function DuePaymentCollectionView({
+  branchId: branchIdOverride,
+  homeHref = "/manager/dashboard",
+  roleLabel = "Branch Manager",
+  readOnly = false,
+}: {
+  /** Scopes the view to one branch regardless of the logged-in user — used when Admin is browsing a specific branch. */
+  branchId?: string;
+  homeHref?: string;
+  roleLabel?: string;
+  /** Hides the "Collect Payment" action — Admin can view dues but shouldn't collect on a branch's behalf. */
+  readOnly?: boolean;
+} = {}) {
   const user = useAuthStore((state) => state.user);
-  const branchId = user?.branchId ?? undefined;
+  const branchId = branchIdOverride ?? user?.branchId ?? undefined;
 
   const [search, setSearch] = useState("");
   const [type, setType] = useState<DuePaymentType | "">("");
@@ -40,8 +52,8 @@ export function DuePaymentCollectionView() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref="/manager/dashboard"
-        breadcrumb={["Branch Manager", "Due Payment Collection"]}
+        homeHref={homeHref}
+        breadcrumb={[roleLabel, "Due Payment Collection"]}
         title="Due Payment Collection"
         subtitle="Review and collect outstanding installment and monthly dues."
       />
@@ -100,7 +112,10 @@ export function DuePaymentCollectionView() {
           )}
           {!isLoading && !isError && data && data.results.length > 0 && (
             <>
-              <DuePaymentTable items={data.results} onCollectPayment={setSelectedItem} />
+              <DuePaymentTable
+                items={data.results}
+                onCollectPayment={readOnly ? undefined : setSelectedItem}
+              />
               <Pagination
                 page={page}
                 pageSize={PAGE_SIZE}
