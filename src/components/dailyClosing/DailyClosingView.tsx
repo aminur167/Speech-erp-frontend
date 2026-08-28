@@ -191,26 +191,34 @@ export function DailyClosingView({
               </div>
               <div>
                 <p className="text-text-secondary">Actual Total</p>
-                <p className="font-medium text-text-primary">{formatCurrency(actualValue)}</p>
+                <p className="font-medium text-text-primary">
+                  {actualTotal ? formatCurrency(actualValue) : "—"}
+                </p>
               </div>
               <div>
                 <p className="text-text-secondary">Difference</p>
                 <p
                   className={clsx(
                     "font-medium",
-                    difference === 0
-                      ? "text-success"
-                      : difference > 0
-                        ? "text-warning"
-                        : "text-danger",
+                    !actualTotal
+                      ? "text-text-primary"
+                      : difference === 0
+                        ? "text-success"
+                        : difference > 0
+                          ? "text-warning"
+                          : "text-danger",
                   )}
                 >
-                  {formatCurrency(difference)}
+                  {actualTotal ? formatCurrency(difference) : "—"}
                 </p>
               </div>
               <div>
                 <p className="text-text-secondary">Status</p>
-                <Badge tone={statusTone[previewStatus]} label={statusLabel[previewStatus]} />
+                {actualTotal ? (
+                  <Badge tone={statusTone[previewStatus]} label={statusLabel[previewStatus]} />
+                ) : (
+                  <span className="text-sm font-medium text-text-secondary">—</span>
+                )}
               </div>
             </div>
 

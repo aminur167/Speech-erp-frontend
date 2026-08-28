@@ -10,10 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useAuthStore } from "@/store/authStore";
 import { useUpdateProfile } from "@/hooks/auth/useUpdateProfile";
-
-const BRANCH_NAMES: Record<string, string> = {
-  "branch-1": "Dhaka Main Branch",
-};
+import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name is required."),
@@ -29,6 +26,7 @@ export function SettingsView({
   roleLabel: string;
 }) {
   const user = useAuthStore((state) => state.user);
+  const branchName = useCurrentBranchName();
   const updateProfile = useUpdateProfile();
   const [showSaved, setShowSaved] = useState(false);
 
@@ -87,7 +85,7 @@ export function SettingsView({
                 <label className="mb-1 block text-xs font-medium text-text-secondary">
                   Branch
                 </label>
-                <Input value={BRANCH_NAMES[user.branchId] ?? user.branchId} disabled />
+                <Input value={branchName} disabled />
               </div>
             )}
           </div>
