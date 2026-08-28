@@ -13,6 +13,7 @@ import { Receipt } from "@/components/payments/Receipt";
 import { useServices } from "@/hooks/services/useServices";
 import { usePatients } from "@/hooks/patients/usePatients";
 import { useCreatePayment } from "@/hooks/payments/useCreatePayment";
+import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import type { Patient, Service, PaymentMethod, Payment } from "@/types/domain";
 
@@ -29,6 +30,7 @@ const STEP_LABELS: Record<Step, string> = {
 
 export function DailyServiceEnrollment() {
   const user = useAuthStore((state) => state.user);
+  const branchName = useCurrentBranchName();
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [search, setSearch] = useState("");
@@ -175,7 +177,7 @@ export function DailyServiceEnrollment() {
               payment={payment}
               patientName={selectedPatient.name}
               serviceName={selectedService.name}
-              branchName="Main Branch"
+              branchName={branchName}
             />
             <div>
               <Button onClick={reset}>Start New Enrollment</Button>

@@ -16,6 +16,7 @@ import { usePatients } from "@/hooks/patients/usePatients";
 import { useCreatePayment } from "@/hooks/payments/useCreatePayment";
 import { useCreateMonthlyEnrollment } from "@/hooks/enrollments/useCreateMonthlyEnrollment";
 import { usePayMonthlyBill } from "@/hooks/enrollments/usePayMonthlyBill";
+import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import type { Patient, Service, PaymentMethod, Payment, MonthlyEnrollment } from "@/types/domain";
@@ -34,6 +35,7 @@ const STEP_LABELS: Record<Step, string> = {
 
 export function MonthlyServiceEnrollment() {
   const user = useAuthStore((state) => state.user);
+  const branchName = useCurrentBranchName();
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [search, setSearch] = useState("");
@@ -247,7 +249,7 @@ export function MonthlyServiceEnrollment() {
               payment={payment}
               patientName={selectedPatient.name}
               serviceName={selectedService.name}
-              branchName="Main Branch"
+              branchName={branchName}
             />
             <div>
               <Button onClick={reset}>Start New Enrollment</Button>

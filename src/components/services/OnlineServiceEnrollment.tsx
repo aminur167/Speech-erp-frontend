@@ -14,6 +14,7 @@ import { useServices } from "@/hooks/services/useServices";
 import { usePatients } from "@/hooks/patients/usePatients";
 import { useCreatePayment } from "@/hooks/payments/useCreatePayment";
 import { useCreateBooking } from "@/hooks/enrollments/useCreateBooking";
+import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import type { Patient, Service, PaymentMethod, Payment, Booking } from "@/types/domain";
@@ -53,6 +54,7 @@ function formatTimeLabel(value: string): string {
 
 export function OnlineServiceEnrollment() {
   const user = useAuthStore((state) => state.user);
+  const branchName = useCurrentBranchName();
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [search, setSearch] = useState("");
@@ -289,7 +291,7 @@ export function OnlineServiceEnrollment() {
               payment={payment}
               patientName={selectedPatient.name}
               serviceName={selectedService.name}
-              branchName="Main Branch"
+              branchName={branchName}
             />
             <div>
               <Button onClick={reset}>Start New Booking</Button>

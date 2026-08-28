@@ -17,6 +17,7 @@ import { useMaterials } from "@/hooks/materials/useMaterials";
 import { usePatients } from "@/hooks/patients/usePatients";
 import { useCreatePatient } from "@/hooks/patients/useCreatePatient";
 import { useSellMaterials } from "@/hooks/materials/useSellMaterials";
+import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import type { Material, MaterialUnit, Patient, Payment, PaymentMethod } from "@/types/domain";
@@ -44,6 +45,7 @@ const UNIT_LABELS: Record<MaterialUnit, string> = {
 
 export function SellMaterialsView() {
   const user = useAuthStore((state) => state.user);
+  const branchName = useCurrentBranchName();
   const branchId = user?.branchId ?? "branch-1";
 
   const { data: materials, isLoading } = useMaterials(branchId);
@@ -609,7 +611,7 @@ export function SellMaterialsView() {
             payment={payment}
             patientName={selectedPatient.name}
             serviceName={cartSummaryLabel}
-            branchName="Main Branch"
+            branchName={branchName}
           />
         )}
       </Drawer>

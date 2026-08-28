@@ -16,6 +16,7 @@ import { usePatients } from "@/hooks/patients/usePatients";
 import { useCreatePayment } from "@/hooks/payments/useCreatePayment";
 import { useCreateInstallmentPlan } from "@/hooks/enrollments/useCreateInstallmentPlan";
 import { usePayInstallment } from "@/hooks/enrollments/usePayInstallment";
+import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import type { Patient, Service, PaymentMethod, Payment, InstallmentPlan } from "@/types/domain";
@@ -36,6 +37,7 @@ const PLAN_OPTIONS = [2, 3, 4];
 
 export function InstallmentServiceEnrollment() {
   const user = useAuthStore((state) => state.user);
+  const branchName = useCurrentBranchName();
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [search, setSearch] = useState("");
@@ -274,7 +276,7 @@ export function InstallmentServiceEnrollment() {
               payment={payment}
               patientName={selectedPatient.name}
               serviceName={selectedService.name}
-              branchName="Main Branch"
+              branchName={branchName}
             />
             <div>
               <Button onClick={reset}>Start New Enrollment</Button>

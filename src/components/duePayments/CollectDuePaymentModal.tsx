@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { PaymentMethodSelector } from "@/components/payments/PaymentMethodSelector";
 import { Receipt } from "@/components/payments/Receipt";
 import { useCollectDuePayment } from "@/hooks/duePayments/useCollectDuePayment";
+import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import type { DuePaymentItem } from "@/lib/api/duePayments";
@@ -19,6 +20,7 @@ export function CollectDuePaymentModal({
   onClose: () => void;
 }) {
   const user = useAuthStore((state) => state.user);
+  const branchName = useCurrentBranchName();
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [payment, setPayment] = useState<Payment | null>(null);
   const collectPayment = useCollectDuePayment();
@@ -109,7 +111,7 @@ export function CollectDuePaymentModal({
             payment={payment}
             patientName={item.patientName}
             serviceName={item.serviceName}
-            branchName="Main Branch"
+            branchName={branchName}
           />
           <Button onClick={handleClose}>Done</Button>
         </div>
