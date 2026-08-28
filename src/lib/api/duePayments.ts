@@ -148,14 +148,54 @@ export interface DuePaymentsSummary {
   installmentDue: number;
 }
 
-export async function getDuePaymentsSummary(branchId?: string): Promise<DuePaymentsSummary> {
-  const all = await collectDueItems(branchId);
-  const monthlyDue = all
-    .filter((item) => item.type === "monthly")
-    .reduce((sum, item) => sum + item.amount, 0);
-  const installmentDue = all
-    .filter((item) => item.type === "installment")
-    .reduce((sum, item) => sum + item.amount, 0);
+/**
+ * `date` (an ISO "YYYY-MM-DD" from a date picker) reconstructs what was
+ * outstanding as of that day, using each bill/installment's `paidAt`: still
+ * counts if it wasn't paid yet, or was only paid after the target date.
+ * Defaults to the current outstanding snapshot when omitted.
+ */
+export async function getDuePaymentsSummary(
+  branchId?: string,
+  date?: string,
+): Promise<DuePaymentsSummary> {
+  const targetDate = date ? new Date(date) : new Date();
+  // Compare "was this already paid/created" against the END of the target day, not its
+  // start — otherwise a payment made earlier the same day would still show as outstanding.
+  const targetDateEnd = date ? new Date(date) : new Date();
+  targetDateEnd.setHours(23, 59, 59, 999);
+
+  const [enrollments, plans] = await Promise.all([
+    listMonthlyEnrollments(),
+    listInstallmentPlans(),
+  ]);
+
+  let monthlyDue = 0;
+  for (const enrollment of enrollments) {
+    if (enrollment.status === "terminated") continue;
+    if (branchId && enrollment.branchId !== branchId) continue;
+    const sortedBills = [...enrollment.bills].sort((a, b) => a.month.localeCompare(b.month));
+    const dueBill = sortedBills.find(
+      (bill) => !bill.paidAt || new Date(bill.paidAt) > targetDateEnd,
+    );
+    if (dueBill && new Date(`${dueBill.month}-01`) <= targetDate) {
+      monthlyDue += dueBill.amount;
+    }
+  }
+
+  let installmentDue = 0;
+  for (const plan of plans) {
+    if (plan.status === "terminated") continue;
+    if (branchId && plan.branchId !== branchId) continue;
+    if (new Date(plan.createdAt) > targetDateEnd) continue;
+    const sortedInstallments = [...plan.installments].sort((a, b) => a.index - b.index);
+    const dueInstallment = sortedInstallments.find(
+      (installment) => !installment.paidAt || new Date(installment.paidAt) > targetDateEnd,
+    );
+    if (dueInstallment) {
+      installmentDue += dueInstallment.amount;
+    }
+  }
+
   return { totalDue: monthlyDue + installmentDue, monthlyDue, installmentDue };
 }
 

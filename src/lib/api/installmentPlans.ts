@@ -87,6 +87,7 @@ export async function payInstallment(planId: string, index: number): Promise<Ins
     throw { message: "Installment not found.", status: 404 };
   }
   plan.installments[i].status = "paid";
+  plan.installments[i].paidAt = new Date().toISOString();
   if (plan.installments[i + 1]) {
     plan.installments[i + 1].status = "due";
   }

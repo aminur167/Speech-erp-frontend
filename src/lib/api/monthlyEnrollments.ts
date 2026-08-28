@@ -73,6 +73,7 @@ export async function payMonthlyBill(
     throw { message: "Bill not found.", status: 404 };
   }
   enrollment.bills[billIndex].status = "paid";
+  enrollment.bills[billIndex].paidAt = new Date().toISOString();
   if (enrollment.bills[billIndex + 1]) {
     enrollment.bills[billIndex + 1].status = "due";
   }

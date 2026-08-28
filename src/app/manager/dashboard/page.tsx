@@ -50,7 +50,7 @@ export default function ManagerDashboardPage() {
   const { data: metrics } = useBranchDashboardMetrics(branchId, selectedDate);
   const { data: expenses } = useExpenseSummary(branchId, selectedDate);
   const { data: transactions } = useTransactionsSummary(branchId, selectedDate);
-  const { data: dues } = useDuePaymentsSummary(branchId);
+  const { data: dues } = useDuePaymentsSummary(branchId, selectedDate);
   const { data: patients } = usePatientDirectorySummary(branchId, selectedDate);
   const { data: closings } = useDailyClosingHistory(branchId);
 

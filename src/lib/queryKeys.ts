@@ -43,7 +43,8 @@ export const queryKeys = {
   duePayments: {
     all: ["due-payments"] as const,
     list: (params?: object) => ["due-payments", "list", params] as const,
-    summary: (branchId?: string) => ["due-payments", "summary", branchId] as const,
+    summary: (branchId?: string, date?: string) =>
+      ["due-payments", "summary", branchId, date] as const,
   },
   expenses: {
     all: ["expenses"] as const,

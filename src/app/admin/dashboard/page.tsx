@@ -89,7 +89,7 @@ export default function AdminDashboardPage() {
   const { data: metrics } = useBranchDashboardMetrics(undefined, selectedDate);
   const { data: expenses } = useExpenseSummary(undefined, selectedDate);
   const { data: transactions } = useTransactionsSummary(undefined, selectedDate);
-  const { data: dues } = useDuePaymentsSummary();
+  const { data: dues } = useDuePaymentsSummary(undefined, selectedDate);
   const { data: patients } = usePatientDirectorySummary(undefined, selectedDate);
 
   const { data: trend, isLoading: trendLoading } = useRevenueTrend(undefined, 7);

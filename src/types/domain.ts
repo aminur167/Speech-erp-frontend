@@ -140,6 +140,8 @@ export interface MonthlyBill {
   label: string; // e.g. "August 2026"
   amount: number;
   status: BillStatus;
+  /** Set the moment this bill is marked paid — lets a past date be checked for whether it was still outstanding then. */
+  paidAt?: string;
 }
 
 export type EnrollmentStatus = "active" | "terminated";
@@ -159,6 +161,8 @@ export interface Installment {
   label: string; // e.g. "1st Installment"
   amount: number;
   status: BillStatus;
+  /** Set the moment this installment is marked paid — lets a past date be checked for whether it was still outstanding then. */
+  paidAt?: string;
 }
 
 export interface InstallmentPlan {
