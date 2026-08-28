@@ -138,14 +138,16 @@ export interface PatientDirectorySummary {
   inProgress: number;
 }
 
+/** `date` (an ISO "YYYY-MM-DD" from a date picker) scopes `intake` to that date's month; defaults to today. */
 export async function getPatientDirectorySummary(
   branchId?: string,
+  date?: string,
 ): Promise<PatientDirectorySummary> {
   const directory = await buildDirectory();
   const scoped = branchId ? directory.filter((p) => p.branchId === branchId) : directory;
 
-  const now = new Date();
-  const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+  const target = date ? new Date(date) : new Date();
+  const monthKey = `${target.getFullYear()}-${target.getMonth()}`;
 
   return {
     total: scoped.length,

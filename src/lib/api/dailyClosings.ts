@@ -12,12 +12,6 @@ function delay<T>(value: T, ms = 300): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
 }
 
-function startOfToday(): Date {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
-
 export function todayDateString(): string {
   // Build the date from local components — toISOString() converts to UTC,
   // which rolls back to the previous day for any positive UTC offset.
@@ -34,17 +28,25 @@ export interface TodayCollectionSummary {
   byMethod: { method: PaymentMethod; amount: number }[];
 }
 
-export async function getTodaySystemCollection(branchId?: string): Promise<TodayCollectionSummary> {
-  const todaysPayments = await listPayments({ branchId, since: startOfToday() });
+/** `date` (an ISO "YYYY-MM-DD" from a date picker) defaults to today when omitted. */
+export async function getTodaySystemCollection(
+  branchId?: string,
+  date?: string,
+): Promise<TodayCollectionSummary> {
+  const targetKey = (date ? new Date(date) : new Date()).toDateString();
+  const allPayments = await listPayments({ branchId });
+  const targetPayments = allPayments.filter(
+    (payment) => new Date(payment.createdAt).toDateString() === targetKey,
+  );
 
   const byMethodMap = new Map<PaymentMethod, number>();
-  for (const payment of todaysPayments) {
+  for (const payment of targetPayments) {
     byMethodMap.set(payment.method, (byMethodMap.get(payment.method) ?? 0) + payment.amount);
   }
 
   return {
-    total: todaysPayments.reduce((sum, payment) => sum + payment.amount, 0),
-    transactionCount: todaysPayments.length,
+    total: targetPayments.reduce((sum, payment) => sum + payment.amount, 0),
+    transactionCount: targetPayments.length,
     byMethod: Array.from(byMethodMap.entries()).map(([method, amount]) => ({ method, amount })),
   };
 }

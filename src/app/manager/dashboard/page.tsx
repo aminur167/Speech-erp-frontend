@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Wallet,
@@ -15,6 +16,7 @@ import {
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { DashboardDateFilter } from "@/components/dashboard/DashboardDateFilter";
 import { ActionCenterCard, type ActionItem } from "@/components/dashboard/ActionCenterCard";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { RevenueTrendChart } from "@/components/dashboard/RevenueTrendChart";
@@ -41,12 +43,15 @@ export default function ManagerDashboardPage() {
   const user = useAuthStore((state) => state.user);
   const branchId = user?.branchId ?? undefined;
 
-  const { data: todayCollection } = useTodaySystemCollection(branchId);
-  const { data: metrics } = useBranchDashboardMetrics(branchId);
-  const { data: expenses } = useExpenseSummary(branchId);
-  const { data: transactions } = useTransactionsSummary(branchId);
+  const [selectedDate, setSelectedDate] = useState(todayDateString());
+  const isToday = selectedDate === todayDateString();
+
+  const { data: todayCollection } = useTodaySystemCollection(branchId, selectedDate);
+  const { data: metrics } = useBranchDashboardMetrics(branchId, selectedDate);
+  const { data: expenses } = useExpenseSummary(branchId, selectedDate);
+  const { data: transactions } = useTransactionsSummary(branchId, selectedDate);
   const { data: dues } = useDuePaymentsSummary(branchId);
-  const { data: patients } = usePatientDirectorySummary(branchId);
+  const { data: patients } = usePatientDirectorySummary(branchId, selectedDate);
   const { data: closings } = useDailyClosingHistory(branchId);
 
   const { data: trend, isLoading: trendLoading } = useRevenueTrend(branchId, 7);
@@ -56,6 +61,14 @@ export default function ManagerDashboardPage() {
   const todaysClosing = closings?.find((closing) => closing.date === todayDateString());
   const pendingApprovals = expenses?.pendingCount ?? 0;
   const todayRevenue = (todayCollection?.total ?? 0) - (expenses?.todayTotal ?? 0);
+
+  const selectedDateObj = new Date(selectedDate);
+  const dayLabel = isToday
+    ? "Today"
+    : selectedDateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const monthLabel = isToday
+    ? "This Month"
+    : selectedDateObj.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   const actionItems: ActionItem[] = [
     {
@@ -87,11 +100,12 @@ export default function ManagerDashboardPage() {
         breadcrumb={["Branch Manager", "Dashboard"]}
         title="Dashboard"
         subtitle="Overview of your branch's daily performance."
+        action={<DashboardDateFilter value={selectedDate} onChange={setSelectedDate} />}
       />
 
       <div className="flex flex-col gap-3">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-          Today
+          {dayLabel}
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -123,7 +137,7 @@ export default function ManagerDashboardPage() {
 
       <div className="flex flex-col gap-3">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-          This Month
+          {monthLabel}
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard

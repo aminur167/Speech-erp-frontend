@@ -4,8 +4,8 @@ export const queryKeys = {
     list: (params?: object) => ["patients", "list", params] as const,
     detail: (id: string) => ["patients", "detail", id] as const,
     directory: (params?: object) => ["patients", "directory", params] as const,
-    directorySummary: (branchId?: string) =>
-      ["patients", "directory-summary", branchId] as const,
+    directorySummary: (branchId?: string, date?: string) =>
+      ["patients", "directory-summary", branchId, date] as const,
     activeServices: (patientId: string) => ["patients", "active-services", patientId] as const,
   },
   services: {
@@ -25,7 +25,8 @@ export const queryKeys = {
   transactions: {
     all: ["transactions"] as const,
     list: (params?: object) => ["transactions", "list", params] as const,
-    summary: (branchId?: string) => ["transactions", "summary", branchId] as const,
+    summary: (branchId?: string, date?: string) =>
+      ["transactions", "summary", branchId, date] as const,
     refundsAndVoids: (branchId?: string) =>
       ["transactions", "refunds-voids", branchId] as const,
     trend: (branchId: string | undefined, days: number) =>
@@ -34,8 +35,8 @@ export const queryKeys = {
       ["transactions", "by-method-month", branchId] as const,
     byCategoryThisMonth: (branchId?: string) =>
       ["transactions", "by-category-month", branchId] as const,
-    dashboardMetrics: (branchId?: string) =>
-      ["transactions", "dashboard-metrics", branchId] as const,
+    dashboardMetrics: (branchId?: string, date?: string) =>
+      ["transactions", "dashboard-metrics", branchId, date] as const,
     collectionForDate: (branchId: string | undefined, date: string) =>
       ["transactions", "collection-for-date", branchId, date] as const,
   },
@@ -47,13 +48,15 @@ export const queryKeys = {
   expenses: {
     all: ["expenses"] as const,
     list: (params?: object) => ["expenses", "list", params] as const,
-    summary: (branchId?: string) => ["expenses", "summary", branchId] as const,
+    summary: (branchId?: string, date?: string) =>
+      ["expenses", "summary", branchId, date] as const,
     totalForDate: (branchId: string | undefined, date: string) =>
       ["expenses", "total-for-date", branchId, date] as const,
   },
   dailyClosing: {
     all: ["daily-closing"] as const,
-    todaySummary: (branchId?: string) => ["daily-closing", "today-summary", branchId] as const,
+    todaySummary: (branchId?: string, date?: string) =>
+      ["daily-closing", "today-summary", branchId, date] as const,
     history: (branchId?: string) => ["daily-closing", "history", branchId] as const,
   },
   materials: {

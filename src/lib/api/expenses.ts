@@ -125,15 +125,16 @@ export interface ExpenseSummary {
   voucherCount: number;
 }
 
+/** `date` (an ISO "YYYY-MM-DD" from a date picker) defaults to today when omitted. */
 export async function getExpenseSummary(
-  params: { branchId?: string } = {},
+  params: { branchId?: string; date?: string } = {},
 ): Promise<ExpenseSummary> {
-  const { branchId } = params;
+  const { branchId, date } = params;
   const scoped = mockExpenses.filter((expense) => !branchId || expense.branchId === branchId);
 
-  const now = new Date();
-  const todayKey = now.toDateString();
-  const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+  const target = date ? new Date(date) : new Date();
+  const todayKey = target.toDateString();
+  const monthKey = `${target.getFullYear()}-${target.getMonth()}`;
 
   const total = scoped.reduce((sum, expense) => sum + expense.amount, 0);
   const todayTotal = scoped

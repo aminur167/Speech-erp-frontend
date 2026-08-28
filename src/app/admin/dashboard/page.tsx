@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Building2,
@@ -21,6 +22,7 @@ import { Badge } from "@/components/ui/Badge";
 import { StatCard, toneAccentColor } from "@/components/dashboard/StatCard";
 import { TrendFooter } from "@/components/dashboard/TrendFooter";
 import { Sparkline } from "@/components/dashboard/Sparkline";
+import { DashboardDateFilter } from "@/components/dashboard/DashboardDateFilter";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { RevenueTrendChart } from "@/components/dashboard/RevenueTrendChart";
 import { RevenueByMethodChart } from "@/components/dashboard/RevenueByMethodChart";
@@ -36,6 +38,7 @@ import { useMonthlyRevenueByMethod } from "@/hooks/transactions/useMonthlyRevenu
 import { useRevenueByCategory } from "@/hooks/transactions/useRevenueByCategory";
 import { useBranchesOverview } from "@/hooks/branches/useBranchesOverview";
 import { useAuthStore } from "@/store/authStore";
+import { todayDateString } from "@/lib/api/dailyClosings";
 import { formatCurrency } from "@/utils/currency";
 
 function getGreeting(): string {
@@ -78,13 +81,16 @@ const QUICK_ACTIONS = [
 
 export default function AdminDashboardPage() {
   const user = useAuthStore((state) => state.user);
+  const [selectedDate, setSelectedDate] = useState(todayDateString());
+  const isToday = selectedDate === todayDateString();
+
   const { data: overview, isLoading: branchesLoading } = useBranchesOverview();
-  const { data: todayCollection } = useTodaySystemCollection();
-  const { data: metrics } = useBranchDashboardMetrics();
-  const { data: expenses } = useExpenseSummary();
-  const { data: transactions } = useTransactionsSummary();
+  const { data: todayCollection } = useTodaySystemCollection(undefined, selectedDate);
+  const { data: metrics } = useBranchDashboardMetrics(undefined, selectedDate);
+  const { data: expenses } = useExpenseSummary(undefined, selectedDate);
+  const { data: transactions } = useTransactionsSummary(undefined, selectedDate);
   const { data: dues } = useDuePaymentsSummary();
-  const { data: patients } = usePatientDirectorySummary();
+  const { data: patients } = usePatientDirectorySummary(undefined, selectedDate);
 
   const { data: trend, isLoading: trendLoading } = useRevenueTrend(undefined, 7);
   const { data: byMethod, isLoading: byMethodLoading } = useMonthlyRevenueByMethod();
@@ -108,6 +114,11 @@ export default function AdminDashboardPage() {
     day: "numeric",
   });
 
+  const selectedDateObj = new Date(selectedDate);
+  const monthLabel = isToday
+    ? "This Month"
+    : selectedDateObj.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -116,9 +127,14 @@ export default function AdminDashboardPage() {
         title={`${getGreeting()}, ${user?.name ?? "Admin"}`}
         subtitle={`${todayDateLabel} · Real-time overview across all branches`}
         action={
-          <div className="flex items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-medium text-success">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
-            Live
+          <div className="flex items-center gap-3">
+            <DashboardDateFilter value={selectedDate} onChange={setSelectedDate} />
+            {isToday && (
+              <div className="flex items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-medium text-success">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
+                Live
+              </div>
+            )}
           </div>
         }
       />
@@ -181,22 +197,34 @@ export default function AdminDashboardPage() {
           hint="All branches combined"
         />
         <StatCard
-          label="Today's Revenue"
+          label={isToday ? "Today's Revenue" : "Revenue"}
           value={formatCurrency(todayCollection?.total ?? 0)}
           icon={Wallet}
           tone="success"
           chart={
-            trend && trend.length > 1 ? (
+            isToday && trend && trend.length > 1 ? (
               <Sparkline data={trend.map((point) => point.amount)} color={toneAccentColor.success} />
             ) : undefined
           }
-          footer={<TrendFooter trend="Live" context="Real-time from all branches" />}
+          footer={
+            isToday ? (
+              <TrendFooter trend="Live" context="Real-time from all branches" />
+            ) : (
+              <p className="text-xs text-text-secondary">
+                {selectedDateObj.toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
+            )
+          }
         />
       </div>
 
       <div className="flex flex-col gap-3">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-          This Month
+          {monthLabel}
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard

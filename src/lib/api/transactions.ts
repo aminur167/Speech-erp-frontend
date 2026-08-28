@@ -119,13 +119,17 @@ export interface TransactionsSummary {
   byMethod: { method: PaymentMethod; amount: number }[];
 }
 
-export async function getTransactionsSummary(branchId?: string): Promise<TransactionsSummary> {
+/** `date` (an ISO "YYYY-MM-DD" from a date picker) defaults to today when omitted. */
+export async function getTransactionsSummary(
+  branchId?: string,
+  date?: string,
+): Promise<TransactionsSummary> {
   const all = await joinTransactions(branchId);
   // Refunded/void payments aren't real revenue — exclude them from the totals below.
   const paid = all.filter((item) => item.status === "paid");
-  const now = new Date();
-  const todayKey = now.toDateString();
-  const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+  const target = date ? new Date(date) : new Date();
+  const todayKey = target.toDateString();
+  const monthKey = `${target.getFullYear()}-${target.getMonth()}`;
 
   const byMethodMap = new Map<PaymentMethod, number>();
   for (const item of paid) {
@@ -226,14 +230,17 @@ export interface BranchDashboardMetrics {
   todayDueCollected: number;
 }
 
-/** A couple of "today" metrics that don't fit neatly into the other summary functions. */
+/**
+ * A couple of per-day metrics that don't fit neatly into the other summary
+ * functions. `date` (an ISO "YYYY-MM-DD" from a date picker) defaults to today.
+ */
 export async function getBranchDashboardMetrics(
   branchId?: string,
+  date?: string,
 ): Promise<BranchDashboardMetrics> {
   const all = await joinTransactions(branchId);
   const paid = all.filter((item) => item.status === "paid");
-  const now = new Date();
-  const todayKey = now.toDateString();
+  const todayKey = (date ? new Date(date) : new Date()).toDateString();
   const today = paid.filter((item) => new Date(item.createdAt).toDateString() === todayKey);
 
   return {
