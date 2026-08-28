@@ -8,6 +8,8 @@ import { ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { clsx } from "clsx";
 import { isNavGroup, type NavGroup, type NavItem } from "@/config/navigation";
 import { useUiStore } from "@/store/uiStore";
+import { useAuthStore } from "@/store/authStore";
+import { useBranches } from "@/hooks/branches/useBranches";
 
 function collectHrefs(items: NavItem[]): string[] {
   return items.flatMap((item) => (isNavGroup(item) ? item.children.map((child) => child.href) : item.href));
@@ -124,6 +126,11 @@ export function Sidebar({ items }: { items: NavItem[] }) {
   const closeMobileSidebar = useUiStore((state) => state.closeMobileSidebar);
   const activeHref = findActiveHref(pathname, collectHrefs(items));
 
+  const user = useAuthStore((state) => state.user);
+  const isManager = user?.role === "manager";
+  const { data: branches } = useBranches(isManager);
+  const branchName = isManager ? branches?.find((b) => b.id === user?.branchId)?.name : undefined;
+
   return (
     <>
       {isMobileOpen && (
@@ -155,9 +162,16 @@ export function Sidebar({ items }: { items: NavItem[] }) {
             priority
           />
           {!isCollapsed && (
-            <span className="truncate text-base font-semibold text-primary-dark">
-              Speech Therapy Lab
-            </span>
+            <div className="min-w-0">
+              <span className="block truncate text-base font-semibold leading-tight text-primary-dark">
+                Speech Therapy Lab
+              </span>
+              {branchName && (
+                <span className="block truncate text-xs font-medium leading-tight text-text-secondary">
+                  {branchName}
+                </span>
+              )}
+            </div>
           )}
         </div>
 

@@ -14,6 +14,7 @@ export const queryKeys = {
   },
   branches: {
     all: ["branches"] as const,
+    list: ["branches", "list"] as const,
     overview: ["branches", "overview"] as const,
   },
   payments: {

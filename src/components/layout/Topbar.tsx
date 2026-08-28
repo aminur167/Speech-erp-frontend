@@ -5,12 +5,17 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
+import { useBranches } from "@/hooks/branches/useBranches";
 
 export function Topbar() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const toggleMobileSidebar = useUiStore((state) => state.toggleMobileSidebar);
+
+  const isManager = user?.role === "manager";
+  const { data: branches } = useBranches(isManager);
+  const branchName = isManager ? branches?.find((b) => b.id === user?.branchId)?.name : undefined;
 
   return (
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between border-b border-border bg-surface/80 px-4 backdrop-blur-sm md:px-6">
@@ -32,7 +37,10 @@ export function Topbar() {
       <div className="flex items-center gap-4">
         <div className="text-right">
           <p className="text-sm font-medium text-text-primary">{user?.name}</p>
-          <p className="text-xs capitalize text-text-secondary">{user?.role}</p>
+          <p className="text-xs capitalize text-text-secondary">
+            {user?.role}
+            {branchName && <span> · {branchName}</span>}
+          </p>
         </div>
         <button
           type="button"
