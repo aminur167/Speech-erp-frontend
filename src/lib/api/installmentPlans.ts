@@ -26,10 +26,10 @@ let plans: InstallmentPlan[] = [
   {
     id: "plan-seed-1",
     patientId: "p-7",
-    serviceId: "s-7",
+    serviceId: "s-11",
     branchId: "branch-1",
-    totalAmount: 6000,
-    installments: buildInstallments(6000, 3),
+    totalAmount: 18500,
+    installments: buildInstallments(18500, 3),
     status: "active",
   },
 ];

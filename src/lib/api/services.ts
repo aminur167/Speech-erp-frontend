@@ -13,9 +13,48 @@ let mockServices: Service[] = [
   { id: "s-4", name: "Certificate Fee", code: "DLY-CERT", category: "daily", fee: 300, isOnline: false, description: "Assessment or completion certificate." },
   { id: "s-5", name: "Individual Therapy", code: "MON-INDIV", category: "monthly", fee: 5000, isOnline: false, description: "Monthly individual speech therapy package." },
   { id: "s-6", name: "Group Therapy", code: "MON-GROUP", category: "monthly", fee: 3000, isOnline: false, description: "Monthly group therapy package." },
-  { id: "s-7", name: "Assessment", code: "INST-ASSESS", category: "installment", fee: 6000, isOnline: false, description: "Full assessment, payable in installments." },
   { id: "s-8", name: "Online Session", code: "ONL-SESSION", category: "online", fee: 1200, isOnline: true, description: "Live online therapy session." },
   { id: "s-9", name: "Online Consultation", code: "ONL-CONSULT", category: "online", fee: 900, isOnline: true, description: "Live online consultation." },
+  {
+    id: "s-10",
+    name: "Screening",
+    code: "PKG-SCR-01",
+    category: "installment",
+    fee: 4000,
+    isOnline: false,
+    description: "Comprehensive speech & language screening with a same-day findings summary and referral plan.",
+    registrationFee: 0,
+    durationLabel: "1 Day",
+    sessionsLabel: "1 Session",
+    expiryLabel: "Valid same day",
+  },
+  {
+    id: "s-11",
+    name: "Assessment",
+    code: "PKG-ASM-01",
+    category: "installment",
+    fee: 18500,
+    isOnline: false,
+    description: "In-depth diagnostic assessment across three sessions, including a full written report and therapy roadmap.",
+    registrationFee: 0,
+    durationLabel: "3 Days – 3 Months",
+    sessionsLabel: "3 Sessions",
+    expiryLabel: "3 months from purchase",
+  },
+  {
+    id: "s-12",
+    name: "Monthly 1:1 Individual Plan",
+    code: "PKG-M1-01",
+    category: "installment",
+    fee: 12600,
+    isOnline: false,
+    description: "Twelve one-to-one therapy sessions per month with priority scheduling, a personalized home-practice plan, and monthly progress reviews.",
+    originalFee: 14000,
+    registrationFee: 1000,
+    durationLabel: "1 Month (auto-renew)",
+    sessionsLabel: "12 Sessions",
+    expiryLabel: "Last day of billing month",
+  },
 ];
 
 let sequence = mockServices.length;
@@ -45,6 +84,11 @@ export interface ServiceInput {
   fee: number;
   isOnline: boolean;
   description?: string;
+  originalFee?: number;
+  registrationFee?: number;
+  durationLabel?: string;
+  sessionsLabel?: string;
+  expiryLabel?: string;
 }
 
 export async function createService(input: ServiceInput): Promise<Service> {

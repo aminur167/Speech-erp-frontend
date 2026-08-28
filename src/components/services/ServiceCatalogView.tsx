@@ -26,6 +26,7 @@ import { ServiceCard } from "@/components/services/ServiceCard";
 import { ServiceForm } from "@/components/services/ServiceForm";
 import { AddPackageModal } from "@/components/services/AddPackageModal";
 import { useServices } from "@/hooks/services/useServices";
+import { useServiceEnrollmentCounts } from "@/hooks/services/useServiceEnrollmentCounts";
 import { useCreateService } from "@/hooks/services/useCreateService";
 import { useUpdateService } from "@/hooks/services/useUpdateService";
 import { useDeleteService } from "@/hooks/services/useDeleteService";
@@ -65,6 +66,7 @@ export function ServiceCatalogView({
   canManage: boolean;
 }) {
   const { data: services, isLoading, isFetching, refetch } = useServices();
+  const { data: enrollmentCounts } = useServiceEnrollmentCounts();
   const createService = useCreateService();
   const updateService = useUpdateService();
   const deleteService = useDeleteService();
@@ -128,6 +130,11 @@ export function ServiceCatalogView({
         Name: service.name,
         Category: service.category,
         Fee: service.fee,
+        "Original Fee": service.originalFee ?? "",
+        "Registration Fee": service.registrationFee ?? "",
+        Duration: service.durationLabel ?? "",
+        Sessions: service.sessionsLabel ?? "",
+        Expiry: service.expiryLabel ?? "",
         Delivery: service.isOnline ? "Online" : "In-clinic",
         Description: service.description ?? "",
       })),
@@ -213,6 +220,7 @@ export function ServiceCatalogView({
                   <ServiceCard
                     key={service.id}
                     service={service}
+                    enrolledCount={enrollmentCounts?.[service.id]}
                     actions={
                       canManage ? (
                         <>

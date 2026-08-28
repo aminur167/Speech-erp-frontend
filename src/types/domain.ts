@@ -55,6 +55,16 @@ export interface Service {
   fee: number;
   isOnline: boolean;
   description?: string;
+  /** "Before discount" price — when set and greater than `fee`, the card shows it struck through. */
+  originalFee?: number;
+  /** One-time signup fee charged separately from the recurring/package fee. */
+  registrationFee?: number;
+  /** Free-text duration, e.g. "1 Day", "3 Days – 3 Months", "1 Month (auto-renew)". */
+  durationLabel?: string;
+  /** Free-text session count, e.g. "1 Session", "12 Sessions". */
+  sessionsLabel?: string;
+  /** Free-text validity/expiry policy, e.g. "3 months from purchase". */
+  expiryLabel?: string;
 }
 
 export type PaymentStatus =

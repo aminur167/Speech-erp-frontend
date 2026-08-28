@@ -28,6 +28,17 @@ const serviceSchema = z.object({
     .refine((value) => Number(value) > 0, "Enter a fee greater than 0."),
   isOnline: z.boolean().optional(),
   description: z.string().optional(),
+  originalFee: z
+    .string()
+    .optional()
+    .refine((value) => !value || Number(value) > 0, "Enter a price greater than 0."),
+  registrationFee: z
+    .string()
+    .optional()
+    .refine((value) => !value || Number(value) >= 0, "Enter a valid registration fee."),
+  durationLabel: z.string().optional(),
+  sessionsLabel: z.string().optional(),
+  expiryLabel: z.string().optional(),
 });
 
 type ServiceFormValues = z.infer<typeof serviceSchema>;
@@ -64,6 +75,12 @@ export function ServiceForm({
           fee: String(initialValues.fee),
           isOnline: initialValues.isOnline,
           description: initialValues.description ?? "",
+          originalFee: initialValues.originalFee ? String(initialValues.originalFee) : "",
+          registrationFee:
+            initialValues.registrationFee != null ? String(initialValues.registrationFee) : "",
+          durationLabel: initialValues.durationLabel ?? "",
+          sessionsLabel: initialValues.sessionsLabel ?? "",
+          expiryLabel: initialValues.expiryLabel ?? "",
         }
       : { category: fixedCategory ?? "daily", isOnline: false },
   });
@@ -76,6 +93,11 @@ export function ServiceForm({
       fee: Number(values.fee),
       isOnline: Boolean(values.isOnline),
       description: values.description || undefined,
+      originalFee: values.originalFee ? Number(values.originalFee) : undefined,
+      registrationFee: values.registrationFee ? Number(values.registrationFee) : undefined,
+      durationLabel: values.durationLabel || undefined,
+      sessionsLabel: values.sessionsLabel || undefined,
+      expiryLabel: values.expiryLabel || undefined,
     });
   };
 
@@ -105,6 +127,30 @@ export function ServiceForm({
           <option value="online">Online</option>
         </Select>
       )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Input
+          type="number"
+          step="0.01"
+          placeholder="Original Price (optional, for discounts)"
+          error={errors.originalFee?.message}
+          {...register("originalFee")}
+        />
+        <Input
+          type="number"
+          step="0.01"
+          placeholder="Registration Fee (optional)"
+          error={errors.registrationFee?.message}
+          {...register("registrationFee")}
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Input placeholder="Duration (e.g. 1 Month)" {...register("durationLabel")} />
+        <Input placeholder="Sessions (e.g. 12 Sessions)" {...register("sessionsLabel")} />
+      </div>
+      <Input
+        placeholder="Expiry / Validity (e.g. 3 months from purchase)"
+        {...register("expiryLabel")}
+      />
       <label className="flex items-center gap-2 text-sm text-text-secondary">
         <input
           type="checkbox"
