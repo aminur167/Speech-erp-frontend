@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Building2,
   CheckCircle2,
@@ -15,8 +16,6 @@ import {
   Calendar,
   ChevronRight,
   Plus,
-  Pencil,
-  KeyRound,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -31,11 +30,10 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { BranchForm } from "@/components/branches/BranchForm";
 import { useBranchesOverview } from "@/hooks/branches/useBranchesOverview";
 import { useCreateBranch } from "@/hooks/branches/useCreateBranch";
-import { useUpdateBranch } from "@/hooks/branches/useUpdateBranch";
 import { formatCurrency } from "@/utils/currency";
 import { exportToCsv } from "@/utils/exportCsv";
 import type { BranchStatus } from "@/types/domain";
-import type { BranchInput, BranchOverview } from "@/lib/api/branches";
+import type { BranchInput } from "@/lib/api/branches";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -44,12 +42,9 @@ function formatDate(iso: string) {
 export function BranchesView() {
   const { data: overview, isLoading, isFetching, refetch } = useBranchesOverview();
   const createBranch = useCreateBranch();
-  const updateBranch = useUpdateBranch();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<BranchStatus | "">("");
-  const [viewingBranch, setViewingBranch] = useState<BranchOverview | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
 
   const totals = useMemo(() => {
     const list = overview ?? [];
@@ -82,24 +77,6 @@ export function BranchesView() {
 
   const handleCreate = (input: BranchInput) => {
     createBranch.mutate(input, { onSuccess: () => setIsCreateOpen(false) });
-  };
-
-  const handleUpdate = (input: BranchInput) => {
-    if (!viewingBranch) return;
-    updateBranch.mutate(
-      { id: viewingBranch.branch.id, input },
-      {
-        onSuccess: (updated) => {
-          setViewingBranch({ ...viewingBranch, branch: updated });
-          setIsEditing(false);
-        },
-      },
-    );
-  };
-
-  const closeManageModal = () => {
-    setViewingBranch(null);
-    setIsEditing(false);
   };
 
   const handleExport = () => {
@@ -220,197 +197,97 @@ export function BranchesView() {
             const staffTotal = item.branch.therapistCount + item.branch.supportCount;
             const isActive = item.branch.status === "active";
             return (
-              <Card key={item.branch.id} className="flex flex-col gap-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
-                      <Building2 className="h-5 w-5" />
+              <Link
+                key={item.branch.id}
+                href={`/admin/branches/${item.branch.id}`}
+                className="group block"
+              >
+                <Card className="flex h-full flex-col gap-4 transition-all group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-md">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
+                        <Building2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-text-primary">{item.branch.name}</p>
+                        <p className="font-mono text-xs text-text-secondary">{item.branch.code}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-text-primary">{item.branch.name}</p>
-                      <p className="font-mono text-xs text-text-secondary">{item.branch.code}</p>
-                    </div>
+                    <Badge
+                      tone={isActive ? "success" : "warning"}
+                      label={isActive ? "Active" : "Inactive"}
+                    />
                   </div>
-                  <Badge
-                    tone={isActive ? "success" : "warning"}
-                    label={isActive ? "Active" : "Inactive"}
-                  />
-                </div>
 
-                <div className="grid grid-cols-3 gap-2 rounded-lg border border-border bg-background p-3 text-center">
-                  <div>
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">
-                      Patients
-                    </p>
-                    <p className="text-lg font-semibold text-text-primary">{item.patientCount}</p>
-                  </div>
-                  <div className="border-x border-border">
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">
-                      Staff
-                    </p>
-                    <p className="text-lg font-semibold text-text-primary">{staffTotal}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">
-                      Revenue
-                    </p>
-                    <p className="text-lg font-semibold text-text-primary">
-                      {formatCurrency(item.monthlyRevenue)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-2 rounded-lg border border-border p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
-                      {item.branch.managerName.charAt(0)}
-                    </span>
+                  <div className="grid grid-cols-3 gap-2 rounded-lg border border-border bg-background p-3 text-center">
                     <div>
-                      <p className="text-sm font-medium text-text-primary">
-                        {item.branch.managerName}
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">
+                        Patients
                       </p>
-                      <p className="text-xs text-text-secondary">Branch Manager</p>
+                      <p className="text-lg font-semibold text-text-primary">
+                        {item.patientCount}
+                      </p>
+                    </div>
+                    <div className="border-x border-border">
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">
+                        Staff
+                      </p>
+                      <p className="text-lg font-semibold text-text-primary">{staffTotal}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">
+                        Revenue
+                      </p>
+                      <p className="text-lg font-semibold text-text-primary">
+                        {formatCurrency(item.monthlyRevenue)}
+                      </p>
                     </div>
                   </div>
-                  <span className="shrink-0 font-mono text-[11px] text-text-secondary">
-                    {item.branch.managerCode}
-                  </span>
-                </div>
 
-                <div className="flex flex-col gap-1.5 text-sm text-text-secondary">
-                  <span className="flex items-start gap-2">
-                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    {item.branch.address}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Phone className="h-3.5 w-3.5 shrink-0" />
-                    {item.branch.phone}
-                  </span>
-                </div>
+                  <div className="flex items-center justify-between gap-2 rounded-lg border border-border p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
+                        {item.branch.managerName.charAt(0)}
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-text-primary">
+                          {item.branch.managerName}
+                        </p>
+                        <p className="text-xs text-text-secondary">Branch Manager</p>
+                      </div>
+                    </div>
+                    <span className="shrink-0 font-mono text-[11px] text-text-secondary">
+                      {item.branch.managerCode}
+                    </span>
+                  </div>
 
-                <div className="flex items-center justify-between border-t border-border pt-3">
-                  <span className="flex items-center gap-1.5 text-xs text-text-secondary">
-                    <Calendar className="h-3.5 w-3.5" />
-                    Since {formatDate(item.branch.openedAt)}
-                  </span>
-                  <Button variant="secondary" onClick={() => setViewingBranch(item)}>
-                    Manage
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </Card>
+                  <div className="flex flex-col gap-1.5 text-sm text-text-secondary">
+                    <span className="flex items-start gap-2">
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      {item.branch.address}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5 shrink-0" />
+                      {item.branch.phone}
+                    </span>
+                  </div>
+
+                  <div className="mt-auto flex items-center justify-between border-t border-border pt-3">
+                    <span className="flex items-center gap-1.5 text-xs text-text-secondary">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Since {formatDate(item.branch.openedAt)}
+                    </span>
+                    <span className="flex items-center gap-1 text-sm font-medium text-primary">
+                      View Live Details
+                      <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </div>
+                </Card>
+              </Link>
             );
           })}
         </div>
       )}
-
-      <Modal
-        open={Boolean(viewingBranch)}
-        onClose={closeManageModal}
-        title={isEditing ? "Edit Branch" : (viewingBranch?.branch.name ?? "")}
-        description={viewingBranch?.branch.code}
-      >
-        {viewingBranch && isEditing && (
-          <BranchForm
-            initialValues={viewingBranch.branch}
-            onSubmit={handleUpdate}
-            onCancel={() => setIsEditing(false)}
-            isSubmitting={updateBranch.isPending}
-          />
-        )}
-        {viewingBranch && !isEditing && (
-          <div className="flex flex-col gap-4">
-            <dl className="flex flex-col gap-3 text-sm">
-              <div className="flex items-center justify-between">
-                <dt className="text-text-secondary">Status</dt>
-                <dd>
-                  <Badge
-                    tone={viewingBranch.branch.status === "active" ? "success" : "warning"}
-                    label={viewingBranch.branch.status === "active" ? "Active" : "Inactive"}
-                  />
-                </dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-text-secondary">Branch Manager</dt>
-                <dd className="text-right text-text-primary">
-                  {viewingBranch.branch.managerName}{" "}
-                  <span className="font-mono text-xs text-text-secondary">
-                    ({viewingBranch.branch.managerCode})
-                  </span>
-                </dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-text-secondary">Phone</dt>
-                <dd className="text-text-primary">{viewingBranch.branch.phone}</dd>
-              </div>
-              <div className="flex items-start justify-between gap-4">
-                <dt className="shrink-0 text-text-secondary">Address</dt>
-                <dd className="text-right text-text-primary">{viewingBranch.branch.address}</dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-text-secondary">Opened</dt>
-                <dd className="text-text-primary">{formatDate(viewingBranch.branch.openedAt)}</dd>
-              </div>
-            </dl>
-
-            <div className="flex flex-col gap-2 rounded-lg border border-primary/20 bg-primary-light/30 p-3">
-              <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-primary-dark">
-                <KeyRound className="h-3.5 w-3.5" />
-                Manager Login
-              </p>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-text-secondary">Email</span>
-                <span className="font-mono text-text-primary">
-                  {viewingBranch.branch.managerEmail}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-text-secondary">Password</span>
-                <span className="font-mono text-text-primary">
-                  {viewingBranch.branch.managerPassword}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 border-t border-border pt-4">
-              <div className="rounded-lg border border-border bg-background p-3">
-                <p className="text-xs text-text-secondary">Patients</p>
-                <p className="text-lg font-semibold text-text-primary">
-                  {viewingBranch.patientCount}
-                </p>
-              </div>
-              <div className="rounded-lg border border-border bg-background p-3">
-                <p className="text-xs text-text-secondary">Therapists / Support</p>
-                <p className="text-lg font-semibold text-text-primary">
-                  {viewingBranch.branch.therapistCount} / {viewingBranch.branch.supportCount}
-                </p>
-              </div>
-              <div className="rounded-lg border border-border bg-background p-3">
-                <p className="text-xs text-text-secondary">Revenue (this month)</p>
-                <p className="text-lg font-semibold text-text-primary">
-                  {formatCurrency(viewingBranch.monthlyRevenue)}
-                </p>
-              </div>
-              <div className="rounded-lg border border-border bg-background p-3">
-                <p className="text-xs text-text-secondary">Total Collected</p>
-                <p className="text-lg font-semibold text-text-primary">
-                  {formatCurrency(viewingBranch.totalCollected)}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={closeManageModal} className="flex-1 justify-center">
-                Close
-              </Button>
-              <Button onClick={() => setIsEditing(true)} className="flex-1 justify-center">
-                <Pencil className="h-4 w-4" />
-                Edit
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       <Modal
         open={isCreateOpen}

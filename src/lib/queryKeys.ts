@@ -16,6 +16,7 @@ export const queryKeys = {
     all: ["branches"] as const,
     list: ["branches", "list"] as const,
     overview: ["branches", "overview"] as const,
+    overviewOne: (id: string) => ["branches", "overview", id] as const,
   },
   payments: {
     all: ["payments"] as const,

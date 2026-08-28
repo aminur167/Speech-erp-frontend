@@ -80,6 +80,15 @@ export async function listBranches(): Promise<Branch[]> {
   return branches;
 }
 
+export async function getBranch(id: string): Promise<Branch> {
+  await delay(null, 200);
+  const branch = branches.find((b) => b.id === id);
+  if (!branch) {
+    throw { message: "Branch not found.", status: 404 };
+  }
+  return branch;
+}
+
 export interface BranchInput {
   name: string;
   code: string;
@@ -142,19 +151,24 @@ export interface BranchOverview {
   monthlyRevenue: number;
 }
 
+async function buildBranchOverview(branch: Branch): Promise<BranchOverview> {
+  const [patients, transactions] = await Promise.all([
+    getPatientDirectorySummary(branch.id),
+    getTransactionsSummary(branch.id),
+  ]);
+  return {
+    branch,
+    patientCount: patients.total,
+    totalCollected: transactions.totalCollected,
+    monthlyRevenue: transactions.monthCollected,
+  };
+}
+
 export async function getBranchesOverview(): Promise<BranchOverview[]> {
-  return Promise.all(
-    branches.map(async (branch) => {
-      const [patients, transactions] = await Promise.all([
-        getPatientDirectorySummary(branch.id),
-        getTransactionsSummary(branch.id),
-      ]);
-      return {
-        branch,
-        patientCount: patients.total,
-        totalCollected: transactions.totalCollected,
-        monthlyRevenue: transactions.monthCollected,
-      };
-    }),
-  );
+  return Promise.all(branches.map(buildBranchOverview));
+}
+
+export async function getBranchOverview(id: string): Promise<BranchOverview> {
+  const branch = await getBranch(id);
+  return buildBranchOverview(branch);
 }
