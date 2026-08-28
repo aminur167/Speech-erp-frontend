@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Wallet, Receipt, TrendingUp, AlertCircle, Users, HeartPulse, Activity, ClipboardList } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Select } from "@/components/ui/Select";
+import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -15,16 +18,39 @@ import { useDailyClosingHistory } from "@/hooks/dailyClosing/useDailyClosingHist
 import { useRefundsAndVoids } from "@/hooks/transactions/useRefundsAndVoids";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { formatCurrency } from "@/utils/currency";
+import type { SummaryPeriod } from "@/lib/api/transactions";
+
+const PERIOD_LABEL: Record<SummaryPeriod, string> = {
+  "": "All time",
+  today: "Today",
+  month: "This month",
+};
 
 export function AdminReportsView() {
-  const { data: transactions } = useTransactionsSummary();
-  const { data: expenses } = useExpenseSummary();
-  const { data: dues } = useDuePaymentsSummary();
-  const { data: patients } = usePatientDirectorySummary();
-  const { data: closings, isLoading: closingsLoading } = useDailyClosingHistory();
-  const { data: refundsAndVoids, isLoading: refundsLoading } = useRefundsAndVoids();
+  const [branchId, setBranchId] = useState("");
+  const [period, setPeriod] = useState<SummaryPeriod>("");
+  const scopedBranchId = branchId || undefined;
 
-  const netRevenue = (transactions?.totalCollected ?? 0) - (expenses?.total ?? 0);
+  const { data: transactions } = useTransactionsSummary(scopedBranchId);
+  const { data: expenses } = useExpenseSummary(scopedBranchId);
+  const { data: dues } = useDuePaymentsSummary(scopedBranchId);
+  const { data: patients } = usePatientDirectorySummary(scopedBranchId);
+  const { data: closings, isLoading: closingsLoading } = useDailyClosingHistory(scopedBranchId);
+  const { data: refundsAndVoids, isLoading: refundsLoading } = useRefundsAndVoids(scopedBranchId);
+
+  const totalCollected =
+    period === "today"
+      ? (transactions?.todayCollected ?? 0)
+      : period === "month"
+        ? (transactions?.monthCollected ?? 0)
+        : (transactions?.totalCollected ?? 0);
+  const totalExpenses =
+    period === "today"
+      ? (expenses?.todayTotal ?? 0)
+      : period === "month"
+        ? (expenses?.monthTotal ?? 0)
+        : (expenses?.total ?? 0);
+  const netRevenue = totalCollected - totalExpenses;
   const mismatches = closings?.filter((closing) => closing.status !== "matched") ?? [];
   const maxMethodAmount = transactions?.byMethod[0]?.amount ?? 0;
 
@@ -37,16 +63,33 @@ export function AdminReportsView() {
         subtitle="Revenue, service and payment-type reports across the organization."
       />
 
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-xs font-medium uppercase tracking-wide text-text-secondary">
+          Filter
+        </span>
+        <BranchFilterSelect value={branchId} onChange={setBranchId} />
+        <Select
+          value={period}
+          onChange={(event) => setPeriod(event.target.value as SummaryPeriod)}
+          containerClassName="w-auto shrink-0"
+          className="w-auto"
+        >
+          <option value="">All time</option>
+          <option value="today">Today</option>
+          <option value="month">This month</option>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total Collected"
-          value={formatCurrency(transactions?.totalCollected ?? 0)}
+          label={`Total Collected (${PERIOD_LABEL[period]})`}
+          value={formatCurrency(totalCollected)}
           icon={Wallet}
           tone="success"
         />
         <StatCard
-          label="Total Expenses"
-          value={formatCurrency(expenses?.total ?? 0)}
+          label={`Total Expenses (${PERIOD_LABEL[period]})`}
+          value={formatCurrency(totalExpenses)}
           icon={Receipt}
           tone="danger"
         />

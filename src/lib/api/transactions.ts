@@ -14,12 +14,23 @@ export interface TransactionItem extends Payment {
   patientCode: string;
 }
 
+export type SummaryPeriod = "today" | "month" | "";
+
+function isWithinPeriod(isoDate: string, period: SummaryPeriod | undefined): boolean {
+  if (!period) return true;
+  const date = new Date(isoDate);
+  const now = new Date();
+  if (period === "today") return date.toDateString() === now.toDateString();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+}
+
 export interface TransactionListParams {
   search?: string;
   method?: PaymentMethod;
   status?: PaymentStatus;
   branchId?: string;
   patientId?: string;
+  period?: SummaryPeriod;
   page?: number;
   pageSize?: number;
 }
@@ -44,7 +55,16 @@ async function joinTransactions(branchId?: string): Promise<TransactionItem[]> {
 export async function listTransactions(
   params: TransactionListParams = {},
 ): Promise<PaginatedResponse<TransactionItem>> {
-  const { search = "", method, status, branchId, patientId, page = 1, pageSize = 10 } = params;
+  const {
+    search = "",
+    method,
+    status,
+    branchId,
+    patientId,
+    period,
+    page = 1,
+    pageSize = 10,
+  } = params;
   const query = search.trim().toLowerCase();
 
   const all = await joinTransactions(branchId);
@@ -56,6 +76,7 @@ export async function listTransactions(
     if (patientId && item.patientId !== patientId) return false;
     if (method && item.method !== method) return false;
     if (status && item.status !== status) return false;
+    if (!isWithinPeriod(item.createdAt, period)) return false;
     if (!query) return true;
     return (
       item.patientName.toLowerCase().includes(query) ||

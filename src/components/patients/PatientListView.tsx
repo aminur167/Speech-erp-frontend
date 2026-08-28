@@ -14,6 +14,7 @@ import { ColumnsMenu } from "@/components/ui/ColumnsMenu";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { PatientTable, type PatientTableColumns } from "@/components/patients/PatientTable";
 import { PatientRegistrationForm } from "@/components/patients/PatientRegistrationForm";
 import { usePatientDirectory } from "@/hooks/patients/usePatientDirectory";
@@ -52,7 +53,10 @@ export function PatientListView({
   const user = useAuthStore((state) => state.user);
   const canRegister = user?.role === "manager";
   const isAdmin = user?.role === "admin";
-  const branchId = branchIdOverride ?? (isAdmin ? undefined : (user?.branchId ?? undefined));
+  const canPickBranch = isAdmin && !branchIdOverride;
+  const [selectedBranch, setSelectedBranch] = useState("");
+  const branchId =
+    branchIdOverride ?? (isAdmin ? selectedBranch || undefined : (user?.branchId ?? undefined));
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PatientCareStatus | "">("");
@@ -75,7 +79,9 @@ export function PatientListView({
   });
   const { data: summary } = usePatientDirectorySummary(branchId);
 
-  const hasFilters = Boolean(search || statusFilter || paymentType || gender || timeRange);
+  const hasFilters = Boolean(
+    search || statusFilter || paymentType || gender || timeRange || selectedBranch,
+  );
 
   const resetFilters = () => {
     setSearch("");
@@ -83,6 +89,7 @@ export function PatientListView({
     setPaymentType("");
     setGender("");
     setTimeRange("");
+    setSelectedBranch("");
     setPage(1);
   };
 
@@ -178,6 +185,68 @@ export function PatientListView({
         />
       </div>
 
+      <div className="flex flex-wrap items-center gap-3">
+        {canPickBranch && (
+          <BranchFilterSelect
+            value={selectedBranch}
+            onChange={(value) => {
+              setSelectedBranch(value);
+              setPage(1);
+            }}
+          />
+        )}
+        <Select
+          value={paymentType}
+          onChange={(event) => {
+            setPaymentType(event.target.value);
+            setPage(1);
+          }}
+          containerClassName="w-auto shrink-0"
+          className="w-auto"
+        >
+          <option value="">All payment types</option>
+          <option value="Monthly">Monthly</option>
+          <option value="Installment">Installment</option>
+        </Select>
+        <Select
+          value={gender}
+          onChange={(event) => {
+            setGender(event.target.value as Gender | "");
+            setPage(1);
+          }}
+          containerClassName="w-auto shrink-0"
+          className="w-auto"
+        >
+          <option value="">All genders</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </Select>
+        <Select
+          value={timeRange}
+          onChange={(event) => {
+            setTimeRange(event.target.value as PatientTimeRange);
+            setPage(1);
+          }}
+          containerClassName="w-auto shrink-0"
+          className="w-auto"
+        >
+          <option value="">All time</option>
+          <option value="today">Today</option>
+          <option value="week">This week</option>
+          <option value="month">This month</option>
+        </Select>
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="shrink-0 text-sm font-medium text-primary hover:underline"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
       <Card>
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-3">
@@ -216,58 +285,6 @@ export function PatientListView({
                 }
               />
             </div>
-          </div>
-
-          <div className="flex flex-nowrap items-center gap-3 overflow-x-auto pb-1">
-            <Select
-              value={paymentType}
-              onChange={(event) => {
-                setPaymentType(event.target.value);
-                setPage(1);
-              }}
-              containerClassName="w-auto shrink-0"
-              className="w-auto"
-            >
-              <option value="">All payment types</option>
-              <option value="Monthly">Monthly</option>
-              <option value="Installment">Installment</option>
-            </Select>
-            <Select
-              value={gender}
-              onChange={(event) => {
-                setGender(event.target.value as Gender | "");
-                setPage(1);
-              }}
-              containerClassName="w-auto shrink-0"
-              className="w-auto"
-            >
-              <option value="">All genders</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </Select>
-            <Select
-              value={timeRange}
-              onChange={(event) => {
-                setTimeRange(event.target.value as PatientTimeRange);
-                setPage(1);
-              }}
-              containerClassName="w-auto shrink-0"
-              className="w-auto"
-            >
-              <option value="">All time</option>
-              <option value="week">This week</option>
-              <option value="month">This month</option>
-            </Select>
-            {hasFilters && (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="shrink-0 text-sm font-medium text-primary hover:underline"
-              >
-                Reset
-              </button>
-            )}
           </div>
           <p className="text-xs text-text-secondary">
             Filters apply instantly and combine with the search box.

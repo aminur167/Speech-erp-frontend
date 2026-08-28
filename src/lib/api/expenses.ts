@@ -32,11 +32,22 @@ function generateExpenseCode(): string {
   return `EXP-${year}-${String(sequence).padStart(5, "0")}`;
 }
 
+export type SummaryPeriod = "today" | "month" | "";
+
+function isWithinPeriod(isoDate: string, period: SummaryPeriod | undefined): boolean {
+  if (!period) return true;
+  const date = new Date(isoDate);
+  const now = new Date();
+  if (period === "today") return date.toDateString() === now.toDateString();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+}
+
 export interface ExpenseListParams {
   search?: string;
   status?: ExpenseStatus;
   category?: ExpenseCategory;
   branchId?: string;
+  period?: SummaryPeriod;
   page?: number;
   pageSize?: number;
 }
@@ -44,13 +55,14 @@ export interface ExpenseListParams {
 export async function listExpenses(
   params: ExpenseListParams = {},
 ): Promise<PaginatedResponse<Expense>> {
-  const { search = "", status, category, branchId, page = 1, pageSize = 10 } = params;
+  const { search = "", status, category, branchId, period, page = 1, pageSize = 10 } = params;
   const query = search.trim().toLowerCase();
 
   const filtered = mockExpenses.filter((expense) => {
     if (branchId && expense.branchId !== branchId) return false;
     if (status && expense.status !== status) return false;
     if (category && expense.category !== category) return false;
+    if (!isWithinPeriod(expense.createdAt, period)) return false;
     if (!query) return true;
     return (
       expense.description.toLowerCase().includes(query) ||

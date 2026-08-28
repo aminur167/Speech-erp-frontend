@@ -12,6 +12,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { ExpenseTable } from "@/components/expenses/ExpenseTable";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { useExpenses } from "@/hooks/expenses/useExpenses";
@@ -21,6 +22,7 @@ import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { exportToCsv } from "@/utils/exportCsv";
 import type { ExpenseCategory, ExpenseStatus } from "@/types/domain";
+import type { SummaryPeriod } from "@/lib/api/expenses";
 
 const PAGE_SIZE = 10;
 
@@ -38,11 +40,15 @@ export function ExpenseListView({
   const isManager = user?.role === "manager";
   const canCreate = isManager;
   const canApprove = user?.role === "admin";
-  const branchId = branchIdOverride ?? (isManager ? (user?.branchId ?? undefined) : undefined);
+  const canPickBranch = user?.role === "admin" && !branchIdOverride;
+  const [selectedBranch, setSelectedBranch] = useState("");
+  const branchId =
+    branchIdOverride ?? (isManager ? (user?.branchId ?? undefined) : selectedBranch || undefined);
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<ExpenseStatus | "">("");
   const [category, setCategory] = useState<ExpenseCategory | "">("");
+  const [period, setPeriod] = useState<SummaryPeriod>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -50,6 +56,7 @@ export function ExpenseListView({
     search,
     status: status || undefined,
     category: category || undefined,
+    period: period || undefined,
     branchId,
     page,
     pageSize: PAGE_SIZE,
@@ -57,12 +64,14 @@ export function ExpenseListView({
   const { data: summary } = useExpenseSummary(branchId);
   const updateStatus = useUpdateExpenseStatus();
 
-  const hasFilters = Boolean(search || status || category);
+  const hasFilters = Boolean(search || status || category || period || selectedBranch);
 
   const clearFilters = () => {
     setSearch("");
     setStatus("");
     setCategory("");
+    setPeriod("");
+    setSelectedBranch("");
     setPage(1);
   };
 
@@ -129,6 +138,73 @@ export function ExpenseListView({
         />
       </div>
 
+      <div className="flex flex-wrap items-center gap-3">
+        {canPickBranch && (
+          <BranchFilterSelect
+            value={selectedBranch}
+            onChange={(value) => {
+              setSelectedBranch(value);
+              setPage(1);
+            }}
+          />
+        )}
+        <Select
+          value={period}
+          onChange={(event) => {
+            setPeriod(event.target.value as SummaryPeriod);
+            setPage(1);
+          }}
+          containerClassName="w-auto shrink-0"
+          className="w-auto"
+        >
+          <option value="">All time</option>
+          <option value="today">Today</option>
+          <option value="month">This month</option>
+        </Select>
+        <Select
+          value={category}
+          onChange={(event) => {
+            setCategory(event.target.value as ExpenseCategory | "");
+            setPage(1);
+          }}
+          containerClassName="w-auto shrink-0"
+          className="w-auto"
+        >
+          <option value="">All categories</option>
+          <option value="rent">Rent</option>
+          <option value="utilities">Utilities</option>
+          <option value="salaries">Salaries</option>
+          <option value="supplies">Supplies</option>
+          <option value="equipment">Equipment</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="marketing">Marketing</option>
+          <option value="other">Other</option>
+        </Select>
+        <Select
+          value={status}
+          onChange={(event) => {
+            setStatus(event.target.value as ExpenseStatus | "");
+            setPage(1);
+          }}
+          containerClassName="w-auto shrink-0"
+          className="w-auto"
+        >
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </Select>
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="shrink-0 text-sm font-medium text-primary hover:underline"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
       <Card>
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-3">
@@ -156,51 +232,6 @@ export function ExpenseListView({
                 Export
               </Button>
             </div>
-          </div>
-
-          <div className="flex flex-nowrap items-center gap-3 overflow-x-auto pb-1">
-            <Select
-              value={category}
-              onChange={(event) => {
-                setCategory(event.target.value as ExpenseCategory | "");
-                setPage(1);
-              }}
-              containerClassName="w-auto shrink-0"
-              className="w-auto"
-            >
-              <option value="">All categories</option>
-              <option value="rent">Rent</option>
-              <option value="utilities">Utilities</option>
-              <option value="salaries">Salaries</option>
-              <option value="supplies">Supplies</option>
-              <option value="equipment">Equipment</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="marketing">Marketing</option>
-              <option value="other">Other</option>
-            </Select>
-            <Select
-              value={status}
-              onChange={(event) => {
-                setStatus(event.target.value as ExpenseStatus | "");
-                setPage(1);
-              }}
-              containerClassName="w-auto shrink-0"
-              className="w-auto"
-            >
-              <option value="">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </Select>
-            {hasFilters && (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="shrink-0 text-sm font-medium text-primary hover:underline"
-              >
-                Clear
-              </button>
-            )}
           </div>
 
           {isLoading && <LoadingState label="Loading expenses…" />}

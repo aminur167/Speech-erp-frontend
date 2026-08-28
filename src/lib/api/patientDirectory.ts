@@ -18,7 +18,7 @@ const BRANCH_NAMES: Record<string, string> = {
 };
 
 export type PatientCareStatus = "active-care" | "in-progress" | "action-needed";
-export type PatientTimeRange = "week" | "month" | "";
+export type PatientTimeRange = "today" | "week" | "month" | "";
 
 export interface PatientDirectoryItem {
   id: string;
@@ -162,6 +162,7 @@ export async function listPatientDirectory(
     if (gender && patient.gender !== gender) return false;
     if (timeRange) {
       const created = new Date(patient.createdAt);
+      if (timeRange === "today" && created.toDateString() !== now.toDateString()) return false;
       const days = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
       if (timeRange === "week" && days > 7) return false;
       if (timeRange === "month" && days > 30) return false;
