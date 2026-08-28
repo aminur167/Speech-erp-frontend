@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { LayoutDashboard } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -53,6 +55,7 @@ function formatTimeLabel(value: string): string {
 }
 
 export function OnlineServiceEnrollment() {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const branchName = useCurrentBranchName();
   const [step, setStep] = useState<Step>("service");
@@ -293,7 +296,11 @@ export function OnlineServiceEnrollment() {
               serviceName={selectedService.name}
               branchName={branchName}
             />
-            <div>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => router.push("/manager/dashboard")}>
+                <LayoutDashboard className="h-4 w-4" />
+                Go to Dashboard
+              </Button>
               <Button onClick={reset}>Start New Booking</Button>
             </div>
           </div>

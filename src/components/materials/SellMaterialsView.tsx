@@ -1,7 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Minus, Plus, Search, ShoppingCart, Trash2, PackageSearch, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Check,
+  Minus,
+  Plus,
+  Search,
+  ShoppingCart,
+  Trash2,
+  PackageSearch,
+  UserPlus,
+  LayoutDashboard,
+} from "lucide-react";
 import { clsx } from "clsx";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -44,6 +55,7 @@ const UNIT_LABELS: Record<MaterialUnit, string> = {
 };
 
 export function SellMaterialsView() {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const branchName = useCurrentBranchName();
   const branchId = user?.branchId ?? "branch-1";
@@ -377,9 +389,19 @@ export function SellMaterialsView() {
         description={drawerDescription}
         footer={
           stage === "receipt" ? (
-            <Button onClick={resetSale} className="w-full justify-center">
-              Start New Sale
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => router.push("/manager/dashboard")}
+                className="flex-1 justify-center"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Go to Dashboard
+              </Button>
+              <Button onClick={resetSale} className="flex-1 justify-center">
+                Start New Sale
+              </Button>
+            </div>
           ) : (
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">

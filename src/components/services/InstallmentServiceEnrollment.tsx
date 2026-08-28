@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
+import { LayoutDashboard } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Stepper } from "@/components/ui/Stepper";
@@ -36,6 +38,7 @@ const STEP_LABELS: Record<Step, string> = {
 const PLAN_OPTIONS = [2, 3, 4];
 
 export function InstallmentServiceEnrollment() {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const branchName = useCurrentBranchName();
   const [step, setStep] = useState<Step>("service");
@@ -278,7 +281,11 @@ export function InstallmentServiceEnrollment() {
               serviceName={selectedService.name}
               branchName={branchName}
             />
-            <div>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => router.push("/manager/dashboard")}>
+                <LayoutDashboard className="h-4 w-4" />
+                Go to Dashboard
+              </Button>
               <Button onClick={reset}>Start New Enrollment</Button>
             </div>
           </div>
