@@ -49,6 +49,7 @@ export function ExpenseListView({
   const [status, setStatus] = useState<ExpenseStatus | "">("");
   const [category, setCategory] = useState<ExpenseCategory | "">("");
   const [period, setPeriod] = useState<SummaryPeriod>("");
+  const [date, setDate] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -57,6 +58,7 @@ export function ExpenseListView({
     status: status || undefined,
     category: category || undefined,
     period: period || undefined,
+    date: date || undefined,
     branchId,
     page,
     pageSize: PAGE_SIZE,
@@ -64,13 +66,14 @@ export function ExpenseListView({
   const { data: summary } = useExpenseSummary(branchId);
   const updateStatus = useUpdateExpenseStatus();
 
-  const hasFilters = Boolean(search || status || category || period || selectedBranch);
+  const hasFilters = Boolean(search || status || category || period || date || selectedBranch);
 
   const clearFilters = () => {
     setSearch("");
     setStatus("");
     setCategory("");
     setPeriod("");
+    setDate("");
     setSelectedBranch("");
     setPage(1);
   };
@@ -152,6 +155,7 @@ export function ExpenseListView({
           value={period}
           onChange={(event) => {
             setPeriod(event.target.value as SummaryPeriod);
+            setDate("");
             setPage(1);
           }}
           containerClassName="w-auto shrink-0"
@@ -161,6 +165,18 @@ export function ExpenseListView({
           <option value="today">Today</option>
           <option value="month">This month</option>
         </Select>
+        <Input
+          type="date"
+          value={date}
+          onChange={(event) => {
+            setDate(event.target.value);
+            setPeriod("");
+            setPage(1);
+          }}
+          containerClassName="w-auto shrink-0"
+          className="w-auto"
+          max={new Date().toISOString().slice(0, 10)}
+        />
         <Select
           value={category}
           onChange={(event) => {

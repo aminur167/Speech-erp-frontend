@@ -5,13 +5,16 @@ import { Wallet, Receipt, TrendingUp, AlertCircle, Users, HeartPulse, Activity, 
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Select";
+import { Input } from "@/components/ui/Input";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { BarRow } from "@/components/reports/BarRow";
 import { useTransactionsSummary } from "@/hooks/transactions/useTransactionsSummary";
+import { useCollectionForDate } from "@/hooks/transactions/useCollectionForDate";
 import { useExpenseSummary } from "@/hooks/expenses/useExpenseSummary";
+import { useExpenseTotalForDate } from "@/hooks/expenses/useExpenseTotalForDate";
 import { useDuePaymentsSummary } from "@/hooks/duePayments/useDuePaymentsSummary";
 import { usePatientDirectorySummary } from "@/hooks/patients/usePatientDirectorySummary";
 import { useDailyClosingHistory } from "@/hooks/dailyClosing/useDailyClosingHistory";
@@ -29,23 +32,32 @@ const PERIOD_LABEL: Record<SummaryPeriod, string> = {
 export function AdminReportsView() {
   const [branchId, setBranchId] = useState("");
   const [period, setPeriod] = useState<SummaryPeriod>("");
+  const [date, setDate] = useState("");
   const scopedBranchId = branchId || undefined;
 
   const { data: transactions } = useTransactionsSummary(scopedBranchId);
   const { data: expenses } = useExpenseSummary(scopedBranchId);
+  const { data: dateCollected } = useCollectionForDate(scopedBranchId, date);
+  const { data: dateExpenses } = useExpenseTotalForDate(scopedBranchId, date);
   const { data: dues } = useDuePaymentsSummary(scopedBranchId);
   const { data: patients } = usePatientDirectorySummary(scopedBranchId);
   const { data: closings, isLoading: closingsLoading } = useDailyClosingHistory(scopedBranchId);
   const { data: refundsAndVoids, isLoading: refundsLoading } = useRefundsAndVoids(scopedBranchId);
 
-  const totalCollected =
-    period === "today"
+  const periodLabel = date
+    ? new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : PERIOD_LABEL[period];
+
+  const totalCollected = date
+    ? (dateCollected ?? 0)
+    : period === "today"
       ? (transactions?.todayCollected ?? 0)
       : period === "month"
         ? (transactions?.monthCollected ?? 0)
         : (transactions?.totalCollected ?? 0);
-  const totalExpenses =
-    period === "today"
+  const totalExpenses = date
+    ? (dateExpenses ?? 0)
+    : period === "today"
       ? (expenses?.todayTotal ?? 0)
       : period === "month"
         ? (expenses?.monthTotal ?? 0)
@@ -70,7 +82,10 @@ export function AdminReportsView() {
         <BranchFilterSelect value={branchId} onChange={setBranchId} />
         <Select
           value={period}
-          onChange={(event) => setPeriod(event.target.value as SummaryPeriod)}
+          onChange={(event) => {
+            setPeriod(event.target.value as SummaryPeriod);
+            setDate("");
+          }}
           containerClassName="w-auto shrink-0"
           className="w-auto"
         >
@@ -78,17 +93,28 @@ export function AdminReportsView() {
           <option value="today">Today</option>
           <option value="month">This month</option>
         </Select>
+        <Input
+          type="date"
+          value={date}
+          onChange={(event) => {
+            setDate(event.target.value);
+            setPeriod("");
+          }}
+          containerClassName="w-auto shrink-0"
+          className="w-auto"
+          max={new Date().toISOString().slice(0, 10)}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label={`Total Collected (${PERIOD_LABEL[period]})`}
+          label={`Total Collected (${periodLabel})`}
           value={formatCurrency(totalCollected)}
           icon={Wallet}
           tone="success"
         />
         <StatCard
-          label={`Total Expenses (${PERIOD_LABEL[period]})`}
+          label={`Total Expenses (${periodLabel})`}
           value={formatCurrency(totalExpenses)}
           icon={Receipt}
           tone="danger"

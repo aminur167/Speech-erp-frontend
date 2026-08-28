@@ -46,6 +46,7 @@ export function TransactionHistoryView({
   const [method, setMethod] = useState<PaymentMethod | "">("");
   const [status, setStatus] = useState<PaymentStatus | "">("");
   const [period, setPeriod] = useState<SummaryPeriod>("");
+  const [date, setDate] = useState("");
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isFetching, isError, refetch } = useTransactions({
@@ -53,6 +54,7 @@ export function TransactionHistoryView({
     method: method || undefined,
     status: status || undefined,
     period: period || undefined,
+    date: date || undefined,
     branchId,
     page,
     pageSize: PAGE_SIZE,
@@ -126,6 +128,7 @@ export function TransactionHistoryView({
           value={period}
           onChange={(event) => {
             setPeriod(event.target.value as SummaryPeriod);
+            setDate("");
             setPage(1);
           }}
           containerClassName="w-auto shrink-0"
@@ -135,6 +138,18 @@ export function TransactionHistoryView({
           <option value="today">Today</option>
           <option value="month">This month</option>
         </Select>
+        <Input
+          type="date"
+          value={date}
+          onChange={(event) => {
+            setDate(event.target.value);
+            setPeriod("");
+            setPage(1);
+          }}
+          containerClassName="w-auto shrink-0"
+          className="w-auto"
+          max={new Date().toISOString().slice(0, 10)}
+        />
         <Select
           value={method}
           onChange={(event) => {

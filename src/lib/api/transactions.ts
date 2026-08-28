@@ -16,12 +16,14 @@ export interface TransactionItem extends Payment {
 
 export type SummaryPeriod = "today" | "month" | "";
 
-function isWithinPeriod(isoDate: string, period: SummaryPeriod | undefined): boolean {
+/** `date` (an ISO "YYYY-MM-DD" from a date picker) always wins over `period` when both are set. */
+function isWithinPeriod(isoDate: string, period: SummaryPeriod | undefined, date?: string): boolean {
+  const created = new Date(isoDate);
+  if (date) return created.toDateString() === new Date(date).toDateString();
   if (!period) return true;
-  const date = new Date(isoDate);
   const now = new Date();
-  if (period === "today") return date.toDateString() === now.toDateString();
-  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+  if (period === "today") return created.toDateString() === now.toDateString();
+  return created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth();
 }
 
 export interface TransactionListParams {
@@ -31,6 +33,8 @@ export interface TransactionListParams {
   branchId?: string;
   patientId?: string;
   period?: SummaryPeriod;
+  /** Exact calendar date (ISO "YYYY-MM-DD") from a date picker — overrides `period` when set. */
+  date?: string;
   page?: number;
   pageSize?: number;
 }
@@ -62,6 +66,7 @@ export async function listTransactions(
     branchId,
     patientId,
     period,
+    date,
     page = 1,
     pageSize = 10,
   } = params;
@@ -76,7 +81,7 @@ export async function listTransactions(
     if (patientId && item.patientId !== patientId) return false;
     if (method && item.method !== method) return false;
     if (status && item.status !== status) return false;
-    if (!isWithinPeriod(item.createdAt, period)) return false;
+    if (!isWithinPeriod(item.createdAt, period, date)) return false;
     if (!query) return true;
     return (
       item.patientName.toLowerCase().includes(query) ||
@@ -95,6 +100,15 @@ export async function listTransactions(
     previous: page > 1 ? String(page - 1) : null,
     results,
   };
+}
+
+/** Total collected on one specific calendar date (ISO "YYYY-MM-DD") — powers the Reports date-picker view. */
+export async function getCollectionForDate(branchId: string | undefined, date: string): Promise<number> {
+  const all = await joinTransactions(branchId);
+  const target = new Date(date).toDateString();
+  return all
+    .filter((item) => item.status === "paid" && new Date(item.createdAt).toDateString() === target)
+    .reduce((sum, item) => sum + item.amount, 0);
 }
 
 export interface TransactionsSummary {

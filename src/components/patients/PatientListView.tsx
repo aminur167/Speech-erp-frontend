@@ -63,6 +63,7 @@ export function PatientListView({
   const [paymentType, setPaymentType] = useState("");
   const [gender, setGender] = useState<Gender | "">("");
   const [timeRange, setTimeRange] = useState<PatientTimeRange>("");
+  const [date, setDate] = useState("");
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [columns, setColumns] = useState<PatientTableColumns>(DEFAULT_COLUMNS);
@@ -73,6 +74,7 @@ export function PatientListView({
     paymentType: paymentType || undefined,
     gender: gender || undefined,
     timeRange: timeRange || undefined,
+    date: date || undefined,
     branchId,
     page,
     pageSize: PAGE_SIZE,
@@ -80,7 +82,7 @@ export function PatientListView({
   const { data: summary } = usePatientDirectorySummary(branchId);
 
   const hasFilters = Boolean(
-    search || statusFilter || paymentType || gender || timeRange || selectedBranch,
+    search || statusFilter || paymentType || gender || timeRange || date || selectedBranch,
   );
 
   const resetFilters = () => {
@@ -89,6 +91,7 @@ export function PatientListView({
     setPaymentType("");
     setGender("");
     setTimeRange("");
+    setDate("");
     setSelectedBranch("");
     setPage(1);
   };
@@ -226,6 +229,7 @@ export function PatientListView({
           value={timeRange}
           onChange={(event) => {
             setTimeRange(event.target.value as PatientTimeRange);
+            setDate("");
             setPage(1);
           }}
           containerClassName="w-auto shrink-0"
@@ -236,6 +240,18 @@ export function PatientListView({
           <option value="week">This week</option>
           <option value="month">This month</option>
         </Select>
+        <Input
+          type="date"
+          value={date}
+          onChange={(event) => {
+            setDate(event.target.value);
+            setTimeRange("");
+            setPage(1);
+          }}
+          containerClassName="w-auto shrink-0"
+          className="w-auto"
+          max={new Date().toISOString().slice(0, 10)}
+        />
         {hasFilters && (
           <button
             type="button"

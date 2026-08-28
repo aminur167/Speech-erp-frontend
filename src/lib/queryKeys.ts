@@ -35,6 +35,8 @@ export const queryKeys = {
       ["transactions", "by-category-month", branchId] as const,
     dashboardMetrics: (branchId?: string) =>
       ["transactions", "dashboard-metrics", branchId] as const,
+    collectionForDate: (branchId: string | undefined, date: string) =>
+      ["transactions", "collection-for-date", branchId, date] as const,
   },
   duePayments: {
     all: ["due-payments"] as const,
@@ -45,6 +47,8 @@ export const queryKeys = {
     all: ["expenses"] as const,
     list: (params?: object) => ["expenses", "list", params] as const,
     summary: (branchId?: string) => ["expenses", "summary", branchId] as const,
+    totalForDate: (branchId: string | undefined, date: string) =>
+      ["expenses", "total-for-date", branchId, date] as const,
   },
   dailyClosing: {
     all: ["daily-closing"] as const,

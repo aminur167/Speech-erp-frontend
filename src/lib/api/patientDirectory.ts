@@ -133,6 +133,8 @@ export interface PatientDirectoryListParams {
   gender?: Gender;
   timeRange?: PatientTimeRange;
   branchId?: string;
+  /** Exact calendar date (ISO "YYYY-MM-DD") from a date picker — overrides `timeRange` when set. */
+  date?: string;
   page?: number;
   pageSize?: number;
 }
@@ -147,6 +149,7 @@ export async function listPatientDirectory(
     gender,
     timeRange,
     branchId,
+    date,
     page = 1,
     pageSize = 10,
   } = params;
@@ -160,7 +163,10 @@ export async function listPatientDirectory(
     if (status && patient.status !== status) return false;
     if (paymentType && patient.paymentType !== paymentType) return false;
     if (gender && patient.gender !== gender) return false;
-    if (timeRange) {
+    if (date) {
+      if (new Date(patient.createdAt).toDateString() !== new Date(date).toDateString())
+        return false;
+    } else if (timeRange) {
       const created = new Date(patient.createdAt);
       if (timeRange === "today" && created.toDateString() !== now.toDateString()) return false;
       const days = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);

@@ -34,12 +34,14 @@ function generateExpenseCode(): string {
 
 export type SummaryPeriod = "today" | "month" | "";
 
-function isWithinPeriod(isoDate: string, period: SummaryPeriod | undefined): boolean {
+/** `date` (an ISO "YYYY-MM-DD" from a date picker) always wins over `period` when both are set. */
+function isWithinPeriod(isoDate: string, period: SummaryPeriod | undefined, date?: string): boolean {
+  const created = new Date(isoDate);
+  if (date) return created.toDateString() === new Date(date).toDateString();
   if (!period) return true;
-  const date = new Date(isoDate);
   const now = new Date();
-  if (period === "today") return date.toDateString() === now.toDateString();
-  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+  if (period === "today") return created.toDateString() === now.toDateString();
+  return created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth();
 }
 
 export interface ExpenseListParams {
@@ -48,6 +50,8 @@ export interface ExpenseListParams {
   category?: ExpenseCategory;
   branchId?: string;
   period?: SummaryPeriod;
+  /** Exact calendar date (ISO "YYYY-MM-DD") from a date picker — overrides `period` when set. */
+  date?: string;
   page?: number;
   pageSize?: number;
 }
@@ -55,14 +59,23 @@ export interface ExpenseListParams {
 export async function listExpenses(
   params: ExpenseListParams = {},
 ): Promise<PaginatedResponse<Expense>> {
-  const { search = "", status, category, branchId, period, page = 1, pageSize = 10 } = params;
+  const {
+    search = "",
+    status,
+    category,
+    branchId,
+    period,
+    date,
+    page = 1,
+    pageSize = 10,
+  } = params;
   const query = search.trim().toLowerCase();
 
   const filtered = mockExpenses.filter((expense) => {
     if (branchId && expense.branchId !== branchId) return false;
     if (status && expense.status !== status) return false;
     if (category && expense.category !== category) return false;
-    if (!isWithinPeriod(expense.createdAt, period)) return false;
+    if (!isWithinPeriod(expense.createdAt, period, date)) return false;
     if (!query) return true;
     return (
       expense.description.toLowerCase().includes(query) ||
@@ -87,6 +100,21 @@ export async function listExpenses(
     previous: page > 1 ? String(page - 1) : null,
     results,
   };
+}
+
+/** Total expenses recorded on one specific calendar date (ISO "YYYY-MM-DD") — powers the Reports date-picker view. */
+export async function getExpenseTotalForDate(
+  branchId: string | undefined,
+  date: string,
+): Promise<number> {
+  const target = new Date(date).toDateString();
+  return mockExpenses
+    .filter(
+      (expense) =>
+        (!branchId || expense.branchId === branchId) &&
+        new Date(expense.createdAt).toDateString() === target,
+    )
+    .reduce((sum, expense) => sum + expense.amount, 0);
 }
 
 export interface ExpenseSummary {

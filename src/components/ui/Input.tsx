@@ -3,12 +3,14 @@ import { clsx } from "clsx";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
+  /** Width class for the wrapping div — defaults to "w-full". Pass "w-auto" for inline toolbar use. */
+  containerClassName?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, error, ...props }, ref) => {
+  ({ className, error, containerClassName = "w-full", ...props }, ref) => {
     return (
-      <div className="w-full">
+      <div className={containerClassName}>
         <input
           ref={ref}
           className={clsx(
