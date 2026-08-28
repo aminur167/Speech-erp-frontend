@@ -117,6 +117,20 @@ body {
     width: 100%;
   }
 
+  /*
+   * A plain, !important CSS rule rather than Tailwind's print: variant — two competing
+   * width utilities (max-w-md vs. print:max-w-full) have equal specificity, so which one
+   * "wins" depends on Tailwind's generated stylesheet order rather than intent. This is
+   * the deterministic way to guarantee the receipt fills the printed page.
+   */
+  .receipt-card {
+    max-width: 100% !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
   @page {
     margin: 12mm;
   }
