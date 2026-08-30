@@ -8,23 +8,29 @@ interface RawRefundRequestItem {
   material: number | string;
   materialName: string;
   quantity: number;
-  unitPrice: number;
+  unitPrice: number | string;
 }
-interface RawRefundRequest extends Omit<RefundRequest, "id" | "payment" | "items"> {
+interface RawRefundRequest extends Omit<RefundRequest, "id" | "payment" | "items" | "amount"> {
   id: number | string;
   payment: RawPayment;
   items: RawRefundRequestItem[];
+  // RefundRequestSerializer's `amount` is a real DecimalField, so it crosses
+  // the wire as a JSON string (COERCE_DECIMAL_TO_STRING) -- normalized below,
+  // same as `unitPrice` on each item.
+  amount: number | string;
 }
 
 function normalizeRefundRequest(raw: RawRefundRequest): RefundRequest {
   return {
     ...raw,
     id: String(raw.id),
+    amount: Number(raw.amount),
     payment: normalizePayment(raw.payment),
     items: raw.items.map((item) => ({
       ...item,
       id: String(item.id),
       material: String(item.material),
+      unitPrice: Number(item.unitPrice),
     })),
   };
 }

@@ -1,23 +1,41 @@
 import { apiClient } from "@/lib/api/client";
+import { normalizePayment, type RawPayment } from "@/lib/api/payments";
 import type { PaginatedResponse } from "@/types/api";
 import type { MonthlyEnrollment, MonthlyBill, Payment } from "@/types/domain";
 
 // MonthlyEnrollment/MonthlyBill both have integer primary keys, while every
 // place that refers to one elsewhere (Payment.serviceId, etc.) is a string --
 // same reasoning as Branch/Service. Normalized on the way in.
-interface RawBill extends Omit<MonthlyBill, "id"> {
+//
+// `amount`/`amountPaid`/`outstanding` are real DRF DecimalFields, which cross
+// the wire as JSON strings (COERCE_DECIMAL_TO_STRING) -- normalized to
+// numbers here too, the same as the id fields.
+interface RawBill extends Omit<MonthlyBill, "id" | "amount" | "amountPaid" | "outstanding"> {
   id: number | string;
+  amount: number | string;
+  amountPaid: number | string;
+  outstanding: number | string;
 }
 interface RawEnrollment extends Omit<MonthlyEnrollment, "id" | "bills"> {
   id: number | string;
   bills: RawBill[];
 }
 
+function normalizeBill(bill: RawBill): MonthlyBill {
+  return {
+    ...bill,
+    id: String(bill.id),
+    amount: Number(bill.amount),
+    amountPaid: Number(bill.amountPaid),
+    outstanding: Number(bill.outstanding),
+  };
+}
+
 function normalizeEnrollment(raw: RawEnrollment): MonthlyEnrollment {
   return {
     ...raw,
     id: String(raw.id),
-    bills: raw.bills.map((bill) => ({ ...bill, id: String(bill.id) })),
+    bills: raw.bills.map(normalizeBill),
   };
 }
 
@@ -62,12 +80,12 @@ export async function payMonthlyBill(
   method: string,
   idempotencyKey?: string,
 ): Promise<PayMonthlyBillResult> {
-  const { data } = await apiClient.post<{ payment: Payment & { id: number | string }; enrollment: RawEnrollment }>(
+  const { data } = await apiClient.post<{ payment: RawPayment; enrollment: RawEnrollment }>(
     `/enrollments/monthly/${enrollmentId}/bills/${billId}/pay/`,
     { method, idempotencyKey },
   );
   return {
-    payment: { ...data.payment, id: String(data.payment.id) },
+    payment: normalizePayment(data.payment),
     enrollment: normalizeEnrollment(data.enrollment),
   };
 }

@@ -1,20 +1,39 @@
 import { apiClient } from "@/lib/api/client";
+import { normalizePayment, type RawPayment } from "@/lib/api/payments";
 import type { PaginatedResponse } from "@/types/api";
 import type { InstallmentPlan, Installment, Payment } from "@/types/domain";
 
-interface RawInstallment extends Omit<Installment, "id"> {
+// `amount`/`amountPaid`/`outstanding`/`totalAmount` are real DRF DecimalFields,
+// so they cross the wire as JSON strings (COERCE_DECIMAL_TO_STRING) --
+// normalized to numbers here, same as the id fields.
+interface RawInstallment extends Omit<Installment, "id" | "amount" | "amountPaid" | "outstanding"> {
   id: number | string;
+  amount: number | string;
+  amountPaid: number | string;
+  outstanding: number | string;
 }
-interface RawPlan extends Omit<InstallmentPlan, "id" | "installments"> {
+interface RawPlan extends Omit<InstallmentPlan, "id" | "installments" | "totalAmount"> {
   id: number | string;
+  totalAmount: number | string;
   installments: RawInstallment[];
+}
+
+function normalizeInstallment(installment: RawInstallment): Installment {
+  return {
+    ...installment,
+    id: String(installment.id),
+    amount: Number(installment.amount),
+    amountPaid: Number(installment.amountPaid),
+    outstanding: Number(installment.outstanding),
+  };
 }
 
 function normalizePlan(raw: RawPlan): InstallmentPlan {
   return {
     ...raw,
     id: String(raw.id),
-    installments: raw.installments.map((i) => ({ ...i, id: String(i.id) })),
+    totalAmount: Number(raw.totalAmount),
+    installments: raw.installments.map(normalizeInstallment),
   };
 }
 
@@ -57,12 +76,12 @@ export async function payInstallment(
   method: string,
   idempotencyKey?: string,
 ): Promise<PayInstallmentResult> {
-  const { data } = await apiClient.post<{ payment: Payment & { id: number | string }; plan: RawPlan }>(
+  const { data } = await apiClient.post<{ payment: RawPayment; plan: RawPlan }>(
     `/enrollments/installments/${planId}/installments/${installmentId}/pay/`,
     { method, idempotencyKey },
   );
   return {
-    payment: { ...data.payment, id: String(data.payment.id) },
+    payment: normalizePayment(data.payment),
     plan: normalizePlan(data.plan),
   };
 }

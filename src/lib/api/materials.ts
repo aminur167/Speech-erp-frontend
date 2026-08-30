@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api/client";
 import { toSnakeCase } from "@/lib/api/caseUtils";
+import { normalizePayment, type RawPayment } from "@/lib/api/payments";
 import type { PaginatedResponse } from "@/types/api";
 import type { Material, MaterialMovement, MaterialMovementType, MaterialUnit, Payment, PaymentMethod } from "@/types/domain";
 
@@ -106,7 +107,7 @@ export interface MaterialsSaleResult {
  * sent, so a manipulated request could buy a 2,500 taka kit for 1 taka).
  */
 export async function sellMaterials(input: SellMaterialsInput): Promise<MaterialsSaleResult> {
-  const { data } = await apiClient.post<{ payment: Payment & { id: number | string } }>(
+  const { data } = await apiClient.post<{ payment: RawPayment }>(
     "/materials/sell/",
     {
       patient: input.patientId,
@@ -115,5 +116,5 @@ export async function sellMaterials(input: SellMaterialsInput): Promise<Material
       idempotencyKey: input.idempotencyKey,
     },
   );
-  return { payment: { ...data.payment, id: String(data.payment.id) } };
+  return { payment: normalizePayment(data.payment) };
 }

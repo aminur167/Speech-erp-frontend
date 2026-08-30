@@ -1,12 +1,16 @@
 import { apiClient } from "@/lib/api/client";
+import { normalizePayment, type RawPayment } from "@/lib/api/payments";
 import type { Booking, Payment, PaymentMethod } from "@/types/domain";
 
-interface RawBooking extends Omit<Booking, "id"> {
+// `advanceAmount` is a real DRF DecimalField, so it crosses the wire as a
+// JSON string (COERCE_DECIMAL_TO_STRING) -- normalized here too.
+interface RawBooking extends Omit<Booking, "id" | "advanceAmount"> {
   id: number | string;
+  advanceAmount: number | string;
 }
 
 function normalizeBooking(raw: RawBooking): Booking {
-  return { ...raw, id: String(raw.id) };
+  return { ...raw, id: String(raw.id), advanceAmount: Number(raw.advanceAmount) };
 }
 
 export interface CreateBookingInput {
@@ -31,7 +35,7 @@ export interface CreateBookingResult {
 export async function createBooking(input: CreateBookingInput): Promise<CreateBookingResult> {
   const { data } = await apiClient.post<{
     booking: RawBooking;
-    payment: Payment & { id: number | string };
+    payment: RawPayment;
   }>("/enrollments/bookings/", {
     patient: input.patientId,
     service: input.serviceId,
@@ -42,6 +46,6 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
   });
   return {
     booking: normalizeBooking(data.booking),
-    payment: { ...data.payment, id: String(data.payment.id) },
+    payment: normalizePayment(data.payment),
   };
 }

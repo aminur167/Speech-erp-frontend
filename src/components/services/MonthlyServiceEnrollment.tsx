@@ -185,6 +185,8 @@ export function MonthlyServiceEnrollment() {
                 key: bill.month,
                 label: bill.label,
                 amount: bill.amount,
+                amountPaid: bill.amountPaid,
+                outstanding: bill.outstanding,
                 status: bill.status,
               }))}
               onCollectPayment={(month) => {

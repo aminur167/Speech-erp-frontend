@@ -6,12 +6,17 @@ import type { Payment, PaymentCategory, PaymentMethod } from "@/types/domain";
 // (e.g. RefundRequest.payment) would be a string — same reasoning as
 // Branch/Service. Normalized here, and exported so refunds.ts can reuse it
 // for the payment nested inside a RefundRequest.
-export interface RawPayment extends Omit<Payment, "id"> {
+//
+// `amount` is a real DRF DecimalField, so it crosses the wire as a JSON
+// string (COERCE_DECIMAL_TO_STRING) -- normalized to a number here too, the
+// same as the id field, so formatCurrency() always receives a real number.
+export interface RawPayment extends Omit<Payment, "id" | "amount"> {
   id: number | string;
+  amount: number | string;
 }
 
 export function normalizePayment(raw: RawPayment): Payment {
-  return { ...raw, id: String(raw.id) };
+  return { ...raw, id: String(raw.id), amount: Number(raw.amount) };
 }
 
 export interface CreatePaymentInput {

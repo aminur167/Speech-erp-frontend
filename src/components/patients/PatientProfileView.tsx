@@ -188,12 +188,16 @@ export function PatientProfileView({
                           key: bill.month,
                           label: bill.label,
                           amount: bill.amount,
+                          amountPaid: bill.amountPaid,
+                          outstanding: bill.outstanding,
                           status: bill.status,
                         }))
                       : item.plan.installments.map((installment) => ({
                           key: String(installment.index),
                           label: installment.label,
                           amount: installment.amount,
+                          amountPaid: installment.amountPaid,
+                          outstanding: installment.outstanding,
                           status: installment.status,
                         }))
                   }

@@ -184,7 +184,12 @@ export interface MonthlyBill {
   month: string; // e.g. "2026-08"
   label: string; // e.g. "August 2026"
   amount: number;
+  /** How much of `amount` has actually been settled — less than `amount` after a partial refund. */
+  amountPaid: number;
+  /** `amount - amountPaid` — what's still owed. Zero for `written_off`, since nobody owes that. */
+  outstanding: number;
   status: BillStatus;
+  dueDate: string;
   /** Set the moment this bill is marked paid — lets a past date be checked for whether it was still outstanding then. */
   paidAt?: string;
 }
@@ -206,7 +211,12 @@ export interface Installment {
   index: number;
   label: string; // e.g. "1st Installment"
   amount: number;
+  /** How much of `amount` has actually been settled — less than `amount` after a partial refund. */
+  amountPaid: number;
+  /** `amount - amountPaid` — what's still owed. Zero for `written_off`, since nobody owes that. */
+  outstanding: number;
   status: BillStatus;
+  dueDate: string;
   /** Set the moment this installment is marked paid — lets a past date be checked for whether it was still outstanding then. */
   paidAt?: string;
 }

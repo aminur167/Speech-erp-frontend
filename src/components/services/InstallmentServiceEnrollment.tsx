@@ -210,6 +210,8 @@ export function InstallmentServiceEnrollment() {
                 key: String(installment.index),
                 label: installment.label,
                 amount: installment.amount,
+                amountPaid: installment.amountPaid,
+                outstanding: installment.outstanding,
                 status: installment.status,
               }))}
               onCollectPayment={(key) => {
