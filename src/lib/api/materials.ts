@@ -4,11 +4,21 @@ import { normalizePayment, type RawPayment } from "@/lib/api/payments";
 import type { PaginatedResponse } from "@/types/api";
 import type { Material, MaterialMovement, MaterialMovementType, MaterialUnit, Payment, PaymentMethod } from "@/types/domain";
 
-interface RawMaterial extends Omit<Material, "id"> {
+// `unitCost`/`sellingPrice` are real DRF DecimalFields, so they cross the
+// wire as JSON strings (COERCE_DECIMAL_TO_STRING) -- normalized here too,
+// same as the id field.
+interface RawMaterial extends Omit<Material, "id" | "unitCost" | "sellingPrice"> {
   id: number | string;
+  unitCost: number | string;
+  sellingPrice: number | string;
 }
 function normalizeMaterial(raw: RawMaterial): Material {
-  return { ...raw, id: String(raw.id) };
+  return {
+    ...raw,
+    id: String(raw.id),
+    unitCost: Number(raw.unitCost),
+    sellingPrice: Number(raw.sellingPrice),
+  };
 }
 
 interface RawMovement extends Omit<MaterialMovement, "id" | "materialId"> {
@@ -31,11 +41,15 @@ export interface MaterialsSummary {
   lowStockCount: number;
 }
 
+interface RawMaterialsSummary extends Omit<MaterialsSummary, "totalStockValue"> {
+  totalStockValue: number | string;
+}
+
 export async function getMaterialsSummary(branchId?: string): Promise<MaterialsSummary> {
-  const { data } = await apiClient.get<MaterialsSummary>("/materials/summary/", {
+  const { data } = await apiClient.get<RawMaterialsSummary>("/materials/summary/", {
     params: { branch: branchId },
   });
-  return data;
+  return { ...data, totalStockValue: Number(data.totalStockValue) };
 }
 
 export interface MaterialInput {

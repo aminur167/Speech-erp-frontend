@@ -8,12 +8,22 @@ import type { Service, ServiceCategory } from "@/types/domain";
 // so through an explicit CharField and is already a string. Left as a raw
 // number here, `services.find(s => s.id === enrollment.serviceId)` would
 // silently never match — the exact bug this once caused for Branch.
-interface RawService extends Omit<Service, "id"> {
+//
+// `fee`/`originalFee` are real DRF DecimalFields, so they cross the wire as
+// JSON strings (COERCE_DECIMAL_TO_STRING) -- normalized here too.
+interface RawService extends Omit<Service, "id" | "fee" | "originalFee"> {
   id: number | string;
+  fee: number | string;
+  originalFee?: number | string;
 }
 
 function normalizeService(raw: RawService): Service {
-  return { ...raw, id: String(raw.id) };
+  return {
+    ...raw,
+    id: String(raw.id),
+    fee: Number(raw.fee),
+    originalFee: raw.originalFee === undefined ? undefined : Number(raw.originalFee),
+  };
 }
 
 export async function listServices(
