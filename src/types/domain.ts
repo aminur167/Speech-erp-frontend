@@ -102,6 +102,35 @@ export interface Payment {
   createdAt: string;
 }
 
+export type RefundRequestStatus = "pending" | "approved" | "rejected";
+/** What happens to the bill/enrollment once the refund is approved. */
+export type RefundBillAction = "reopen" | "write_off";
+
+export interface RefundRequestItem {
+  id: string;
+  material: string;
+  materialName: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface RefundRequest {
+  id: string;
+  payment: Payment;
+  amount: number;
+  reason: string;
+  status: RefundRequestStatus;
+  /** Present only for a partial material-sale refund — which lines/quantities are being returned. */
+  items: RefundRequestItem[];
+  requestedBy: string;
+  requestedAt: string;
+  reviewedBy: string;
+  reviewedAt: string | null;
+  reviewNote: string;
+  billAction: RefundBillAction;
+  refundMethod: string;
+}
+
 export type ExpenseCategory =
   | "rent"
   | "utilities"

@@ -14,13 +14,15 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
+import { VoidPaymentModal } from "@/components/payments/VoidPaymentModal";
+import { RequestRefundModal } from "@/components/payments/RequestRefundModal";
 import { useTransactions } from "@/hooks/transactions/useTransactions";
 import { useTransactionsSummary } from "@/hooks/transactions/useTransactionsSummary";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { exportToCsv } from "@/utils/exportCsv";
 import type { PaymentMethod, PaymentStatus } from "@/types/domain";
-import type { SummaryPeriod } from "@/lib/api/transactions";
+import type { SummaryPeriod, TransactionItem } from "@/lib/api/transactions";
 
 const PAGE_SIZE = 10;
 
@@ -49,6 +51,8 @@ export function TransactionHistoryView({
   const [period, setPeriod] = useState<SummaryPeriod>("");
   const [date, setDate] = useState("");
   const [page, setPage] = useState(1);
+  const [voidingTransaction, setVoidingTransaction] = useState<TransactionItem | null>(null);
+  const [refundingTransaction, setRefundingTransaction] = useState<TransactionItem | null>(null);
 
   const { data, isLoading, isFetching, isError, refetch } = useTransactions({
     search,
@@ -221,7 +225,13 @@ export function TransactionHistoryView({
           )}
           {!isLoading && !isError && data && data.results.length > 0 && (
             <>
-              <TransactionTable transactions={data.results} />
+              <TransactionTable
+                transactions={data.results}
+                canVoid={Boolean(user)}
+                canRequestRefund={user?.role === "manager"}
+                onVoid={setVoidingTransaction}
+                onRequestRefund={setRefundingTransaction}
+              />
               <Pagination
                 page={page}
                 pageSize={PAGE_SIZE}
@@ -232,6 +242,12 @@ export function TransactionHistoryView({
           )}
         </div>
       </Card>
+
+      <VoidPaymentModal payment={voidingTransaction} onClose={() => setVoidingTransaction(null)} />
+      <RequestRefundModal
+        payment={refundingTransaction}
+        onClose={() => setRefundingTransaction(null)}
+      />
     </div>
   );
 }

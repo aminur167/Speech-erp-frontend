@@ -14,6 +14,7 @@ import {
   Boxes,
   ShoppingCart,
   ArrowLeft,
+  Undo2,
 } from "lucide-react";
 
 export interface NavLink {
@@ -85,6 +86,7 @@ export const adminNav: NavItem[] = [
   { label: "Services", href: "/admin/services", icon: ClipboardList },
   { label: "Expenses", href: "/admin/expenses", icon: Receipt },
   { label: "Transactions", href: "/admin/transactions", icon: History },
+  { label: "Refund Approvals", href: "/admin/refund-approvals", icon: Undo2 },
   { label: "Reports", href: "/admin/reports", icon: BarChart3 },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];

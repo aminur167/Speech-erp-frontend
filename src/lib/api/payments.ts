@@ -3,14 +3,14 @@ import type { PaginatedResponse } from "@/types/api";
 import type { Payment, PaymentCategory, PaymentMethod } from "@/types/domain";
 
 // Payment has an integer primary key, while every place that refers to one
-// (were there such a place) would be a string — same reasoning as
-// Branch/Service. Normalized here for consistency even though nothing
-// currently cross-references a payment by id.
-interface RawPayment extends Omit<Payment, "id"> {
+// (e.g. RefundRequest.payment) would be a string — same reasoning as
+// Branch/Service. Normalized here, and exported so refunds.ts can reuse it
+// for the payment nested inside a RefundRequest.
+export interface RawPayment extends Omit<Payment, "id"> {
   id: number | string;
 }
 
-function normalizePayment(raw: RawPayment): Payment {
+export function normalizePayment(raw: RawPayment): Payment {
   return { ...raw, id: String(raw.id) };
 }
 
@@ -52,4 +52,16 @@ export async function listPayments(params: ListPaymentsParams = {}): Promise<Pay
     params: { branch: params.branchId, pageSize: 500 },
   });
   return data.results.map(normalizePayment);
+}
+
+/**
+ * Cancels a payment that never really happened -- same calendar day only for
+ * a Manager, and only before that day's closing is submitted; Admin may void
+ * any day (docs/04). The backend enforces both cutoffs itself and returns a
+ * 403 with a code identifying which one tripped, surfaced via ApiError like
+ * any other rejection.
+ */
+export async function voidPayment(paymentId: string, reason: string): Promise<Payment> {
+  const { data } = await apiClient.post<RawPayment>(`/payments/${paymentId}/void/`, { reason });
+  return normalizePayment(data);
 }
