@@ -68,7 +68,11 @@ export function ServiceCard({
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <Badge tone="info" label={CATEGORY_LABEL[service.category]} />
-          <Badge tone="success" label="Available" />
+          {service.isActive ? (
+            <Badge tone="success" label="Available" />
+          ) : (
+            <Badge tone="neutral" label="Inactive" />
+          )}
         </div>
       </div>
 

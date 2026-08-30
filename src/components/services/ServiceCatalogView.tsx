@@ -11,6 +11,8 @@ import {
   Globe,
   Pencil,
   Trash2,
+  PowerOff,
+  Power,
   type LucideIcon,
 } from "lucide-react";
 import { clsx } from "clsx";
@@ -30,9 +32,11 @@ import { useServiceEnrollmentCounts } from "@/hooks/services/useServiceEnrollmen
 import { useCreateService } from "@/hooks/services/useCreateService";
 import { useUpdateService } from "@/hooks/services/useUpdateService";
 import { useDeleteService } from "@/hooks/services/useDeleteService";
+import { useToggleServiceActive } from "@/hooks/services/useToggleServiceActive";
 import { exportToCsv } from "@/utils/exportCsv";
 import type { Service, ServiceCategory } from "@/types/domain";
 import type { ServiceInput } from "@/lib/api/services";
+import type { ApiError } from "@/types/api";
 
 const CATEGORY_META: Record<ServiceCategory, { label: string; icon: LucideIcon }> = {
   daily: { label: "Daily", icon: Clock },
@@ -65,17 +69,22 @@ export function ServiceCatalogView({
   addLabel: string;
   canManage: boolean;
 }) {
-  const { data: services, isLoading, isFetching, refetch } = useServices();
+  const { data: services, isLoading, isFetching, refetch } = useServices(undefined, canManage);
   const { data: enrollmentCounts } = useServiceEnrollmentCounts();
   const createService = useCreateService();
   const updateService = useUpdateService();
   const deleteService = useDeleteService();
+  const toggleServiceActive = useToggleServiceActive();
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<ServiceCategory | "">("");
+  const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "">("");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [deletingService, setDeletingService] = useState<Service | null>(null);
+  const [deleteBlocked, setDeleteBlocked] = useState<{ service: Service; message: string } | null>(
+    null,
+  );
 
   const categoryCounts = useMemo(() => {
     const counts: Record<ServiceCategory, number> = { daily: 0, monthly: 0, installment: 0, online: 0 };
@@ -89,12 +98,14 @@ export function ServiceCatalogView({
     const query = search.trim().toLowerCase();
     return (services ?? []).filter((service) => {
       if (categoryFilter && service.category !== categoryFilter) return false;
+      if (statusFilter === "active" && !service.isActive) return false;
+      if (statusFilter === "inactive" && service.isActive) return false;
       if (!query) return true;
       return (
         service.name.toLowerCase().includes(query) || service.code.toLowerCase().includes(query)
       );
     });
-  }, [services, search, categoryFilter]);
+  }, [services, search, categoryFilter, statusFilter]);
 
   const grouped = useMemo(() => {
     return filtered.reduce<Record<string, Service[]>>((acc, service) => {
@@ -103,7 +114,7 @@ export function ServiceCatalogView({
     }, {});
   }, [filtered]);
 
-  const hasFilters = Boolean(search || categoryFilter);
+  const hasFilters = Boolean(search || categoryFilter || statusFilter);
 
   const handleCreate = (input: ServiceInput) => {
     createService.mutate(input, { onSuccess: () => setIsAddOpen(false) });
@@ -119,7 +130,24 @@ export function ServiceCatalogView({
 
   const handleDelete = () => {
     if (!deletingService) return;
-    deleteService.mutate(deletingService.id, { onSuccess: () => setDeletingService(null) });
+    const service = deletingService;
+    deleteService.mutate(service.id, {
+      onSuccess: () => setDeletingService(null),
+      onError: (error: ApiError) => {
+        setDeletingService(null);
+        if (error.status === 400) {
+          setDeleteBlocked({ service, message: error.message });
+        }
+      },
+    });
+  };
+
+  const handleDeactivateInstead = () => {
+    if (!deleteBlocked) return;
+    toggleServiceActive.mutate(
+      { id: deleteBlocked.service.id, makeActive: false },
+      { onSuccess: () => setDeleteBlocked(null) },
+    );
   };
 
   const handleExport = () => {
@@ -178,12 +206,32 @@ export function ServiceCatalogView({
                 placeholder="Search package name or code…"
               />
             </div>
+            {canManage && (
+              <div className="flex gap-1 rounded-lg border border-border p-1">
+                {(["", "active", "inactive"] as const).map((status) => (
+                  <button
+                    key={status || "all"}
+                    type="button"
+                    onClick={() => setStatusFilter(status)}
+                    className={clsx(
+                      "rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors",
+                      statusFilter === status
+                        ? "bg-primary text-white"
+                        : "text-text-secondary hover:bg-background",
+                    )}
+                  >
+                    {status || "All"}
+                  </button>
+                ))}
+              </div>
+            )}
             {hasFilters && (
               <button
                 type="button"
                 onClick={() => {
                   setSearch("");
                   setCategoryFilter("");
+                  setStatusFilter("");
                 }}
                 className="text-sm font-medium text-primary hover:underline"
               >
@@ -222,24 +270,44 @@ export function ServiceCatalogView({
                     enrolledCount={enrollmentCounts?.[service.id]}
                     actions={
                       canManage ? (
-                        <>
+                        <div className="flex w-full flex-col gap-2">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="secondary"
+                              className="flex-1"
+                              onClick={() => setEditingService(service)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="danger"
+                              className="flex-1"
+                              onClick={() => setDeletingService(service)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </Button>
+                          </div>
                           <Button
                             variant="secondary"
-                            className="flex-1"
-                            onClick={() => setEditingService(service)}
+                            className="w-full"
+                            onClick={() =>
+                              toggleServiceActive.mutate({
+                                id: service.id,
+                                makeActive: !service.isActive,
+                              })
+                            }
+                            disabled={toggleServiceActive.isPending}
                           >
-                            <Pencil className="h-4 w-4" />
-                            Edit
+                            {service.isActive ? (
+                              <PowerOff className="h-4 w-4" />
+                            ) : (
+                              <Power className="h-4 w-4" />
+                            )}
+                            {service.isActive ? "Deactivate" : "Activate"}
                           </Button>
-                          <Button
-                            variant="danger"
-                            className="flex-1"
-                            onClick={() => setDeletingService(service)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Delete
-                          </Button>
-                        </>
+                        </div>
                       ) : undefined
                     }
                   />
@@ -282,6 +350,15 @@ export function ServiceCatalogView({
             confirmLabel="Delete"
             danger
             isLoading={deleteService.isPending}
+          />
+          <ConfirmDialog
+            open={Boolean(deleteBlocked)}
+            onClose={() => setDeleteBlocked(null)}
+            onConfirm={handleDeactivateInstead}
+            title="Can't delete this package"
+            description={deleteBlocked?.message}
+            confirmLabel="Deactivate Instead"
+            isLoading={toggleServiceActive.isPending}
           />
         </>
       )}

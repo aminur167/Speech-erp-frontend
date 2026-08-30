@@ -16,9 +16,12 @@ function normalizeService(raw: RawService): Service {
   return { ...raw, id: String(raw.id) };
 }
 
-export async function listServices(category?: ServiceCategory): Promise<Service[]> {
+export async function listServices(
+  category?: ServiceCategory,
+  includeInactive?: boolean,
+): Promise<Service[]> {
   const { data } = await apiClient.get<PaginatedResponse<RawService>>("/services/", {
-    params: { category, pageSize: 200 },
+    params: { category, pageSize: 200, includeInactive: includeInactive || undefined },
   });
   return data.results.map(normalizeService);
 }
@@ -53,4 +56,15 @@ export async function updateService(id: string, input: ServiceInput): Promise<Se
 
 export async function deleteService(id: string): Promise<void> {
   await apiClient.delete(`/services/${id}/`);
+}
+
+/** Retires a package from sale — hides it from the enrollment wizards, but existing enrollments keep billing. */
+export async function deactivateService(id: string): Promise<Service> {
+  const { data } = await apiClient.post<RawService>(`/services/${id}/deactivate/`);
+  return normalizeService(data);
+}
+
+export async function activateService(id: string): Promise<Service> {
+  const { data } = await apiClient.post<RawService>(`/services/${id}/activate/`);
+  return normalizeService(data);
 }

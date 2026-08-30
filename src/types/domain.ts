@@ -64,6 +64,8 @@ export interface Service {
   sessionsLabel?: string;
   /** Free-text validity/expiry policy, e.g. "3 months from purchase". */
   expiryLabel?: string;
+  /** Retired from sale — hidden from the enrollment wizards, but existing enrollments keep billing (docs/03). */
+  isActive: boolean;
 }
 
 export type PaymentStatus =
