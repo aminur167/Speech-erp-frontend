@@ -48,14 +48,14 @@ export function MaterialListView({
   const [deletingMaterial, setDeletingMaterial] = useState<Material | null>(null);
   const [adjustingMaterial, setAdjustingMaterial] = useState<Material | null>(null);
 
-  const handleCreate = (input: Omit<MaterialInput, "branchId">) => {
-    createMaterial.mutate({ ...input, branchId }, { onSuccess: () => setIsAddOpen(false) });
+  const handleCreate = (input: MaterialInput) => {
+    createMaterial.mutate(input, { onSuccess: () => setIsAddOpen(false) });
   };
 
-  const handleUpdate = (input: Omit<MaterialInput, "branchId">) => {
+  const handleUpdate = (input: MaterialInput) => {
     if (!editingMaterial) return;
     updateMaterial.mutate(
-      { id: editingMaterial.id, input: { ...input, branchId } },
+      { id: editingMaterial.id, input },
       { onSuccess: () => setEditingMaterial(null) },
     );
   };
@@ -68,9 +68,9 @@ export function MaterialListView({
   };
 
   const handleAdjust = (input: { type: MaterialMovementType; quantity: number; note?: string }) => {
-    if (!adjustingMaterial || !user) return;
+    if (!adjustingMaterial) return;
     adjustStockMutation.mutate(
-      { materialId: adjustingMaterial.id, ...input, branchId, createdBy: user.name },
+      { materialId: adjustingMaterial.id, ...input },
       { onSuccess: () => setAdjustingMaterial(null) },
     );
   };

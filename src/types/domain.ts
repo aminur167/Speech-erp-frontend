@@ -132,9 +132,15 @@ export interface Expense {
   createdAt: string;
 }
 
-export type BillStatus = "paid" | "due" | "upcoming";
+// "overdue" is derived server-side from the due date, never stored — it can
+// still be the currently-payable item, so anywhere that finds "the bill to
+// pay" must treat "due" and "overdue" the same way. "written_off" is the
+// admin-approved way to forgive an uncollectable bill (docs/04) and is
+// excluded from what's payable, same as "paid".
+export type BillStatus = "paid" | "due" | "overdue" | "upcoming" | "written_off";
 
 export interface MonthlyBill {
+  id: string;
   month: string; // e.g. "2026-08"
   label: string; // e.g. "August 2026"
   amount: number;
@@ -156,6 +162,7 @@ export interface MonthlyEnrollment {
 }
 
 export interface Installment {
+  id: string;
   index: number;
   label: string; // e.g. "1st Installment"
   amount: number;
@@ -180,7 +187,6 @@ export interface Booking {
   bookingCode: string; // e.g. BKG-2026-00001
   patientId: string;
   serviceId: string;
-  branchId: string;
   date: string;
   time: string;
   advanceAmount: number;

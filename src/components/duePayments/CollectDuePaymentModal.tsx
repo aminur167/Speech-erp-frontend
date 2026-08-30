@@ -34,17 +34,7 @@ export function CollectDuePaymentModal({
   const handleConfirm = () => {
     if (!user || !item) return;
     collectPayment.mutate(
-      {
-        item,
-        payment: {
-          patientId: item.patientId,
-          amount: item.amount,
-          method,
-          category: item.type,
-          collectedBy: user.name,
-          branchId: user.branchId ?? "branch-1",
-        },
-      },
+      { item, method },
       { onSuccess: (createdPayment) => setPayment(createdPayment) },
     );
   };

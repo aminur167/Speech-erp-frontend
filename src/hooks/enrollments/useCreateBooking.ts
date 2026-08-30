@@ -1,10 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
-import { createBooking, type CreateBookingInput } from "@/lib/api/bookings";
+import { createBooking, type CreateBookingInput, type CreateBookingResult } from "@/lib/api/bookings";
 import type { ApiError } from "@/types/api";
-import type { Booking } from "@/types/domain";
 
 export function useCreateBooking() {
-  return useMutation<Booking, ApiError, CreateBookingInput>({
+  return useMutation<CreateBookingResult, ApiError, CreateBookingInput>({
     mutationFn: createBooking,
   });
 }

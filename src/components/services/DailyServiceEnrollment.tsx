@@ -59,8 +59,6 @@ export function DailyServiceEnrollment() {
         amount: selectedService.fee,
         method,
         category: "daily",
-        collectedBy: user.name,
-        branchId: user.branchId ?? "branch-1",
       },
       {
         onSuccess: (createdPayment) => {

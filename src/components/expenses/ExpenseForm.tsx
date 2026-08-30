@@ -8,7 +8,6 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { useCreateExpense } from "@/hooks/expenses/useCreateExpense";
-import { useAuthStore } from "@/store/authStore";
 import { EXPENSE_AUTO_APPROVE_THRESHOLD } from "@/lib/api/expenses";
 import { formatCurrency } from "@/utils/currency";
 
@@ -51,7 +50,6 @@ export function ExpenseForm({
   onSuccess: () => void;
   onCancel: () => void;
 }) {
-  const user = useAuthStore((state) => state.user);
   const createExpense = useCreateExpense();
 
   const {
@@ -69,12 +67,7 @@ export function ExpenseForm({
 
   const onSubmit = (values: ExpenseFormValues) => {
     createExpense.mutate(
-      {
-        ...values,
-        amount: Number(values.amount),
-        branchId: user?.branchId ?? "branch-1",
-        submittedBy: user?.name ?? "Unknown",
-      },
+      { ...values, amount: Number(values.amount) },
       { onSuccess },
     );
   };

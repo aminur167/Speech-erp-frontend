@@ -1,105 +1,75 @@
-import type { InstallmentPlan, Installment } from "@/types/domain";
+import { apiClient } from "@/lib/api/client";
+import type { PaginatedResponse } from "@/types/api";
+import type { InstallmentPlan, Installment, Payment } from "@/types/domain";
 
-/**
- * Mock implementation — matches the shape/signature this module will have
- * once it calls the real Django/DRF `/enrollments/installments/` endpoints.
- */
-
-const ORDINALS = ["1st", "2nd", "3rd", "4th", "5th", "6th"];
-
-function delay<T>(value: T, ms = 350): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+interface RawInstallment extends Omit<Installment, "id"> {
+  id: number | string;
+}
+interface RawPlan extends Omit<InstallmentPlan, "id" | "installments"> {
+  id: number | string;
+  installments: RawInstallment[];
 }
 
-function buildInstallments(totalAmount: number, numberOfInstallments: number): Installment[] {
-  const base = Math.floor(totalAmount / numberOfInstallments);
-  const remainder = totalAmount - base * numberOfInstallments;
-  return Array.from({ length: numberOfInstallments }, (_, i) => ({
-    index: i + 1,
-    label: `${ORDINALS[i] ?? `${i + 1}th`} Installment`,
-    amount: i === numberOfInstallments - 1 ? base + remainder : base,
-    status: i === 0 ? "due" : "upcoming",
-  }));
+function normalizePlan(raw: RawPlan): InstallmentPlan {
+  return {
+    ...raw,
+    id: String(raw.id),
+    installments: raw.installments.map((i) => ({ ...i, id: String(i.id) })),
+  };
 }
-
-let plans: InstallmentPlan[] = [
-  {
-    id: "plan-seed-1",
-    patientId: "p-7",
-    serviceId: "s-11",
-    branchId: "branch-1",
-    totalAmount: 18500,
-    installments: buildInstallments(18500, 3),
-    status: "active",
-    createdAt: "2026-07-20T09:00:00Z",
-  },
-  {
-    id: "plan-seed-2",
-    patientId: "p-4",
-    serviceId: "s-10",
-    branchId: "branch-1",
-    totalAmount: 4000,
-    installments: buildInstallments(4000, 2),
-    status: "active",
-    createdAt: "2026-08-10T09:00:00Z",
-  },
-];
 
 export async function listInstallmentPlans(): Promise<InstallmentPlan[]> {
-  await delay(null, 150);
-  return plans;
+  const { data } = await apiClient.get<PaginatedResponse<RawPlan>>(
+    "/enrollments/installments/",
+    { params: { pageSize: 500 } },
+  );
+  return data.results.map(normalizePlan);
 }
 
 export interface CreateInstallmentPlanInput {
   patientId: string;
   serviceId: string;
-  branchId: string;
-  totalAmount: number;
   numberOfInstallments: number;
 }
 
 export async function createInstallmentPlan(
   input: CreateInstallmentPlanInput,
 ): Promise<InstallmentPlan> {
-  await delay(null);
-  const plan: InstallmentPlan = {
-    id: `plan-${Date.now()}`,
-    patientId: input.patientId,
-    serviceId: input.serviceId,
-    branchId: input.branchId,
-    totalAmount: input.totalAmount,
-    installments: buildInstallments(input.totalAmount, input.numberOfInstallments),
-    status: "active",
-    createdAt: new Date().toISOString(),
-  };
-  plans = [plan, ...plans];
-  return plan;
+  // No branchId/totalAmount: the backend derives the branch from the
+  // authenticated manager and the total from the service's own price.
+  const { data } = await apiClient.post<RawPlan>("/enrollments/installments/", {
+    patient: input.patientId,
+    service: input.serviceId,
+    numberOfInstallments: input.numberOfInstallments,
+  });
+  return normalizePlan(data);
 }
 
-export async function payInstallment(planId: string, index: number): Promise<InstallmentPlan> {
-  await delay(null, 250);
-  const plan = plans.find((p) => p.id === planId);
-  if (!plan) {
-    throw { message: "Installment plan not found.", status: 404 };
-  }
-  const i = plan.installments.findIndex((x) => x.index === index);
-  if (i === -1) {
-    throw { message: "Installment not found.", status: 404 };
-  }
-  plan.installments[i].status = "paid";
-  plan.installments[i].paidAt = new Date().toISOString();
-  if (plan.installments[i + 1]) {
-    plan.installments[i + 1].status = "due";
-  }
-  return { ...plan, installments: [...plan.installments] };
+export interface PayInstallmentResult {
+  payment: Payment;
+  plan: InstallmentPlan;
+}
+
+/** One atomic call — charges the payment and marks the installment paid together. */
+export async function payInstallment(
+  planId: string,
+  installmentId: string,
+  method: string,
+  idempotencyKey?: string,
+): Promise<PayInstallmentResult> {
+  const { data } = await apiClient.post<{ payment: Payment & { id: number | string }; plan: RawPlan }>(
+    `/enrollments/installments/${planId}/installments/${installmentId}/pay/`,
+    { method, idempotencyKey },
+  );
+  return {
+    payment: { ...data.payment, id: String(data.payment.id) },
+    plan: normalizePlan(data.plan),
+  };
 }
 
 export async function terminateInstallmentPlan(planId: string): Promise<InstallmentPlan> {
-  await delay(null, 250);
-  const plan = plans.find((p) => p.id === planId);
-  if (!plan) {
-    throw { message: "Installment plan not found.", status: 404 };
-  }
-  plan.status = "terminated";
-  return { ...plan };
+  const { data } = await apiClient.post<RawPlan>(
+    `/enrollments/installments/${planId}/terminate/`,
+  );
+  return normalizePlan(data);
 }

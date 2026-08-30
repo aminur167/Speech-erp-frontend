@@ -191,12 +191,9 @@ export function SellMaterialsView() {
         items: cart.map((line) => ({
           materialId: line.materialId,
           quantity: line.quantity,
-          unitPrice: line.unitPrice,
         })),
         patientId: selectedPatient.id,
         method,
-        branchId,
-        createdBy: user.name,
       },
       {
         onSuccess: ({ payment: createdPayment }) => {

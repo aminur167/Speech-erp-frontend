@@ -1,12 +1,15 @@
-import { listPayments } from "@/lib/api/payments";
-import { listPatients } from "@/lib/api/patients";
+import { apiClient } from "@/lib/api/client";
 import type { PaginatedResponse } from "@/types/api";
 import type { Payment, PaymentMethod, PaymentStatus, ServiceCategory } from "@/types/domain";
 
 /**
- * Denormalized "transaction history" view — joins payments with patient
- * records so the UI can show patient name/code without a second round trip.
- * Mirrors what a real backend would return via a joined serializer.
+ * Reporting and analytics -- every function here now calls its own dedicated
+ * backend aggregate (apps/reporting/) instead of joining payments+patients
+ * client-side. That join also hid a real bug: filtering on `status === "paid"`
+ * excludes a payment from its own month the instant it's later refunded, even
+ * months after the fact -- the backend instead keeps a payment in the period
+ * it was collected and books the refund separately by approval date
+ * (docs/10), so a refund can never retroactively rewrite a closed month.
  */
 
 export interface TransactionItem extends Payment {
@@ -14,17 +17,14 @@ export interface TransactionItem extends Payment {
   patientCode: string;
 }
 
-export type SummaryPeriod = "today" | "month" | "";
-
-/** `date` (an ISO "YYYY-MM-DD" from a date picker) always wins over `period` when both are set. */
-function isWithinPeriod(isoDate: string, period: SummaryPeriod | undefined, date?: string): boolean {
-  const created = new Date(isoDate);
-  if (date) return created.toDateString() === new Date(date).toDateString();
-  if (!period) return true;
-  const now = new Date();
-  if (period === "today") return created.toDateString() === now.toDateString();
-  return created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth();
+interface RawTransactionItem extends Omit<TransactionItem, "id"> {
+  id: number | string;
 }
+function normalizeItem(raw: RawTransactionItem): TransactionItem {
+  return { ...raw, id: String(raw.id) };
+}
+
+export type SummaryPeriod = "today" | "month" | "";
 
 export interface TransactionListParams {
   search?: string;
@@ -39,76 +39,38 @@ export interface TransactionListParams {
   pageSize?: number;
 }
 
-async function joinTransactions(branchId?: string): Promise<TransactionItem[]> {
-  const [payments, patientsPage] = await Promise.all([
-    listPayments({ branchId }),
-    listPatients({ pageSize: 1000 }),
-  ]);
-  const patientById = new Map(patientsPage.results.map((p) => [p.id, p]));
-
-  return payments.map((payment) => {
-    const patient = patientById.get(payment.patientId);
-    return {
-      ...payment,
-      patientName: patient?.name ?? "Unknown patient",
-      patientCode: patient?.patientCode ?? "—",
-    };
-  });
-}
-
 export async function listTransactions(
   params: TransactionListParams = {},
 ): Promise<PaginatedResponse<TransactionItem>> {
-  const {
-    search = "",
-    method,
-    status,
-    branchId,
-    patientId,
-    period,
-    date,
-    page = 1,
-    pageSize = 10,
-  } = params;
-  const query = search.trim().toLowerCase();
-
-  const all = await joinTransactions(branchId);
-  const sorted = [...all].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  const { data } = await apiClient.get<PaginatedResponse<RawTransactionItem>>(
+    "/transactions/",
+    {
+      params: {
+        search: params.search,
+        method: params.method,
+        status: params.status,
+        branch: params.branchId,
+        patientId: params.patientId,
+        period: params.period || undefined,
+        date: params.date,
+        page: params.page,
+        pageSize: params.pageSize,
+      },
+    },
   );
-
-  const filtered = sorted.filter((item) => {
-    if (patientId && item.patientId !== patientId) return false;
-    if (method && item.method !== method) return false;
-    if (status && item.status !== status) return false;
-    if (!isWithinPeriod(item.createdAt, period, date)) return false;
-    if (!query) return true;
-    return (
-      item.patientName.toLowerCase().includes(query) ||
-      item.patientCode.toLowerCase().includes(query) ||
-      item.receiptNumber.toLowerCase().includes(query) ||
-      item.transactionId.toLowerCase().includes(query)
-    );
-  });
-
-  const start = (page - 1) * pageSize;
-  const results = filtered.slice(start, start + pageSize);
-
-  return {
-    count: filtered.length,
-    next: start + pageSize < filtered.length ? String(page + 1) : null,
-    previous: page > 1 ? String(page - 1) : null,
-    results,
-  };
+  return { ...data, results: data.results.map(normalizeItem) };
 }
 
-/** Total collected on one specific calendar date (ISO "YYYY-MM-DD") — powers the Reports date-picker view. */
-export async function getCollectionForDate(branchId: string | undefined, date: string): Promise<number> {
-  const all = await joinTransactions(branchId);
-  const target = new Date(date).toDateString();
-  return all
-    .filter((item) => item.status === "paid" && new Date(item.createdAt).toDateString() === target)
-    .reduce((sum, item) => sum + item.amount, 0);
+/** Total collected on one specific calendar date — powers the Reports date-picker view. */
+export async function getCollectionForDate(
+  branchId: string | undefined,
+  date: string,
+): Promise<number> {
+  const { data } = await apiClient.get<{ date: string; amount: number }>(
+    "/transactions/collection-for-date/",
+    { params: { branch: branchId, date } },
+  );
+  return data.amount;
 }
 
 export interface TransactionsSummary {
@@ -124,34 +86,10 @@ export async function getTransactionsSummary(
   branchId?: string,
   date?: string,
 ): Promise<TransactionsSummary> {
-  const all = await joinTransactions(branchId);
-  // Refunded/void payments aren't real revenue — exclude them from the totals below.
-  const paid = all.filter((item) => item.status === "paid");
-  const target = date ? new Date(date) : new Date();
-  const todayKey = target.toDateString();
-  const monthKey = `${target.getFullYear()}-${target.getMonth()}`;
-
-  const byMethodMap = new Map<PaymentMethod, number>();
-  for (const item of paid) {
-    byMethodMap.set(item.method, (byMethodMap.get(item.method) ?? 0) + item.amount);
-  }
-
-  return {
-    byMethod: Array.from(byMethodMap.entries())
-      .map(([method, amount]) => ({ method, amount }))
-      .sort((a, b) => b.amount - a.amount),
-    totalCollected: paid.reduce((sum, item) => sum + item.amount, 0),
-    transactionCount: all.length,
-    todayCollected: paid
-      .filter((item) => new Date(item.createdAt).toDateString() === todayKey)
-      .reduce((sum, item) => sum + item.amount, 0),
-    monthCollected: paid
-      .filter((item) => {
-        const created = new Date(item.createdAt);
-        return `${created.getFullYear()}-${created.getMonth()}` === monthKey;
-      })
-      .reduce((sum, item) => sum + item.amount, 0),
-  };
+  const { data } = await apiClient.get<TransactionsSummary>("/transactions/summary/", {
+    params: { branch: branchId, date },
+  });
+  return data;
 }
 
 /** Daily collection totals for the last `days` calendar days (oldest first) — powers a revenue trend chart. */
@@ -159,70 +97,33 @@ export async function getRevenueTrend(
   branchId: string | undefined,
   days = 7,
 ): Promise<{ date: string; label: string; amount: number }[]> {
-  const all = await joinTransactions(branchId);
-  const paid = all.filter((item) => item.status === "paid");
-
-  const buckets: { date: string; label: string; amount: number }[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const day = new Date();
-    day.setDate(day.getDate() - i);
-    day.setHours(0, 0, 0, 0);
-    const dayKey = day.toDateString();
-    const amount = paid
-      .filter((item) => new Date(item.createdAt).toDateString() === dayKey)
-      .reduce((sum, item) => sum + item.amount, 0);
-    buckets.push({
-      date: dayKey,
-      label: day.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      amount,
-    });
-  }
-  return buckets;
+  const { data } = await apiClient.get<{ date: string; label: string; amount: number }[]>(
+    "/transactions/trend/",
+    { params: { branch: branchId, days } },
+  );
+  return data;
 }
 
 /** This month's revenue split by payment method — for the Manager Dashboard's method breakdown chart. */
 export async function getMonthlyRevenueByMethod(
   branchId?: string,
 ): Promise<{ method: PaymentMethod; amount: number }[]> {
-  const all = await joinTransactions(branchId);
-  const now = new Date();
-  const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
-
-  const thisMonth = all.filter((item) => {
-    if (item.status !== "paid") return false;
-    const created = new Date(item.createdAt);
-    return `${created.getFullYear()}-${created.getMonth()}` === monthKey;
-  });
-
-  const map = new Map<PaymentMethod, number>();
-  for (const item of thisMonth) {
-    map.set(item.method, (map.get(item.method) ?? 0) + item.amount);
-  }
-  return Array.from(map.entries())
-    .map(([method, amount]) => ({ method, amount }))
-    .sort((a, b) => b.amount - a.amount);
+  const { data } = await apiClient.get<{ method: PaymentMethod; amount: number }[]>(
+    "/transactions/by-method/",
+    { params: { branch: branchId } },
+  );
+  return data;
 }
 
 /** This month's revenue split by service category — for the Manager Dashboard's category chart. */
 export async function getRevenueByCategory(
   branchId?: string,
 ): Promise<{ category: ServiceCategory; amount: number }[]> {
-  const all = await joinTransactions(branchId);
-  const now = new Date();
-  const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
-
-  const thisMonth = all.filter((item) => {
-    if (item.status !== "paid" || !item.category || item.category === "material_sale") return false;
-    const created = new Date(item.createdAt);
-    return `${created.getFullYear()}-${created.getMonth()}` === monthKey;
-  });
-
-  const map = new Map<ServiceCategory, number>();
-  for (const item of thisMonth) {
-    const category = item.category as ServiceCategory;
-    map.set(category, (map.get(category) ?? 0) + item.amount);
-  }
-  return Array.from(map.entries()).map(([category, amount]) => ({ category, amount }));
+  const { data } = await apiClient.get<{ category: ServiceCategory; amount: number }[]>(
+    "/transactions/by-category/",
+    { params: { branch: branchId } },
+  );
+  return data;
 }
 
 export interface BranchDashboardMetrics {
@@ -238,22 +139,36 @@ export async function getBranchDashboardMetrics(
   branchId?: string,
   date?: string,
 ): Promise<BranchDashboardMetrics> {
-  const all = await joinTransactions(branchId);
-  const paid = all.filter((item) => item.status === "paid");
-  const todayKey = (date ? new Date(date) : new Date()).toDateString();
-  const today = paid.filter((item) => new Date(item.createdAt).toDateString() === todayKey);
-
-  return {
-    todayPatientsSeen: new Set(today.map((item) => item.patientId)).size,
-    todayDueCollected: today
-      .filter((item) => item.category === "monthly" || item.category === "installment")
-      .reduce((sum, item) => sum + item.amount, 0),
-  };
+  const { data } = await apiClient.get<BranchDashboardMetrics>(
+    "/transactions/dashboard-metrics/",
+    { params: { branch: branchId, date } },
+  );
+  return data;
 }
 
 export async function listRefundsAndVoids(branchId?: string): Promise<TransactionItem[]> {
-  const all = await joinTransactions(branchId);
-  return all
-    .filter((item) => item.status === "refunded" || item.status === "void")
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const { data } = await apiClient.get<RawTransactionItem[]>("/transactions/refunds-voids/", {
+    params: { branch: branchId },
+  });
+  return data.map(normalizeItem);
+}
+
+export interface NetRevenue {
+  grossCollected: number;
+  refunded: number;
+  expenses: number;
+  netRevenue: number;
+}
+
+/**
+ * grossCollected - refunded - expenses, using the same period-attribution
+ * rule as everywhere else in this module. Replaces computing
+ * `totalCollected - totalExpenses` client-side, which shared the same
+ * refund-exclusion bug the rest of this file used to have.
+ */
+export async function getNetRevenue(branchId?: string, date?: string): Promise<NetRevenue> {
+  const { data } = await apiClient.get<NetRevenue>("/transactions/net-revenue/", {
+    params: { branch: branchId, date },
+  });
+  return data;
 }

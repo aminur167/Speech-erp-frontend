@@ -240,8 +240,15 @@ export function ExpenseListView({
                 expenses={data.results}
                 canApprove={canApprove}
                 isMutating={updateStatus.isPending}
-                onApprove={(id) => updateStatus.mutate({ id, status: "approved" })}
-                onReject={(id) => updateStatus.mutate({ id, status: "rejected" })}
+                onApprove={(id) => updateStatus.mutate({ id, approve: true })}
+                onReject={(id) => {
+                  // The backend requires a reason to reject (and to reverse
+                  // any earlier decision) -- a plain prompt until the
+                  // dedicated reason modal from docs/08 is built.
+                  const reviewNote = window.prompt("Reason for rejecting this expense:");
+                  if (!reviewNote || !reviewNote.trim()) return;
+                  updateStatus.mutate({ id, approve: false, reviewNote });
+                }}
               />
               <Pagination
                 page={page}

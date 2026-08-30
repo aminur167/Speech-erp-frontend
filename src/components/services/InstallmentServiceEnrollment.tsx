@@ -16,7 +16,6 @@ import { PaymentMethodSelector } from "@/components/payments/PaymentMethodSelect
 import { Receipt } from "@/components/payments/Receipt";
 import { useServices } from "@/hooks/services/useServices";
 import { usePatients } from "@/hooks/patients/usePatients";
-import { useCreatePayment } from "@/hooks/payments/useCreatePayment";
 import { useCreateInstallmentPlan } from "@/hooks/enrollments/useCreateInstallmentPlan";
 import { usePayInstallment } from "@/hooks/enrollments/usePayInstallment";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
@@ -59,10 +58,11 @@ export function InstallmentServiceEnrollment() {
   });
   const createPlan = useCreateInstallmentPlan();
   const payInstallmentMutation = usePayInstallment();
-  const createPayment = useCreatePayment();
 
   const stepIndex = STEP_ORDER.indexOf(step);
-  const dueInstallment = plan?.installments.find((installment) => installment.status === "due");
+  const dueInstallment = plan?.installments.find(
+    (installment) => installment.status === "due" || installment.status === "overdue",
+  );
 
   const handleCreatePlan = () => {
     if (!selectedService || !selectedPatient || !user) return;
@@ -70,8 +70,6 @@ export function InstallmentServiceEnrollment() {
       {
         patientId: selectedPatient.id,
         serviceId: selectedService.id,
-        branchId: user.branchId ?? "branch-1",
-        totalAmount: selectedService.fee,
         numberOfInstallments,
       },
       {
@@ -87,27 +85,14 @@ export function InstallmentServiceEnrollment() {
     if (!selectedPatient || !user || !plan || payingIndex == null) return;
     const installment = plan.installments.find((i) => i.index === payingIndex);
     if (!installment) return;
-    createPayment.mutate(
+    // One atomic call -- see the same note in MonthlyServiceEnrollment.
+    payInstallmentMutation.mutate(
+      { planId: plan.id, installmentId: installment.id, method },
       {
-        patientId: selectedPatient.id,
-        amount: installment.amount,
-        method,
-        category: "installment",
-        collectedBy: user.name,
-        branchId: user.branchId ?? "branch-1",
-      },
-      {
-        onSuccess: (createdPayment) => {
-          payInstallmentMutation.mutate(
-            { planId: plan.id, index: payingIndex },
-            {
-              onSuccess: (updated) => {
-                setPlan(updated);
-                setPayment(createdPayment);
-                setStep("receipt");
-              },
-            },
-          );
+        onSuccess: ({ payment: createdPayment, plan: updated }) => {
+          setPlan(updated);
+          setPayment(createdPayment);
+          setStep("receipt");
         },
       },
     );
@@ -251,10 +236,7 @@ export function InstallmentServiceEnrollment() {
               <Button variant="secondary" onClick={() => setStep("schedule")}>
                 ← Back
               </Button>
-              <Button
-                onClick={handleCollectPayment}
-                isLoading={createPayment.isPending || payInstallmentMutation.isPending}
-              >
+              <Button onClick={handleCollectPayment} isLoading={payInstallmentMutation.isPending}>
                 Confirm Payment
               </Button>
             </div>

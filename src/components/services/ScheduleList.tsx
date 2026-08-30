@@ -6,7 +6,9 @@ import type { BillStatus } from "@/types/domain";
 const statusTone: Record<BillStatus, "success" | "warning" | "neutral"> = {
   paid: "success",
   due: "warning",
+  overdue: "warning",
   upcoming: "neutral",
+  written_off: "neutral",
 };
 
 export interface ScheduleItem {
@@ -35,7 +37,7 @@ export function ScheduleList({
           </div>
           <div className="flex items-center gap-3">
             <Badge tone={statusTone[item.status]} label={item.status} />
-            {item.status === "due" && onCollectPayment && (
+            {(item.status === "due" || item.status === "overdue") && onCollectPayment && (
               <Button onClick={() => onCollectPayment(item.key)} disabled={isMutating}>
                 Collect Payment
               </Button>

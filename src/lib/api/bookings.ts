@@ -1,40 +1,47 @@
-import type { Booking } from "@/types/domain";
+import { apiClient } from "@/lib/api/client";
+import type { Booking, Payment, PaymentMethod } from "@/types/domain";
 
-/**
- * Mock implementation — matches the shape/signature this module will have
- * once it calls the real Django/DRF `/bookings/` endpoints.
- */
-
-let bookings: Booking[] = [];
-let sequence = 0;
-
-function delay<T>(value: T, ms = 350): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+interface RawBooking extends Omit<Booking, "id"> {
+  id: number | string;
 }
 
-function generateBookingCode(): string {
-  sequence += 1;
-  const year = new Date().getFullYear();
-  return `BKG-${year}-${String(sequence).padStart(5, "0")}`;
+function normalizeBooking(raw: RawBooking): Booking {
+  return { ...raw, id: String(raw.id) };
 }
 
 export interface CreateBookingInput {
   patientId: string;
   serviceId: string;
-  branchId: string;
   date: string;
   time: string;
-  advanceAmount: number;
+  method: PaymentMethod;
+  idempotencyKey?: string;
 }
 
-export async function createBooking(input: CreateBookingInput): Promise<Booking> {
-  await delay(null);
-  const booking: Booking = {
-    id: `bkg-${Date.now()}`,
-    bookingCode: generateBookingCode(),
-    status: "confirmed",
-    ...input,
+export interface CreateBookingResult {
+  booking: Booking;
+  payment: Payment;
+}
+
+/**
+ * One atomic call: the backend creates the booking and charges its advance
+ * together (advanceAmount is computed server-side from the service's fee --
+ * there's nothing here for a client to tamper with, so it's never sent).
+ */
+export async function createBooking(input: CreateBookingInput): Promise<CreateBookingResult> {
+  const { data } = await apiClient.post<{
+    booking: RawBooking;
+    payment: Payment & { id: number | string };
+  }>("/enrollments/bookings/", {
+    patient: input.patientId,
+    service: input.serviceId,
+    date: input.date,
+    time: input.time,
+    method: input.method,
+    idempotencyKey: input.idempotencyKey,
+  });
+  return {
+    booking: normalizeBooking(data.booking),
+    payment: { ...data.payment, id: String(data.payment.id) },
   };
-  bookings = [booking, ...bookings];
-  return booking;
 }

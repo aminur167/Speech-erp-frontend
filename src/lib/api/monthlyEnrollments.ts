@@ -1,91 +1,82 @@
-import type { MonthlyEnrollment, MonthlyBill } from "@/types/domain";
+import { apiClient } from "@/lib/api/client";
+import type { PaginatedResponse } from "@/types/api";
+import type { MonthlyEnrollment, MonthlyBill, Payment } from "@/types/domain";
 
-/**
- * Mock implementation — matches the shape/signature this module will have
- * once it calls the real Django/DRF `/enrollments/monthly/` endpoints.
- */
-
-function delay<T>(value: T, ms = 350): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+// MonthlyEnrollment/MonthlyBill both have integer primary keys, while every
+// place that refers to one elsewhere (Payment.serviceId, etc.) is a string --
+// same reasoning as Branch/Service. Normalized on the way in.
+interface RawBill extends Omit<MonthlyBill, "id"> {
+  id: number | string;
+}
+interface RawEnrollment extends Omit<MonthlyEnrollment, "id" | "bills"> {
+  id: number | string;
+  bills: RawBill[];
 }
 
-function monthAt(offset: number): { month: string; label: string } {
-  const date = new Date();
-  date.setDate(1);
-  date.setMonth(date.getMonth() + offset);
-  const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-  const label = date.toLocaleString("en-US", { month: "long", year: "numeric" });
-  return { month, label };
+function normalizeEnrollment(raw: RawEnrollment): MonthlyEnrollment {
+  return {
+    ...raw,
+    id: String(raw.id),
+    bills: raw.bills.map((bill) => ({ ...bill, id: String(bill.id) })),
+  };
 }
-
-function seedBills(fee: number): MonthlyBill[] {
-  return [0, 1, 2].map((offset) => {
-    const { month, label } = monthAt(offset);
-    return { month, label, amount: fee, status: offset === 0 ? "due" : "upcoming" };
-  });
-}
-
-let enrollments: MonthlyEnrollment[] = [
-  { id: "menr-seed-1", patientId: "p-4", serviceId: "s-5", branchId: "branch-1", bills: seedBills(5000), status: "active", createdAt: "2026-07-15T09:00:00Z" },
-  { id: "menr-seed-2", patientId: "p-6", serviceId: "s-6", branchId: "branch-1", bills: seedBills(3000), status: "active", createdAt: "2026-08-01T09:00:00Z" },
-];
 
 export async function listMonthlyEnrollments(): Promise<MonthlyEnrollment[]> {
-  await delay(null, 150);
-  return enrollments;
+  const { data } = await apiClient.get<PaginatedResponse<RawEnrollment>>(
+    "/enrollments/monthly/",
+    { params: { pageSize: 500 } },
+  );
+  return data.results.map(normalizeEnrollment);
 }
 
 export interface CreateMonthlyEnrollmentInput {
   patientId: string;
   serviceId: string;
-  branchId: string;
-  fee: number;
 }
 
 export async function createMonthlyEnrollment(
   input: CreateMonthlyEnrollmentInput,
 ): Promise<MonthlyEnrollment> {
-  await delay(null);
-  const enrollment: MonthlyEnrollment = {
-    id: `menr-${Date.now()}`,
-    patientId: input.patientId,
-    serviceId: input.serviceId,
-    branchId: input.branchId,
-    bills: seedBills(input.fee),
-    status: "active",
-    createdAt: new Date().toISOString(),
-  };
-  enrollments = [enrollment, ...enrollments];
-  return enrollment;
+  // No branchId/fee: the backend derives the branch from the authenticated
+  // manager and the fee from the service's own price, never from the body.
+  const { data } = await apiClient.post<RawEnrollment>("/enrollments/monthly/", {
+    patient: input.patientId,
+    service: input.serviceId,
+  });
+  return normalizeEnrollment(data);
 }
 
+export interface PayMonthlyBillResult {
+  payment: Payment;
+  enrollment: MonthlyEnrollment;
+}
+
+/**
+ * Collects a bill in one atomic call -- charges the payment and marks the
+ * bill paid together. The mock's two-step "create payment, then mark paid"
+ * could take money without ever settling the bill if the second call failed.
+ */
 export async function payMonthlyBill(
   enrollmentId: string,
-  month: string,
-): Promise<MonthlyEnrollment> {
-  await delay(null, 250);
-  const enrollment = enrollments.find((e) => e.id === enrollmentId);
-  if (!enrollment) {
-    throw { message: "Enrollment not found.", status: 404 };
-  }
-  const billIndex = enrollment.bills.findIndex((b) => b.month === month);
-  if (billIndex === -1) {
-    throw { message: "Bill not found.", status: 404 };
-  }
-  enrollment.bills[billIndex].status = "paid";
-  enrollment.bills[billIndex].paidAt = new Date().toISOString();
-  if (enrollment.bills[billIndex + 1]) {
-    enrollment.bills[billIndex + 1].status = "due";
-  }
-  return { ...enrollment, bills: [...enrollment.bills] };
+  billId: string,
+  method: string,
+  idempotencyKey?: string,
+): Promise<PayMonthlyBillResult> {
+  const { data } = await apiClient.post<{ payment: Payment & { id: number | string }; enrollment: RawEnrollment }>(
+    `/enrollments/monthly/${enrollmentId}/bills/${billId}/pay/`,
+    { method, idempotencyKey },
+  );
+  return {
+    payment: { ...data.payment, id: String(data.payment.id) },
+    enrollment: normalizeEnrollment(data.enrollment),
+  };
 }
 
-export async function terminateMonthlyEnrollment(enrollmentId: string): Promise<MonthlyEnrollment> {
-  await delay(null, 250);
-  const enrollment = enrollments.find((e) => e.id === enrollmentId);
-  if (!enrollment) {
-    throw { message: "Enrollment not found.", status: 404 };
-  }
-  enrollment.status = "terminated";
-  return { ...enrollment };
+export async function terminateMonthlyEnrollment(
+  enrollmentId: string,
+): Promise<MonthlyEnrollment> {
+  const { data } = await apiClient.post<RawEnrollment>(
+    `/enrollments/monthly/${enrollmentId}/terminate/`,
+  );
+  return normalizeEnrollment(data);
 }

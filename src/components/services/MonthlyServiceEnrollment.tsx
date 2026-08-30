@@ -16,7 +16,6 @@ import { PaymentSummary } from "@/components/payments/PaymentSummary";
 import { Receipt } from "@/components/payments/Receipt";
 import { useServices } from "@/hooks/services/useServices";
 import { usePatients } from "@/hooks/patients/usePatients";
-import { useCreatePayment } from "@/hooks/payments/useCreatePayment";
 import { useCreateMonthlyEnrollment } from "@/hooks/enrollments/useCreateMonthlyEnrollment";
 import { usePayMonthlyBill } from "@/hooks/enrollments/usePayMonthlyBill";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
@@ -56,10 +55,11 @@ export function MonthlyServiceEnrollment() {
   });
   const createEnrollment = useCreateMonthlyEnrollment();
   const payBill = usePayMonthlyBill();
-  const createPayment = useCreatePayment();
 
   const stepIndex = STEP_ORDER.indexOf(step);
-  const dueBill = enrollment?.bills.find((bill) => bill.status === "due");
+  const dueBill = enrollment?.bills.find(
+    (bill) => bill.status === "due" || bill.status === "overdue",
+  );
 
   const handleCreateEnrollment = () => {
     if (!selectedService || !selectedPatient || !user) return;
@@ -67,8 +67,6 @@ export function MonthlyServiceEnrollment() {
       {
         patientId: selectedPatient.id,
         serviceId: selectedService.id,
-        branchId: user.branchId ?? "branch-1",
-        fee: selectedService.fee,
       },
       {
         onSuccess: (created) => {
@@ -83,27 +81,16 @@ export function MonthlyServiceEnrollment() {
     if (!selectedPatient || !user || !enrollment || !payingMonth) return;
     const bill = enrollment.bills.find((b) => b.month === payingMonth);
     if (!bill) return;
-    createPayment.mutate(
+    // One atomic call -- charges the payment and marks the bill paid
+    // together, rather than two separate requests that could leave money
+    // taken without the bill ever settling.
+    payBill.mutate(
+      { enrollmentId: enrollment.id, billId: bill.id, method },
       {
-        patientId: selectedPatient.id,
-        amount: bill.amount,
-        method,
-        category: "monthly",
-        collectedBy: user.name,
-        branchId: user.branchId ?? "branch-1",
-      },
-      {
-        onSuccess: (createdPayment) => {
-          payBill.mutate(
-            { enrollmentId: enrollment.id, month: payingMonth },
-            {
-              onSuccess: (updated) => {
-                setEnrollment(updated);
-                setPayment(createdPayment);
-                setStep("receipt");
-              },
-            },
-          );
+        onSuccess: ({ payment: createdPayment, enrollment: updated }) => {
+          setEnrollment(updated);
+          setPayment(createdPayment);
+          setStep("receipt");
         },
       },
     );
@@ -226,7 +213,7 @@ export function MonthlyServiceEnrollment() {
               </Button>
               <Button
                 onClick={handleCollectPayment}
-                isLoading={createPayment.isPending || payBill.isPending}
+                isLoading={payBill.isPending}
               >
                 Confirm Payment
               </Button>

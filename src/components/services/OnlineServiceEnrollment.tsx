@@ -15,28 +15,19 @@ import { PaymentMethodSelector } from "@/components/payments/PaymentMethodSelect
 import { Receipt } from "@/components/payments/Receipt";
 import { useServices } from "@/hooks/services/useServices";
 import { usePatients } from "@/hooks/patients/usePatients";
-import { useCreatePayment } from "@/hooks/payments/useCreatePayment";
 import { useCreateBooking } from "@/hooks/enrollments/useCreateBooking";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import type { Patient, Service, PaymentMethod, Payment, Booking } from "@/types/domain";
 
-type Step = "service" | "patient" | "datetime" | "payment" | "confirmation" | "receipt";
+type Step = "service" | "patient" | "datetime" | "confirmation" | "receipt";
 
-const STEP_ORDER: Step[] = [
-  "service",
-  "patient",
-  "datetime",
-  "payment",
-  "confirmation",
-  "receipt",
-];
+const STEP_ORDER: Step[] = ["service", "patient", "datetime", "confirmation", "receipt"];
 const STEP_LABELS: Record<Step, string> = {
   service: "Select Service",
   patient: "Search Patient",
-  datetime: "Select Date & Time",
-  payment: "Advance Payment",
+  datetime: "Date, Time & Advance Payment",
   confirmation: "Booking Confirmation",
   receipt: "Receipt",
 };
@@ -75,44 +66,26 @@ export function OnlineServiceEnrollment() {
     pageSize: 5,
   });
   const createBooking = useCreateBooking();
-  const createPayment = useCreatePayment();
 
   const stepIndex = STEP_ORDER.indexOf(step);
 
+  // One atomic call: the backend creates the booking and charges its advance
+  // together, computing the advance amount itself from the service fee --
+  // this used to be two separate requests (create booking, then pay it),
+  // which could leave a booking confirmed with no advance ever collected.
   const handleCreateBooking = () => {
     if (!selectedService || !selectedPatient || !user || !date || !time) return;
-    const advanceAmount = Math.round(selectedService.fee * ADVANCE_RATIO);
     createBooking.mutate(
       {
         patientId: selectedPatient.id,
         serviceId: selectedService.id,
-        branchId: user.branchId ?? "branch-1",
         date,
         time: formatTimeLabel(time),
-        advanceAmount,
-      },
-      {
-        onSuccess: (created) => {
-          setBooking(created);
-          setStep("payment");
-        },
-      },
-    );
-  };
-
-  const handleAdvancePayment = () => {
-    if (!selectedPatient || !user || !booking) return;
-    createPayment.mutate(
-      {
-        patientId: selectedPatient.id,
-        amount: booking.advanceAmount,
         method,
-        category: "online",
-        collectedBy: user.name,
-        branchId: user.branchId ?? "branch-1",
       },
       {
-        onSuccess: (createdPayment) => {
+        onSuccess: ({ booking: created, payment: createdPayment }) => {
+          setBooking(created);
           setPayment(createdPayment);
           setStep("confirmation");
         },
@@ -204,6 +177,13 @@ export function OnlineServiceEnrollment() {
                 max={BOOKING_TIME_RANGE.max}
               />
             </div>
+            <div className="flex justify-between rounded-lg border border-border bg-background p-4 text-sm">
+              <span className="text-text-secondary">Advance Due (est. 50%)</span>
+              <span className="text-lg font-semibold text-primary-dark">
+                {formatCurrency(Math.round(selectedService.fee * ADVANCE_RATIO))}
+              </span>
+            </div>
+            <PaymentMethodSelector value={method} onChange={setMethod} />
             <div className="flex gap-2">
               <Button variant="secondary" onClick={() => setStep("patient")}>
                 ← Back
@@ -213,39 +193,7 @@ export function OnlineServiceEnrollment() {
                 disabled={!date || !time}
                 isLoading={createBooking.isPending}
               >
-                Create Booking
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === "payment" && selectedPatient && booking && (
-          <div className="flex flex-col gap-4">
-            <h2 className="text-sm font-medium text-text-secondary">Advance payment</h2>
-            <div className="flex flex-col gap-2 rounded-lg border border-border bg-background p-4 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Booking</span>
-                <span className="font-mono text-xs text-text-secondary">
-                  {booking.bookingCode}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Date &amp; Time</span>
-                <span className="font-medium text-text-primary">
-                  {booking.date} at {booking.time}
-                </span>
-              </div>
-              <div className="flex justify-between border-t border-border pt-2">
-                <span className="text-text-secondary">Advance Due (50%)</span>
-                <span className="text-lg font-semibold text-primary-dark">
-                  {formatCurrency(booking.advanceAmount)}
-                </span>
-              </div>
-            </div>
-            <PaymentMethodSelector value={method} onChange={setMethod} />
-            <div>
-              <Button onClick={handleAdvancePayment} isLoading={createPayment.isPending}>
-                Pay Advance
+                Create Booking &amp; Pay Advance
               </Button>
             </div>
           </div>

@@ -41,7 +41,7 @@ export function MaterialForm({
   isSubmitting,
 }: {
   initialValues?: Material;
-  onSubmit: (input: Omit<MaterialInput, "branchId">) => void;
+  onSubmit: (input: MaterialInput) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
 }) {

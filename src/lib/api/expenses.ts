@@ -1,48 +1,19 @@
+import { apiClient } from "@/lib/api/client";
+import { toSnakeCase } from "@/lib/api/caseUtils";
 import type { Expense, ExpenseCategory, ExpensePaymentMethod, ExpenseStatus } from "@/types/domain";
 import type { PaginatedResponse } from "@/types/api";
 
-/**
- * Mock implementation — matches the exact shape/signature this module will have
- * once it calls the real Django/DRF `/expenses/` endpoints. Swap the body of
- * each function for a real `apiClient` call later; callers never change.
- */
-
-/** Expenses at or above this amount require Admin approval instead of being auto-approved. */
+/** Expenses at or above this amount require Admin approval instead of being auto-approved. Mirrors EXPENSE_AUTO_APPROVE_THRESHOLD on the backend, which is what actually decides -- this is display-only. */
 export const EXPENSE_AUTO_APPROVE_THRESHOLD = 5000;
 
-let mockExpenses: Expense[] = [
-  { id: "e-1", expenseCode: "EXP-2026-00001", category: "rent", amount: 25000, description: "Monthly branch rent", paidTo: "Gulshan Properties Ltd.", paymentMethod: "bank_transfer", isRecurring: true, branchId: "branch-1", submittedBy: "Branch Manager", status: "approved", createdAt: "2026-08-01T09:00:00Z" },
-  { id: "e-2", expenseCode: "EXP-2026-00002", category: "utilities", amount: 3200, description: "Electricity bill", paidTo: "DPDC", paymentMethod: "cash", isRecurring: true, branchId: "branch-1", submittedBy: "Branch Manager", status: "approved", createdAt: "2026-08-03T09:00:00Z" },
-  { id: "e-3", expenseCode: "EXP-2026-00003", category: "supplies", amount: 1500, description: "Therapy material restock", paidTo: "MediSupply BD", paymentMethod: "cash", isRecurring: false, branchId: "branch-1", submittedBy: "Branch Manager", status: "approved", createdAt: "2026-08-05T09:00:00Z" },
-  { id: "e-4", expenseCode: "EXP-2026-00004", category: "equipment", amount: 12000, description: "New audiometer", paidTo: "Dhaka Medical Supplies", paymentMethod: "bank_transfer", isRecurring: false, branchId: "branch-1", submittedBy: "Branch Manager", status: "pending", createdAt: "2026-08-10T09:00:00Z" },
-  { id: "e-5", expenseCode: "EXP-2026-00005", category: "maintenance", amount: 2500, description: "AC servicing", paidTo: "CoolCare Services", paymentMethod: "cash", isRecurring: false, branchId: "branch-1", submittedBy: "Branch Manager", status: "approved", createdAt: "2026-08-12T09:00:00Z" },
-  { id: "e-6", expenseCode: "EXP-2026-00006", category: "marketing", amount: 8000, description: "Facebook ad campaign", paidTo: "Meta Platforms", paymentMethod: "card", isRecurring: false, branchId: "branch-1", submittedBy: "Branch Manager", status: "pending", createdAt: "2026-08-18T09:00:00Z" },
-  { id: "e-7", expenseCode: "EXP-2026-00007", category: "salaries", amount: 45000, description: "Speech therapist salary", paidTo: "Rina Akter", paymentMethod: "bank_transfer", isRecurring: true, branchId: "branch-1", submittedBy: "Branch Manager", status: "approved", createdAt: "2026-08-20T09:00:00Z" },
-];
-
-let sequence = mockExpenses.length;
-
-function delay<T>(value: T, ms = 350): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+interface RawExpense extends Omit<Expense, "id"> {
+  id: number | string;
 }
-
-function generateExpenseCode(): string {
-  sequence += 1;
-  const year = new Date().getFullYear();
-  return `EXP-${year}-${String(sequence).padStart(5, "0")}`;
+function normalizeExpense(raw: RawExpense): Expense {
+  return { ...raw, id: String(raw.id) };
 }
 
 export type SummaryPeriod = "today" | "month" | "";
-
-/** `date` (an ISO "YYYY-MM-DD" from a date picker) always wins over `period` when both are set. */
-function isWithinPeriod(isoDate: string, period: SummaryPeriod | undefined, date?: string): boolean {
-  const created = new Date(isoDate);
-  if (date) return created.toDateString() === new Date(date).toDateString();
-  if (!period) return true;
-  const now = new Date();
-  if (period === "today") return created.toDateString() === now.toDateString();
-  return created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth();
-}
 
 export interface ExpenseListParams {
   search?: string;
@@ -59,68 +30,26 @@ export interface ExpenseListParams {
 export async function listExpenses(
   params: ExpenseListParams = {},
 ): Promise<PaginatedResponse<Expense>> {
-  const {
-    search = "",
-    status,
-    category,
-    branchId,
-    period,
-    date,
-    page = 1,
-    pageSize = 10,
-  } = params;
-  const query = search.trim().toLowerCase();
-
-  const filtered = mockExpenses.filter((expense) => {
-    if (branchId && expense.branchId !== branchId) return false;
-    if (status && expense.status !== status) return false;
-    if (category && expense.category !== category) return false;
-    if (!isWithinPeriod(expense.createdAt, period, date)) return false;
-    if (!query) return true;
-    return (
-      expense.description.toLowerCase().includes(query) ||
-      expense.expenseCode.toLowerCase().includes(query) ||
-      expense.paidTo.toLowerCase().includes(query) ||
-      expense.category.toLowerCase().includes(query)
-    );
+  const { data } = await apiClient.get<PaginatedResponse<RawExpense>>("/expenses/", {
+    params: {
+      search: params.search,
+      status: params.status,
+      category: params.category,
+      branch: params.branchId,
+      period: params.period || undefined,
+      date: params.date,
+      page: params.page,
+      pageSize: params.pageSize,
+    },
   });
-
-  const sorted = [...filtered].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-
-  const start = (page - 1) * pageSize;
-  const results = sorted.slice(start, start + pageSize);
-
-  await delay(null);
-
-  return {
-    count: filtered.length,
-    next: start + pageSize < filtered.length ? String(page + 1) : null,
-    previous: page > 1 ? String(page - 1) : null,
-    results,
-  };
-}
-
-/** Total expenses recorded on one specific calendar date (ISO "YYYY-MM-DD") — powers the Reports date-picker view. */
-export async function getExpenseTotalForDate(
-  branchId: string | undefined,
-  date: string,
-): Promise<number> {
-  const target = new Date(date).toDateString();
-  return mockExpenses
-    .filter(
-      (expense) =>
-        (!branchId || expense.branchId === branchId) &&
-        new Date(expense.createdAt).toDateString() === target,
-    )
-    .reduce((sum, expense) => sum + expense.amount, 0);
+  return { ...data, results: data.results.map(normalizeExpense) };
 }
 
 export interface ExpenseSummary {
   total: number;
   todayTotal: number;
   monthTotal: number;
+  pendingAmount: number;
   pendingCount: number;
   voucherCount: number;
 }
@@ -129,28 +58,19 @@ export interface ExpenseSummary {
 export async function getExpenseSummary(
   params: { branchId?: string; date?: string } = {},
 ): Promise<ExpenseSummary> {
-  const { branchId, date } = params;
-  const scoped = mockExpenses.filter((expense) => !branchId || expense.branchId === branchId);
+  const { data } = await apiClient.get<ExpenseSummary>("/expenses/summary/", {
+    params: { branch: params.branchId, date: params.date },
+  });
+  return data;
+}
 
-  const target = date ? new Date(date) : new Date();
-  const todayKey = target.toDateString();
-  const monthKey = `${target.getFullYear()}-${target.getMonth()}`;
-
-  const total = scoped.reduce((sum, expense) => sum + expense.amount, 0);
-  const todayTotal = scoped
-    .filter((expense) => new Date(expense.createdAt).toDateString() === todayKey)
-    .reduce((sum, expense) => sum + expense.amount, 0);
-  const monthTotal = scoped
-    .filter((expense) => {
-      const created = new Date(expense.createdAt);
-      return `${created.getFullYear()}-${created.getMonth()}` === monthKey;
-    })
-    .reduce((sum, expense) => sum + expense.amount, 0);
-  const pendingCount = scoped.filter((expense) => expense.status === "pending").length;
-
-  await delay(null, 250);
-
-  return { total, todayTotal, monthTotal, pendingCount, voucherCount: scoped.length };
+/** Total expenses recorded on one specific calendar date — powers the Reports date-picker view. */
+export async function getExpenseTotalForDate(
+  branchId: string | undefined,
+  date: string,
+): Promise<number> {
+  const summary = await getExpenseSummary({ branchId, date });
+  return summary.todayTotal;
 }
 
 export interface CreateExpenseInput {
@@ -161,33 +81,27 @@ export interface CreateExpenseInput {
   paymentMethod: ExpensePaymentMethod;
   remarks?: string;
   isRecurring?: boolean;
-  branchId: string;
-  submittedBy: string;
 }
 
 export async function createExpense(input: CreateExpenseInput): Promise<Expense> {
-  await delay(null);
-  const newExpense: Expense = {
-    id: `e-${Date.now()}`,
-    expenseCode: generateExpenseCode(),
-    isRecurring: false,
-    status: input.amount >= EXPENSE_AUTO_APPROVE_THRESHOLD ? "pending" : "approved",
-    createdAt: new Date().toISOString(),
-    ...input,
-  };
-  mockExpenses = [newExpense, ...mockExpenses];
-  return newExpense;
+  // No branchId/submittedBy: the backend derives both from the authenticated
+  // manager, and computes status itself from the amount vs the configured
+  // threshold -- never trusts a client-posted status.
+  const { data } = await apiClient.post<RawExpense>("/expenses/", toSnakeCase(input));
+  return normalizeExpense(data);
 }
 
-export async function updateExpenseStatus(
-  id: string,
-  status: Extract<ExpenseStatus, "approved" | "rejected">,
-): Promise<Expense> {
-  await delay(null, 250);
-  const expense = mockExpenses.find((e) => e.id === id);
-  if (!expense) {
-    throw { message: "Expense not found.", status: 404 };
-  }
-  expense.status = status;
-  return expense;
+export interface ReviewExpenseInput {
+  id: string;
+  approve: boolean;
+  /** Required when rejecting, and when reversing any earlier decision (docs/08). */
+  reviewNote?: string;
+}
+
+export async function reviewExpense(input: ReviewExpenseInput): Promise<Expense> {
+  const { data } = await apiClient.post<RawExpense>(`/expenses/${input.id}/review/`, {
+    approve: input.approve,
+    reviewNote: input.reviewNote,
+  });
+  return normalizeExpense(data);
 }

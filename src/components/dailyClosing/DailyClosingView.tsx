@@ -60,11 +60,7 @@ export function DailyClosingView({
 
   const handleSubmit = () => {
     if (!user) return;
-    submitClosing.mutate({
-      branchId,
-      actualTotal: actualValue,
-      submittedBy: user.name,
-    });
+    submitClosing.mutate({ actualTotal: actualValue });
   };
 
   const alreadySubmittedToday = useMemo(() => Boolean(todaysClosing), [todaysClosing]);
