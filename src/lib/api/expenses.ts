@@ -6,11 +6,12 @@ import type { PaginatedResponse } from "@/types/api";
 /** Expenses at or above this amount require Admin approval instead of being auto-approved. Mirrors EXPENSE_AUTO_APPROVE_THRESHOLD on the backend, which is what actually decides -- this is display-only. */
 export const EXPENSE_AUTO_APPROVE_THRESHOLD = 5000;
 
-interface RawExpense extends Omit<Expense, "id"> {
+interface RawExpense extends Omit<Expense, "id" | "amount"> {
   id: number | string;
+  amount: number | string;
 }
 function normalizeExpense(raw: RawExpense): Expense {
-  return { ...raw, id: String(raw.id) };
+  return { ...raw, id: String(raw.id), amount: Number(raw.amount) };
 }
 
 export type SummaryPeriod = "today" | "month" | "";
@@ -54,14 +55,35 @@ export interface ExpenseSummary {
   voucherCount: number;
 }
 
+interface RawExpenseSummary
+  extends Omit<ExpenseSummary, "total" | "todayTotal" | "monthTotal" | "pendingAmount"> {
+  // ExpenseSummarySerializer's DecimalField amounts cross the wire as strings
+  // (DRF's default COERCE_DECIMAL_TO_STRING), so this must convert before the
+  // UI does arithmetic or currency formatting on it.
+  total: number | string;
+  todayTotal: number | string;
+  monthTotal: number | string;
+  pendingAmount: number | string;
+}
+
+function normalizeExpenseSummary(raw: RawExpenseSummary): ExpenseSummary {
+  return {
+    ...raw,
+    total: Number(raw.total),
+    todayTotal: Number(raw.todayTotal),
+    monthTotal: Number(raw.monthTotal),
+    pendingAmount: Number(raw.pendingAmount),
+  };
+}
+
 /** `date` (an ISO "YYYY-MM-DD" from a date picker) defaults to today when omitted. */
 export async function getExpenseSummary(
   params: { branchId?: string; date?: string } = {},
 ): Promise<ExpenseSummary> {
-  const { data } = await apiClient.get<ExpenseSummary>("/expenses/summary/", {
+  const { data } = await apiClient.get<RawExpenseSummary>("/expenses/summary/", {
     params: { branch: params.branchId, date: params.date },
   });
-  return data;
+  return normalizeExpenseSummary(data);
 }
 
 /** Total expenses recorded on one specific calendar date — powers the Reports date-picker view. */

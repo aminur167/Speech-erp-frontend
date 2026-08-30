@@ -16,13 +16,14 @@ import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
 import { ExpenseTable } from "@/components/expenses/ExpenseTable";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
+import { RejectExpenseModal } from "@/components/expenses/RejectExpenseModal";
 import { useExpenses } from "@/hooks/expenses/useExpenses";
 import { useExpenseSummary } from "@/hooks/expenses/useExpenseSummary";
 import { useUpdateExpenseStatus } from "@/hooks/expenses/useUpdateExpenseStatus";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { exportToCsv } from "@/utils/exportCsv";
-import type { ExpenseStatus } from "@/types/domain";
+import type { Expense, ExpenseStatus } from "@/types/domain";
 import type { SummaryPeriod } from "@/lib/api/expenses";
 
 const PAGE_SIZE = 10;
@@ -52,6 +53,7 @@ export function ExpenseListView({
   const [date, setDate] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [rejectingExpense, setRejectingExpense] = useState<Expense | null>(null);
 
   const { data, isLoading, isFetching, isError, refetch } = useExpenses({
     search,
@@ -175,7 +177,11 @@ export function ExpenseListView({
           value={formatCurrency(summary?.total ?? 0)}
           icon={Receipt}
           tone="danger"
-          hint={`${summary?.voucherCount ?? 0} vouchers recorded`}
+          hint={
+            summary?.pendingAmount
+              ? `${formatCurrency(summary.pendingAmount)} awaiting approval`
+              : `${summary?.voucherCount ?? 0} vouchers recorded`
+          }
         />
         <StatCard
           label="Today's Expenses"
@@ -242,12 +248,8 @@ export function ExpenseListView({
                 isMutating={updateStatus.isPending}
                 onApprove={(id) => updateStatus.mutate({ id, approve: true })}
                 onReject={(id) => {
-                  // The backend requires a reason to reject (and to reverse
-                  // any earlier decision) -- a plain prompt until the
-                  // dedicated reason modal from docs/08 is built.
-                  const reviewNote = window.prompt("Reason for rejecting this expense:");
-                  if (!reviewNote || !reviewNote.trim()) return;
-                  updateStatus.mutate({ id, approve: false, reviewNote });
+                  const expense = data.results.find((item) => item.id === id);
+                  if (expense) setRejectingExpense(expense);
                 }}
               />
               <Pagination
@@ -273,6 +275,13 @@ export function ExpenseListView({
             onCancel={() => setIsModalOpen(false)}
           />
         </Modal>
+      )}
+
+      {canApprove && (
+        <RejectExpenseModal
+          expense={rejectingExpense}
+          onClose={() => setRejectingExpense(null)}
+        />
       )}
     </div>
   );

@@ -27,6 +27,7 @@ export function ExpenseTable({
             <th className="py-2 pr-4 font-medium">Description</th>
             <th className="py-2 pr-4 font-medium">Paid To</th>
             <th className="py-2 pr-4 font-medium">Amount</th>
+            <th className="py-2 pr-4 font-medium">Notes</th>
             <th className="py-2 pr-4 font-medium">Status</th>
             {canApprove && <th className="py-2 pr-4 font-medium">Actions</th>}
           </tr>
@@ -44,6 +45,29 @@ export function ExpenseTable({
               <td className="py-2 pr-4">{expense.description}</td>
               <td className="py-2 pr-4 text-text-secondary">{expense.paidTo}</td>
               <td className="py-2 pr-4 font-medium">{formatCurrency(expense.amount)}</td>
+              <td className="max-w-[220px] py-2 pr-4">
+                {expense.remarks && (
+                  <p className="truncate text-text-secondary" title={expense.remarks}>
+                    {expense.remarks}
+                  </p>
+                )}
+                {expense.reviewNote && (
+                  <p
+                    className={
+                      expense.status === "rejected"
+                        ? "truncate text-danger"
+                        : "truncate text-text-secondary"
+                    }
+                    title={expense.reviewNote}
+                  >
+                    {expense.reviewedBy ? `${expense.reviewedBy}: ` : ""}
+                    {expense.reviewNote}
+                  </p>
+                )}
+                {!expense.remarks && !expense.reviewNote && (
+                  <span className="text-xs text-text-secondary">—</span>
+                )}
+              </td>
               <td className="py-2 pr-4">
                 <ExpenseStatusBadge status={expense.status} />
               </td>

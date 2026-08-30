@@ -165,6 +165,10 @@ export interface Expense {
   branchId: string;
   submittedBy: string;
   status: ExpenseStatus;
+  /** Set by whoever approved/rejected — required when rejecting or reversing an earlier decision (docs/08). */
+  reviewNote?: string;
+  reviewedBy?: string;
+  reviewedAt?: string | null;
   createdAt: string;
 }
 
