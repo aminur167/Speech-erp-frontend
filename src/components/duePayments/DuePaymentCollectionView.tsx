@@ -17,6 +17,7 @@ import { useDuePaymentsSummary } from "@/hooks/duePayments/useDuePaymentsSummary
 import { useTerminateService } from "@/hooks/duePayments/useTerminateService";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
+import type { ApiError } from "@/types/api";
 import type { DuePaymentItem, DuePaymentType } from "@/lib/api/duePayments";
 
 const PAGE_SIZE = 10;
@@ -42,6 +43,7 @@ export function DuePaymentCollectionView({
   const [page, setPage] = useState(1);
   const [selectedItem, setSelectedItem] = useState<DuePaymentItem | null>(null);
   const [terminatingItem, setTerminatingItem] = useState<DuePaymentItem | null>(null);
+  const [terminateBlockedReason, setTerminateBlockedReason] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = useDuePayments({
     search,
@@ -53,11 +55,28 @@ export function DuePaymentCollectionView({
   const { data: summary } = useDuePaymentsSummary(branchId);
   const terminateService = useTerminateService();
 
+  const closeTerminateDialog = () => {
+    setTerminatingItem(null);
+    setTerminateBlockedReason(null);
+  };
+
   const handleConfirmTerminate = () => {
     if (!terminatingItem) return;
+
+    if (terminateBlockedReason) {
+      // Already blocked once -- the confirm button now offers the remedy
+      // instead of retrying the same call.
+      setSelectedItem(terminatingItem);
+      closeTerminateDialog();
+      return;
+    }
+
     terminateService.mutate(
       { type: terminatingItem.type, refId: terminatingItem.refId },
-      { onSuccess: () => setTerminatingItem(null) },
+      {
+        onSuccess: closeTerminateDialog,
+        onError: (error: ApiError) => setTerminateBlockedReason(error.message),
+      },
     );
   };
 
@@ -127,7 +146,14 @@ export function DuePaymentCollectionView({
               <DuePaymentTable
                 items={data.results}
                 onCollectPayment={readOnly ? undefined : setSelectedItem}
-                onTerminate={readOnly ? undefined : setTerminatingItem}
+                onTerminate={
+                  readOnly
+                    ? undefined
+                    : (item) => {
+                        setTerminateBlockedReason(null);
+                        setTerminatingItem(item);
+                      }
+                }
               />
               <Pagination
                 page={page}
@@ -144,16 +170,17 @@ export function DuePaymentCollectionView({
 
       <ConfirmDialog
         open={Boolean(terminatingItem)}
-        onClose={() => setTerminatingItem(null)}
+        onClose={closeTerminateDialog}
         onConfirm={handleConfirmTerminate}
-        title="Terminate this service?"
+        title={terminateBlockedReason ? "Can't terminate this service" : "Terminate this service?"}
         description={
-          terminatingItem
+          terminateBlockedReason ??
+          (terminatingItem
             ? `${terminatingItem.patientName}'s ${terminatingItem.serviceName} (${terminatingItem.type}) will stop generating due bills. This can't be undone.`
-            : undefined
+            : undefined)
         }
-        confirmLabel="Terminate"
-        danger
+        confirmLabel={terminateBlockedReason ? "Collect Payment" : "Terminate"}
+        danger={!terminateBlockedReason}
         isLoading={terminateService.isPending}
       />
     </div>
