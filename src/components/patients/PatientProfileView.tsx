@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/states";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
+import { OverdueBadge } from "@/components/patients/OverdueBadge";
 import { ScheduleList } from "@/components/services/ScheduleList";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { Pagination } from "@/components/ui/Pagination";
@@ -117,9 +118,17 @@ export function PatientProfileView({
               <p className="mt-0.5 font-mono text-sm text-text-secondary">{patient.patientCode}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Badge tone={statusTone[careStatus]} label={statusLabel[careStatus]} />
+                {patient.serviceStatus === "overdue" && <OverdueBadge />}
                 {patient.gender && <Badge tone="neutral" label={patient.gender} />}
                 {age != null && <Badge tone="neutral" label={`${age} yrs`} />}
               </div>
+              {patient.serviceStatus === "overdue" && (
+                <p className="mt-2 text-sm text-danger">
+                  {formatCurrency(patient.overdueAmount)} overdue
+                  {patient.overdueSince &&
+                    ` since ${new Date(patient.overdueSince).toLocaleDateString()}`}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex gap-6 sm:flex-col sm:items-end sm:gap-3">

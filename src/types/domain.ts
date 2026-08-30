@@ -44,6 +44,11 @@ export interface Patient {
   address?: string;
   branchId: string;
   createdAt: string;
+  /** Derived, never stored — "overdue" when any active enrollment/plan has an unpaid bill past its due date (docs/05). */
+  serviceStatus: "active" | "overdue";
+  overdueAmount: number;
+  /** The oldest overdue due date, ISO "YYYY-MM-DD" — null when not overdue. */
+  overdueSince: string | null;
 }
 
 export type ServiceCategory = "daily" | "monthly" | "installment" | "online";

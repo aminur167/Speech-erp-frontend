@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { OverdueBadge } from "@/components/patients/OverdueBadge";
 import { formatCurrency } from "@/utils/currency";
 import type { DuePaymentItem } from "@/lib/api/duePayments";
 
@@ -25,6 +26,7 @@ export function DuePaymentTable({
             <th className="py-2 pr-4 font-medium">Service</th>
             <th className="py-2 pr-4 font-medium">Due</th>
             <th className="py-2 pr-4 font-medium">Amount</th>
+            <th className="py-2 pr-4 font-medium">Status</th>
             {showActions && <th className="py-2 pr-4 font-medium">Action</th>}
           </tr>
         </thead>
@@ -41,6 +43,13 @@ export function DuePaymentTable({
               <td className="py-2 pr-4">{item.serviceName}</td>
               <td className="py-2 pr-4">{item.label}</td>
               <td className="py-2 pr-4 font-medium">{formatCurrency(item.amount)}</td>
+              <td className="py-2 pr-4">
+                {item.status === "overdue" ? (
+                  <OverdueBadge />
+                ) : (
+                  <Badge tone="warning" label="Due" />
+                )}
+              </td>
               {showActions && (
                 <td className="py-2 pr-4">
                   <div className="flex gap-2">

@@ -3,12 +3,20 @@ import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/utils/currency";
 import type { BillStatus } from "@/types/domain";
 
-const statusTone: Record<BillStatus, "success" | "warning" | "neutral"> = {
+const statusTone: Record<BillStatus, "success" | "warning" | "danger" | "neutral"> = {
   paid: "success",
   due: "warning",
-  overdue: "warning",
+  overdue: "danger",
   upcoming: "neutral",
   written_off: "neutral",
+};
+
+const statusLabel: Record<BillStatus, string> = {
+  paid: "Paid",
+  due: "Due",
+  overdue: "Overdue",
+  upcoming: "Upcoming",
+  written_off: "Written Off",
 };
 
 export interface ScheduleItem {
@@ -36,7 +44,7 @@ export function ScheduleList({
             <p className="text-sm text-text-secondary">{formatCurrency(item.amount)}</p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge tone={statusTone[item.status]} label={item.status} />
+            <Badge tone={statusTone[item.status]} label={statusLabel[item.status]} />
             {(item.status === "due" || item.status === "overdue") && onCollectPayment && (
               <Button onClick={() => onCollectPayment(item.key)} disabled={isMutating}>
                 Collect Payment

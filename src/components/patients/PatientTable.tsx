@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
+import { OverdueBadge } from "@/components/patients/OverdueBadge";
 import type { PatientDirectoryItem } from "@/lib/api/patientDirectory";
 import type { ServiceCategory } from "@/types/domain";
 
@@ -128,7 +129,10 @@ export function PatientTable({
               {columns.paymentType && <td className="py-2 pr-4">{patient.paymentType}</td>}
               {columns.status && (
                 <td className="py-2 pr-4">
-                  <Badge tone={statusTone[patient.status]} label={statusLabel[patient.status]} />
+                  <div className="flex flex-col items-start gap-1.5">
+                    <Badge tone={statusTone[patient.status]} label={statusLabel[patient.status]} />
+                    {patient.serviceStatus === "overdue" && <OverdueBadge />}
+                  </div>
                 </td>
               )}
             </tr>

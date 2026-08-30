@@ -3,6 +3,14 @@ import { toSnakeCase } from "@/lib/api/caseUtils";
 import type { PaginatedResponse } from "@/types/api";
 import type { Patient } from "@/types/domain";
 
+interface RawPatient extends Omit<Patient, "overdueAmount"> {
+  overdueAmount: string;
+}
+
+function normalizePatient(raw: RawPatient): Patient {
+  return { ...raw, overdueAmount: Number(raw.overdueAmount) };
+}
+
 export interface PatientListParams {
   search?: string;
   page?: number;
@@ -12,15 +20,15 @@ export interface PatientListParams {
 export async function listPatients(
   params: PatientListParams = {},
 ): Promise<PaginatedResponse<Patient>> {
-  const { data } = await apiClient.get<PaginatedResponse<Patient>>("/patients/", {
+  const { data } = await apiClient.get<PaginatedResponse<RawPatient>>("/patients/", {
     params: { search: params.search, page: params.page, pageSize: params.pageSize },
   });
-  return data;
+  return { ...data, results: data.results.map(normalizePatient) };
 }
 
 export async function getPatient(id: string): Promise<Patient> {
-  const { data } = await apiClient.get<Patient>(`/patients/${id}/`);
-  return data;
+  const { data } = await apiClient.get<RawPatient>(`/patients/${id}/`);
+  return normalizePatient(data);
 }
 
 export interface CreatePatientInput {

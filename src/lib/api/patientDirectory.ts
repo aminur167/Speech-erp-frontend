@@ -33,14 +33,20 @@ export interface PatientDirectoryItem {
   /** Every payment method this patient has ever paid with — powers the payment-type filter. */
   paymentMethods: PaymentMethod[];
   createdAt: string;
+  /** Derived, never stored — "overdue" when any active enrollment/plan has an unpaid bill past its due date (docs/05). */
+  serviceStatus: "active" | "overdue";
+  overdueAmount: number;
+  /** The oldest overdue due date, ISO "YYYY-MM-DD" — null when not overdue. */
+  overdueSince: string | null;
 }
 
-interface RawDirectoryItem extends Omit<PatientDirectoryItem, "id"> {
+interface RawDirectoryItem extends Omit<PatientDirectoryItem, "id" | "overdueAmount"> {
   id: number | string;
+  overdueAmount: number | string;
 }
 
 function normalizeItem(raw: RawDirectoryItem): PatientDirectoryItem {
-  return { ...raw, id: String(raw.id) };
+  return { ...raw, id: String(raw.id), overdueAmount: Number(raw.overdueAmount) };
 }
 
 /**
