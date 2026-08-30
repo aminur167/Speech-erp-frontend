@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { useCreatePatient } from "@/hooks/patients/useCreatePatient";
-import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/types/api";
 import type { Patient } from "@/types/domain";
 
@@ -15,14 +14,21 @@ const patientSchema = z.object({
   name: z.string().min(2, "Full name is required."),
   phone: z.string().min(6, "Enter a valid phone number."),
   email: z.union([z.string().email("Enter a valid email address."), z.literal("")]).optional(),
-  gender: z.union([z.enum(["male", "female", "other"]), z.literal("")]).optional(),
-  dateOfBirth: z.string().optional(),
+  // Required on create (docs/02) — matching client-side here so the error
+  // shows instantly instead of only after a round trip to the server.
+  gender: z.enum(["male", "female", "other"], { message: "Gender is required." }),
+  dateOfBirth: z.string().min(1, "Date of birth is required."),
   guardianName: z.string().optional(),
   guardianRelation: z.union([
     z.enum(["father", "mother", "guardian", "other"]),
     z.literal(""),
   ]).optional(),
-  address: z.string().optional(),
+  // Not marked required here: whether it's actually needed depends on the
+  // patient's age, and the backend is the one that knows the cutoff and
+  // enforces it (docs/02) — a validation error comes back on this field when
+  // it applies, surfaced the same way as any other server-side error below.
+  guardianPhone: z.string().optional(),
+  address: z.string().min(1, "Address is required."),
 });
 
 type PatientFormValues = z.infer<typeof patientSchema>;
@@ -34,7 +40,6 @@ export function PatientRegistrationForm({
   onSuccess: (patient: Patient) => void;
   onCancel: () => void;
 }) {
-  const user = useAuthStore((state) => state.user);
   const createPatient = useCreatePatient();
 
   const {
@@ -51,7 +56,6 @@ export function PatientRegistrationForm({
         email: values.email || undefined,
         gender: values.gender || undefined,
         guardianRelation: values.guardianRelation || undefined,
-        branchId: user?.branchId ?? "branch-1",
       },
       {
         onSuccess,
@@ -75,13 +79,18 @@ export function PatientRegistrationForm({
         error={errors.email?.message}
         {...register("email")}
       />
-      <Select defaultValue="" {...register("gender")}>
-        <option value="">Gender (optional)</option>
+      <Select defaultValue="" error={errors.gender?.message} {...register("gender")}>
+        <option value="">Gender</option>
         <option value="male">Male</option>
         <option value="female">Female</option>
         <option value="other">Other</option>
       </Select>
-      <Input type="date" aria-label="Date of Birth" {...register("dateOfBirth")} />
+      <Input
+        type="date"
+        aria-label="Date of Birth"
+        error={errors.dateOfBirth?.message}
+        {...register("dateOfBirth")}
+      />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input placeholder="Guardian Name (optional)" {...register("guardianName")} />
         <Select defaultValue="" {...register("guardianRelation")}>
@@ -92,7 +101,16 @@ export function PatientRegistrationForm({
           <option value="other">Other</option>
         </Select>
       </div>
-      <Input placeholder="Address (optional)" {...register("address")} />
+      <Input
+        placeholder="Guardian Phone (required if the patient is a minor)"
+        error={errors.guardianPhone?.message}
+        {...register("guardianPhone")}
+      />
+      <Input
+        placeholder="Address *"
+        error={errors.address?.message}
+        {...register("address")}
+      />
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel

@@ -171,7 +171,7 @@ export function SellMaterialsView() {
       return;
     }
     createPatient.mutate(
-      { name, phone, branchId },
+      { name, phone },
       {
         onSuccess: (patient) => {
           setSelectedPatient(patient);

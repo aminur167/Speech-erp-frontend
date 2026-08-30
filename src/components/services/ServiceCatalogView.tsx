@@ -131,7 +131,6 @@ export function ServiceCatalogView({
         Category: service.category,
         Fee: service.fee,
         "Original Fee": service.originalFee ?? "",
-        "Registration Fee": service.registrationFee ?? "",
         Duration: service.durationLabel ?? "",
         Sessions: service.sessionsLabel ?? "",
         Expiry: service.expiryLabel ?? "",

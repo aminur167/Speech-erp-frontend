@@ -6,6 +6,16 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "speech-erp-backend",
+      "runtimeExecutable": "E:\\Speech ERP System Backend\\.venv\\Scripts\\python.exe",
+      "runtimeArgs": [
+        "E:\\Speech ERP System Backend\\manage.py",
+        "runserver",
+        "0.0.0.0:8000"
+      ],
+      "port": 8000
     }
   ]
 }

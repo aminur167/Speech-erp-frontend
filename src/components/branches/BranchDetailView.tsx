@@ -174,7 +174,9 @@ export function BranchDetailView({ branchId }: { branchId: string }) {
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-text-secondary">Password</span>
-            <span className="font-mono text-text-primary">{branch.managerPassword}</span>
+            <span className="font-mono text-text-secondary">
+              ●●●●●●●● <span className="text-xs">(hashed, not retrievable)</span>
+            </span>
           </div>
         </Card>
       </div>

@@ -1,24 +1,13 @@
-import { listInstallmentPlans } from "@/lib/api/installmentPlans";
-import { listMonthlyEnrollments } from "@/lib/api/monthlyEnrollments";
+import { apiClient } from "@/lib/api/client";
 
 /**
- * Live "N enrolled" counts per service, derived from actual active installment
- * plans and monthly enrollments — not a stored/fabricated field. Daily and
- * online services have no subscription concept, so they're simply absent here.
+ * Live "N enrolled" counts per service. The backend computes this directly
+ * from active installment plans and monthly enrollments in one aggregate
+ * query (GET /services/enrollment-counts/) — fetching both full lists here
+ * and reducing them client-side, as this used to, would mean an extra
+ * waterfall for a number the API already provides.
  */
 export async function getServiceEnrollmentCounts(): Promise<Record<string, number>> {
-  const [plans, enrollments] = await Promise.all([
-    listInstallmentPlans(),
-    listMonthlyEnrollments(),
-  ]);
-  const counts: Record<string, number> = {};
-  for (const plan of plans) {
-    if (plan.status !== "active") continue;
-    counts[plan.serviceId] = (counts[plan.serviceId] ?? 0) + 1;
-  }
-  for (const enrollment of enrollments) {
-    if (enrollment.status !== "active") continue;
-    counts[enrollment.serviceId] = (counts[enrollment.serviceId] ?? 0) + 1;
-  }
-  return counts;
+  const { data } = await apiClient.get<Record<string, number>>("/services/enrollment-counts/");
+  return data;
 }

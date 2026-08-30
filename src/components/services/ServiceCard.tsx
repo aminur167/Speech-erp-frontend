@@ -49,10 +49,6 @@ export function ServiceCard({
   const meta = [
     service.durationLabel && { label: "Duration", value: service.durationLabel },
     service.sessionsLabel && { label: "Sessions", value: service.sessionsLabel },
-    typeof service.registrationFee === "number" && {
-      label: "Registration Fee",
-      value: service.registrationFee > 0 ? formatCurrency(service.registrationFee) : "Free",
-    },
     service.expiryLabel && { label: "Expiry", value: service.expiryLabel },
   ].filter(Boolean) as { label: string; value: string }[];
 

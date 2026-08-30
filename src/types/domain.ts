@@ -21,7 +21,6 @@ export interface Branch {
   managerCode: string; // e.g. MGR-DHK-001
   /** Login used by this branch's manager account — set by Admin when creating/editing the branch. */
   managerEmail: string;
-  managerPassword: string;
   therapistCount: number;
   supportCount: number;
   openedAt: string; // ISO date
@@ -40,6 +39,8 @@ export interface Patient {
   dateOfBirth?: string;
   guardianName?: string;
   guardianRelation?: GuardianRelation;
+  /** Required when the patient is a minor (docs/02). */
+  guardianPhone?: string;
   address?: string;
   branchId: string;
   createdAt: string;
@@ -57,8 +58,6 @@ export interface Service {
   description?: string;
   /** "Before discount" price — when set and greater than `fee`, the card shows it struck through. */
   originalFee?: number;
-  /** One-time signup fee charged separately from the recurring/package fee. */
-  registrationFee?: number;
   /** Free-text duration, e.g. "1 Day", "3 Days – 3 Months", "1 Month (auto-renew)". */
   durationLabel?: string;
   /** Free-text session count, e.g. "1 Session", "12 Sessions". */

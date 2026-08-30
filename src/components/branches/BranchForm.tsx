@@ -28,7 +28,7 @@ function buildBranchSchema(isEditing: boolean) {
     managerEmail: z.string().email("Enter a valid email address."),
     managerPassword: isEditing
       ? z.string().optional()
-      : z.string().min(6, "Password must be at least 6 characters."),
+      : z.string().min(8, "Password must be at least 8 characters."),
     phone: z.string().min(5, "Phone number is required."),
     address: z.string().min(5, "Address is required."),
     therapistCount: z
