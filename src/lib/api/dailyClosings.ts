@@ -1,11 +1,19 @@
 import { apiClient } from "@/lib/api/client";
-import type { DailyClosing, PaymentMethod } from "@/types/domain";
+import type { DailyClosing, DailyClosingAmendment, PaymentMethod } from "@/types/domain";
 
-interface RawClosing extends Omit<DailyClosing, "id"> {
+interface RawAmendment extends Omit<DailyClosingAmendment, "id"> {
   id: number | string;
 }
+interface RawClosing extends Omit<DailyClosing, "id" | "amendments"> {
+  id: number | string;
+  amendments: RawAmendment[];
+}
 function normalizeClosing(raw: RawClosing): DailyClosing {
-  return { ...raw, id: String(raw.id) };
+  return {
+    ...raw,
+    id: String(raw.id),
+    amendments: raw.amendments.map((a) => ({ ...a, id: String(a.id) })),
+  };
 }
 
 /** Pure date formatting, no network call -- also reused by BranchForm for an unrelated date default. */
@@ -19,17 +27,33 @@ export function todayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
+export interface AdjustmentItem {
+  receiptNumber: string;
+  patientName: string;
+  method: PaymentMethod;
+  amount: number;
+  status: string;
+  createdAt: string;
+}
+
 export interface TodayCollectionSummary {
   total: number;
   transactionCount: number;
   byMethod: { method: PaymentMethod; amount: number }[];
+  adjustments: {
+    refundedTotal: number;
+    voidTotal: number;
+    items: AdjustmentItem[];
+  };
 }
 
 /**
  * `date` (an ISO "YYYY-MM-DD" from a date picker) defaults to today when
  * omitted. Cash-drawer reconciliation, not accrual revenue: excludes
  * refunded/partial/void payments server-side, since a payment taken and then
- * refunded put no net cash in the drawer (docs/09).
+ * refunded put no net cash in the drawer (docs/09). `adjustments` itemizes
+ * exactly those excluded refunds/voids, so a manager staring at a short
+ * drawer can see what moved the money instead of just a smaller number.
  */
 export async function getTodaySystemCollection(
   branchId?: string,
@@ -61,6 +85,26 @@ export async function submitDailyClosing(input: SubmitDailyClosingInput): Promis
   // balanced when it didn't (docs/09).
   const { data } = await apiClient.post<RawClosing>("/daily-closing/", {
     actualTotal: input.actualTotal,
+  });
+  return normalizeClosing(data);
+}
+
+export interface AmendClosingInput {
+  id: string;
+  correctedActualTotal: number;
+  reason: string;
+}
+
+/**
+ * Admin-only correction to an already-submitted closing. Never edits in
+ * place: the original actualTotal survives on the new amendment row, and
+ * difference/status are recomputed server-side from the correction, not
+ * accepted from the request (docs/09).
+ */
+export async function amendClosing(input: AmendClosingInput): Promise<DailyClosing> {
+  const { data } = await apiClient.post<RawClosing>(`/daily-closing/${input.id}/amend/`, {
+    correctedActualTotal: input.correctedActualTotal,
+    reason: input.reason,
   });
   return normalizeClosing(data);
 }

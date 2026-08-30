@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Wallet, Receipt, CheckCircle2 } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
+import { Wallet, Receipt, CheckCircle2, Undo2, Ban, PencilLine } from "lucide-react";
 import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -9,13 +9,14 @@ import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { AmendClosingModal } from "@/components/dailyClosing/AmendClosingModal";
 import { useTodaySystemCollection } from "@/hooks/dailyClosing/useTodaySystemCollection";
 import { useDailyClosingHistory } from "@/hooks/dailyClosing/useDailyClosingHistory";
 import { useSubmitDailyClosing } from "@/hooks/dailyClosing/useSubmitDailyClosing";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { todayDateString } from "@/lib/api/dailyClosings";
-import type { DailyClosingStatus } from "@/types/domain";
+import type { DailyClosing, DailyClosingStatus } from "@/types/domain";
 
 const statusTone: Record<DailyClosingStatus, "success" | "warning" | "danger"> = {
   matched: "success",
@@ -46,6 +47,7 @@ export function DailyClosingView({
   const branchId = branchIdOverride ?? user?.branchId ?? "branch-1";
 
   const [actualTotal, setActualTotal] = useState("");
+  const [amendingClosing, setAmendingClosing] = useState<DailyClosing | null>(null);
 
   const { data: summary, isLoading: summaryLoading } = useTodaySystemCollection(branchId);
   const { data: history, isLoading: historyLoading } = useDailyClosingHistory(branchId);
@@ -122,6 +124,61 @@ export function DailyClosingView({
         )}
       </Card>
 
+      {summary && summary.adjustments.items.length > 0 && (
+        <Card className="border-warning/30 bg-warning/5">
+          <h2 className="text-sm font-medium text-text-secondary">
+            Adjustments Today — why the drawer may be short
+          </h2>
+          <p className="mt-1 text-xs text-text-secondary">
+            Refunds and voids are excluded from System Collection above, since
+            no net cash moved (a refund pays out, a void never happened) —
+            they&apos;re listed here so today&apos;s difference has an explanation.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-lg border border-border bg-surface px-3 py-2">
+              <p className="flex items-center gap-1.5 text-text-secondary">
+                <Undo2 className="h-3.5 w-3.5" /> Refunded
+              </p>
+              <p className="font-medium text-text-primary">
+                {formatCurrency(summary.adjustments.refundedTotal)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-2">
+              <p className="flex items-center gap-1.5 text-text-secondary">
+                <Ban className="h-3.5 w-3.5" /> Voided
+              </p>
+              <p className="font-medium text-text-primary">
+                {formatCurrency(summary.adjustments.voidTotal)}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-col divide-y divide-border">
+            {summary.adjustments.items.map((item) => (
+              <div
+                key={item.receiptNumber}
+                className="flex items-center justify-between gap-3 py-2 text-sm"
+              >
+                <div>
+                  <p className="font-medium text-text-primary">{item.patientName}</p>
+                  <p className="font-mono text-xs text-text-secondary">
+                    {item.receiptNumber} · {item.method.replace("_", " ")}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium text-text-primary">
+                    {formatCurrency(item.amount)}
+                  </p>
+                  <Badge
+                    tone={item.status === "void" ? "danger" : "purple"}
+                    label={item.status}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {alreadySubmittedToday && todaysClosing ? (
         <Card className="border-success/30 bg-success/5">
           <div className="flex items-center gap-3">
@@ -157,11 +214,12 @@ export function DailyClosingView({
             </div>
             <div>
               <dt className="text-text-secondary">Status</dt>
-              <dd>
+              <dd className="flex items-center gap-2">
                 <Badge
                   tone={statusTone[todaysClosing.status]}
                   label={statusLabel[todaysClosing.status]}
                 />
+                {todaysClosing.isAmended && <Badge tone="info" label="Amended" />}
               </dd>
             </div>
           </dl>
@@ -252,22 +310,59 @@ export function DailyClosingView({
                     <th className="py-2 pr-4 font-medium">Actual Total</th>
                     <th className="py-2 pr-4 font-medium">Difference</th>
                     <th className="py-2 pr-4 font-medium">Status</th>
+                    {readOnly && <th className="py-2 pr-4 font-medium">Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {history.map((closing) => (
-                    <tr key={closing.id} className="border-b border-border last:border-0">
-                      <td className="py-2 pr-4">{closing.date}</td>
-                      <td className="py-2 pr-4">{formatCurrency(closing.systemTotal)}</td>
-                      <td className="py-2 pr-4">{formatCurrency(closing.actualTotal)}</td>
-                      <td className="py-2 pr-4">{formatCurrency(closing.difference)}</td>
-                      <td className="py-2 pr-4">
-                        <Badge
-                          tone={statusTone[closing.status]}
-                          label={statusLabel[closing.status]}
-                        />
-                      </td>
-                    </tr>
+                    <Fragment key={closing.id}>
+                      <tr className="border-b border-border last:border-0">
+                        <td className="py-2 pr-4">
+                          {closing.date}
+                          {closing.isAmended && (
+                            <Badge tone="info" label="Amended" className="ml-2" />
+                          )}
+                        </td>
+                        <td className="py-2 pr-4">{formatCurrency(closing.systemTotal)}</td>
+                        <td className="py-2 pr-4">{formatCurrency(closing.actualTotal)}</td>
+                        <td className="py-2 pr-4">{formatCurrency(closing.difference)}</td>
+                        <td className="py-2 pr-4">
+                          <Badge
+                            tone={statusTone[closing.status]}
+                            label={statusLabel[closing.status]}
+                          />
+                        </td>
+                        {readOnly && (
+                          <td className="py-2 pr-4">
+                            <button
+                              type="button"
+                              title="Correct this closing"
+                              onClick={() => setAmendingClosing(closing)}
+                              className="rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-primary-light hover:text-primary"
+                            >
+                              <PencilLine className="h-4 w-4" />
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                      {closing.isAmended && (
+                        <tr className="border-b border-border last:border-0 bg-background">
+                          <td colSpan={readOnly ? 6 : 5} className="px-4 py-2">
+                            <div className="flex flex-col gap-1">
+                              {closing.amendments.map((amendment) => (
+                                <p key={amendment.id} className="text-xs text-text-secondary">
+                                  {formatCurrency(amendment.previousActualTotal)} →{" "}
+                                  {formatCurrency(amendment.correctedActualTotal)} by{" "}
+                                  {amendment.amendedBy} on{" "}
+                                  {new Date(amendment.amendedAt).toLocaleString()} —{" "}
+                                  &quot;{amendment.reason}&quot;
+                                </p>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
@@ -275,6 +370,8 @@ export function DailyClosingView({
           )}
         </div>
       </Card>
+
+      <AmendClosingModal closing={amendingClosing} onClose={() => setAmendingClosing(null)} />
     </div>
   );
 }

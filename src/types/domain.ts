@@ -224,6 +224,15 @@ export interface Booking {
 
 export type DailyClosingStatus = "matched" | "over" | "short";
 
+export interface DailyClosingAmendment {
+  id: string;
+  previousActualTotal: number;
+  correctedActualTotal: number;
+  reason: string;
+  amendedBy: string;
+  amendedAt: string;
+}
+
 export interface DailyClosing {
   id: string;
   branchId: string;
@@ -234,6 +243,8 @@ export interface DailyClosing {
   status: DailyClosingStatus;
   submittedBy: string;
   submittedAt: string;
+  isAmended: boolean;
+  amendments: DailyClosingAmendment[];
 }
 
 export type MaterialUnit = "piece" | "box" | "packet" | "set" | "bottle" | "other";

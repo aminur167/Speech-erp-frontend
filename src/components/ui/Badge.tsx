@@ -15,7 +15,15 @@ const toneStyles: Record<Tone, { bg: string; text: string; dot: string }> = {
   },
 };
 
-export function Badge({ tone, label }: { tone: Tone; label: string }) {
+export function Badge({
+  tone,
+  label,
+  className,
+}: {
+  tone: Tone;
+  label: string;
+  className?: string;
+}) {
   const styles = toneStyles[tone];
   return (
     <span
@@ -23,6 +31,7 @@ export function Badge({ tone, label }: { tone: Tone; label: string }) {
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium capitalize",
         styles.bg,
         styles.text,
+        className,
       )}
     >
       <span className={clsx("h-1.5 w-1.5 rounded-full", styles.dot)} />
