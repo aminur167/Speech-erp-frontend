@@ -1,18 +1,40 @@
 import { apiClient } from "@/lib/api/client";
 import type { DailyClosing, DailyClosingAmendment, PaymentMethod } from "@/types/domain";
 
-interface RawAmendment extends Omit<DailyClosingAmendment, "id"> {
+// DailyClosingSerializer/AmendmentSerializer's amount fields are real
+// DRF DecimalFields, so they cross the wire as JSON strings
+// (COERCE_DECIMAL_TO_STRING) -- normalized to numbers here, same as the id
+// fields.
+interface RawAmendment
+  extends Omit<DailyClosingAmendment, "id" | "previousActualTotal" | "correctedActualTotal"> {
   id: number | string;
+  previousActualTotal: number | string;
+  correctedActualTotal: number | string;
 }
-interface RawClosing extends Omit<DailyClosing, "id" | "amendments"> {
+interface RawClosing
+  extends Omit<DailyClosing, "id" | "amendments" | "systemTotal" | "actualTotal" | "difference"> {
   id: number | string;
+  systemTotal: number | string;
+  actualTotal: number | string;
+  difference: number | string;
   amendments: RawAmendment[];
+}
+function normalizeAmendment(a: RawAmendment): DailyClosingAmendment {
+  return {
+    ...a,
+    id: String(a.id),
+    previousActualTotal: Number(a.previousActualTotal),
+    correctedActualTotal: Number(a.correctedActualTotal),
+  };
 }
 function normalizeClosing(raw: RawClosing): DailyClosing {
   return {
     ...raw,
     id: String(raw.id),
-    amendments: raw.amendments.map((a) => ({ ...a, id: String(a.id) })),
+    systemTotal: Number(raw.systemTotal),
+    actualTotal: Number(raw.actualTotal),
+    difference: Number(raw.difference),
+    amendments: raw.amendments.map(normalizeAmendment),
   };
 }
 

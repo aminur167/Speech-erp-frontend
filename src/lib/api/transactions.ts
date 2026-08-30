@@ -17,11 +17,15 @@ export interface TransactionItem extends Payment {
   patientCode: string;
 }
 
-interface RawTransactionItem extends Omit<TransactionItem, "id"> {
+// PaymentSerializer's `amount` is a real DRF DecimalField, so it crosses the
+// wire as a JSON string (COERCE_DECIMAL_TO_STRING) -- normalized here too,
+// same as the id field.
+interface RawTransactionItem extends Omit<TransactionItem, "id" | "amount"> {
   id: number | string;
+  amount: number | string;
 }
 function normalizeItem(raw: RawTransactionItem): TransactionItem {
-  return { ...raw, id: String(raw.id) };
+  return { ...raw, id: String(raw.id), amount: Number(raw.amount) };
 }
 
 export type SummaryPeriod = "today" | "month" | "";
