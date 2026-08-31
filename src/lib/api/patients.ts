@@ -36,18 +36,31 @@ export interface CreatePatientInput {
   phone: string;
   email?: string;
   gender?: Patient["gender"];
+  bloodGroup?: Patient["bloodGroup"];
   dateOfBirth?: string;
   guardianName?: string;
   guardianRelation?: Patient["guardianRelation"];
   /** Required when the patient is a minor (docs/02) — the backend enforces this, not the form. */
   guardianPhone?: string;
+  emergencyContact?: string;
   address?: string;
+  referredBy?: string;
+  chiefComplaint?: string;
+  nationalId?: string;
+  notes?: string;
 }
 
 export async function createPatient(input: CreatePatientInput): Promise<Patient> {
   // No branchId: the backend always assigns the authenticated manager's own
   // branch and ignores anything posted here, the same rule as every other
   // branch-scoped create endpoint.
-  const { data } = await apiClient.post<Patient>("/patients/", toSnakeCase(input));
-  return data;
+  const { data } = await apiClient.post<RawPatient>("/patients/", toSnakeCase(input));
+  return normalizePatient(data);
+}
+
+export type UpdatePatientInput = Partial<CreatePatientInput> & { status?: Patient["status"] };
+
+export async function updatePatient(id: string, input: UpdatePatientInput): Promise<Patient> {
+  const { data } = await apiClient.patch<RawPatient>(`/patients/${id}/`, toSnakeCase(input));
+  return normalizePatient(data);
 }

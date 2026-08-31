@@ -28,6 +28,8 @@ export interface Branch {
 
 export type Gender = "male" | "female" | "other";
 export type GuardianRelation = "father" | "mother" | "guardian" | "other";
+export type BloodGroup = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
+export type PatientStatus = "active" | "inactive";
 
 export interface Patient {
   id: string;
@@ -36,12 +38,21 @@ export interface Patient {
   phone: string;
   email?: string;
   gender?: Gender;
+  bloodGroup?: BloodGroup;
   dateOfBirth?: string;
   guardianName?: string;
   guardianRelation?: GuardianRelation;
   /** Required when the patient is a minor (docs/02). */
   guardianPhone?: string;
+  emergencyContact?: string;
   address?: string;
+  /** Who referred the patient — a person's name, another clinic, etc. Free text. */
+  referredBy?: string;
+  /** The reason for the visit / presenting complaint, as given at intake. */
+  chiefComplaint?: string;
+  nationalId?: string;
+  notes?: string;
+  status: PatientStatus;
   branchId: string;
   createdAt: string;
   /** Derived, never stored — "overdue" when any active enrollment/plan has an unpaid bill past its due date (docs/05). */

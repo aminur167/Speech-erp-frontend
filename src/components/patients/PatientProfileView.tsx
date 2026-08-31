@@ -1,7 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Phone, Mail, Cake, MapPin, UserRound, CalendarPlus, type LucideIcon } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  Cake,
+  MapPin,
+  UserRound,
+  CalendarPlus,
+  Droplet,
+  PhoneCall,
+  Users,
+  IdCard,
+  FileText,
+  type LucideIcon,
+} from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/states";
@@ -151,6 +164,14 @@ export function PatientProfileView({
           <InfoItem icon={Cake} label="Date of Birth" value={patient.dateOfBirth ?? "—"} />
           <InfoItem icon={UserRound} label="Guardian" value={guardianValue} />
           <InfoItem icon={MapPin} label="Address" value={patient.address || "—"} />
+          <InfoItem icon={Droplet} label="Blood Group" value={patient.bloodGroup || "—"} />
+          <InfoItem
+            icon={PhoneCall}
+            label="Emergency Contact"
+            value={patient.emergencyContact || "—"}
+          />
+          <InfoItem icon={Users} label="Referred By" value={patient.referredBy || "—"} />
+          <InfoItem icon={IdCard} label="National ID" value={patient.nationalId || "—"} />
           <InfoItem
             icon={CalendarPlus}
             label="Patient Since"
@@ -161,6 +182,33 @@ export function PatientProfileView({
             })}
           />
         </div>
+
+        {(patient.chiefComplaint || patient.notes) && (
+          <div className="mt-4 grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-2">
+            {patient.chiefComplaint && (
+              <div className="flex items-start gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary-dark">
+                  <FileText className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs text-text-secondary">Chief Complaint</p>
+                  <p className="text-sm text-text-primary">{patient.chiefComplaint}</p>
+                </div>
+              </div>
+            )}
+            {patient.notes && (
+              <div className="flex items-start gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary-dark">
+                  <FileText className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs text-text-secondary">Notes</p>
+                  <p className="text-sm text-text-primary">{patient.notes}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
 
       <Card>
