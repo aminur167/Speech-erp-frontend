@@ -3,6 +3,7 @@ import { apiClient } from "@/lib/api/client";
 import { useAuthTokenStore } from "@/store/authTokenStore";
 import { useAuthStore } from "@/store/authStore";
 import { getRefreshToken, setRefreshToken } from "@/lib/api/authTokenPersistence";
+import { toSnakeCase } from "@/lib/api/caseUtils";
 
 interface RawUser {
   id: number | string;
@@ -89,4 +90,13 @@ export interface UpdateProfileInput {
 export async function updateProfile(input: UpdateProfileInput): Promise<AuthUser> {
   const { data } = await apiClient.patch("/auth/profile/", { name: input.name });
   return normalizeUser(data);
+}
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export async function changePassword(input: ChangePasswordInput): Promise<void> {
+  await apiClient.post("/auth/change-password/", toSnakeCase(input));
 }

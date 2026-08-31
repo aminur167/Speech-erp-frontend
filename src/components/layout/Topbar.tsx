@@ -3,6 +3,7 @@
 import { Menu, LogOut } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { logout as logoutOnServer } from "@/lib/api/auth";
 import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
 import { useBranches } from "@/hooks/branches/useBranches";
@@ -45,8 +46,12 @@ export function Topbar() {
         <button
           type="button"
           onClick={() => {
+            // Clear local state immediately so the UI reacts instantly; the
+            // server-side blacklist call is best-effort and must never block
+            // getting the user off a screen they think is already logged out.
             logout();
             router.push("/login");
+            void logoutOnServer();
           }}
           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-primary-light hover:text-text-primary"
         >
