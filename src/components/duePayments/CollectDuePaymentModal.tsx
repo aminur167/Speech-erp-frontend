@@ -9,6 +9,7 @@ import { useCollectDuePayment } from "@/hooks/duePayments/useCollectDuePayment";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
+import { generateIdempotencyKey } from "@/lib/offline/idempotency";
 import type { DuePaymentItem } from "@/lib/api/duePayments";
 import type { PaymentMethod, Payment } from "@/types/domain";
 
@@ -34,7 +35,7 @@ export function CollectDuePaymentModal({
   const handleConfirm = () => {
     if (!user || !item) return;
     collectPayment.mutate(
-      { item, method },
+      { item, method, idempotencyKey: generateIdempotencyKey() },
       { onSuccess: (createdPayment) => setPayment(createdPayment) },
     );
   };

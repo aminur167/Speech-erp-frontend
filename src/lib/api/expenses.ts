@@ -103,6 +103,8 @@ export interface CreateExpenseInput {
   paymentMethod: ExpensePaymentMethod;
   remarks?: string;
   isRecurring?: boolean;
+  /** Offline-queue replay support (docs/00) — generated once, when the manager submits. */
+  idempotencyKey?: string;
 }
 
 export async function createExpense(input: CreateExpenseInput): Promise<Expense> {

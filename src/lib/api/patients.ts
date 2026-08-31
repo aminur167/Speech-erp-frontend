@@ -48,6 +48,8 @@ export interface CreatePatientInput {
   chiefComplaint?: string;
   nationalId?: string;
   notes?: string;
+  /** Offline-queue replay support (docs/00) — generated once, when the manager submits. */
+  idempotencyKey?: string;
 }
 
 export async function createPatient(input: CreatePatientInput): Promise<Patient> {

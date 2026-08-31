@@ -4,6 +4,7 @@ import type { ApiError } from "@/types/api";
 
 export function useCreateBooking() {
   return useMutation<CreateBookingResult, ApiError, CreateBookingInput>({
+    mutationKey: ["createBooking"],
     mutationFn: createBooking,
   });
 }

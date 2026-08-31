@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Offline — Speech Therapy Lab</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f4f7f8;
+      color: #1a2b33;
+      text-align: center;
+      padding: 24px;
+    }
+    .card { max-width: 380px; }
+    h1 { font-size: 1.25rem; margin-bottom: 8px; }
+    p { color: #556570; font-size: 0.95rem; line-height: 1.5; }
+    button {
+      margin-top: 16px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      background: #0e7c7b;
+      color: white;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>This page hasn't loaded yet</h1>
+    <p>
+      You're offline and haven't visited this screen before, so there's nothing saved to show.
+      Anything you've already opened today will still work — try going back, or reconnect and
+      reload this page.
+    </p>
+    <button onclick="location.reload()">Try Again</button>
+  </div>
+</body>
+</html>

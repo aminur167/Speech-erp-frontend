@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { useCreateExpense } from "@/hooks/expenses/useCreateExpense";
 import { EXPENSE_AUTO_APPROVE_THRESHOLD } from "@/lib/api/expenses";
 import { formatCurrency } from "@/utils/currency";
+import { generateIdempotencyKey } from "@/lib/offline/idempotency";
 
 const expenseSchema = z.object({
   category: z.enum([
@@ -67,7 +68,7 @@ export function ExpenseForm({
 
   const onSubmit = (values: ExpenseFormValues) => {
     createExpense.mutate(
-      { ...values, amount: Number(values.amount) },
+      { ...values, amount: Number(values.amount), idempotencyKey: generateIdempotencyKey() },
       { onSuccess },
     );
   };

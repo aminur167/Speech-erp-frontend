@@ -21,6 +21,7 @@ import { usePayMonthlyBill } from "@/hooks/enrollments/usePayMonthlyBill";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
+import { generateIdempotencyKey } from "@/lib/offline/idempotency";
 import type { Patient, Service, PaymentMethod, Payment, MonthlyEnrollment } from "@/types/domain";
 
 type Step = "service" | "patient" | "enroll" | "bills" | "payment" | "receipt";
@@ -85,7 +86,7 @@ export function MonthlyServiceEnrollment() {
     // together, rather than two separate requests that could leave money
     // taken without the bill ever settling.
     payBill.mutate(
-      { enrollmentId: enrollment.id, billId: bill.id, method },
+      { enrollmentId: enrollment.id, billId: bill.id, method, idempotencyKey: generateIdempotencyKey() },
       {
         onSuccess: ({ payment: createdPayment, enrollment: updated }) => {
           setEnrollment(updated);

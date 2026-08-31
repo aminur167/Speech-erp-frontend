@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
-import { Wallet, Receipt, CheckCircle2, Undo2, Ban, PencilLine } from "lucide-react";
+import { Wallet, Receipt, CheckCircle2, Undo2, Ban, PencilLine, WifiOff, RefreshCw } from "lucide-react";
 import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,8 @@ import { AmendClosingModal } from "@/components/dailyClosing/AmendClosingModal";
 import { useTodaySystemCollection } from "@/hooks/dailyClosing/useTodaySystemCollection";
 import { useDailyClosingHistory } from "@/hooks/dailyClosing/useDailyClosingHistory";
 import { useSubmitDailyClosing } from "@/hooks/dailyClosing/useSubmitDailyClosing";
+import { useIsOnline } from "@/hooks/offline/useIsOnline";
+import { useOfflineQueueStatus } from "@/hooks/offline/useOfflineQueueStatus";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { todayDateString } from "@/lib/api/dailyClosings";
@@ -52,6 +54,14 @@ export function DailyClosingView({
   const { data: summary, isLoading: summaryLoading } = useTodaySystemCollection(branchId);
   const { data: history, isLoading: historyLoading } = useDailyClosingHistory(branchId);
   const submitClosing = useSubmitDailyClosing();
+  const isOnline = useIsOnline();
+  const { queuedCount, syncingCount } = useOfflineQueueStatus();
+  const unsyncedCount = queuedCount + syncingCount;
+  // system_total is computed server-side from Payments (docs/00) -- a
+  // closing submitted while payments are still queued locally would close
+  // the day on a total that's about to change under it the moment they
+  // sync. Block, don't silently show a number that's already wrong.
+  const closingBlocked = !isOnline || unsyncedCount > 0;
 
   const todaysClosing = history?.find((closing) => closing.date === todayDateString());
 
@@ -61,7 +71,7 @@ export function DailyClosingView({
     difference === 0 ? "matched" : difference > 0 ? "over" : "short";
 
   const handleSubmit = () => {
-    if (!user) return;
+    if (!user || closingBlocked) return;
     submitClosing.mutate({ actualTotal: actualValue });
   };
 
@@ -228,6 +238,20 @@ export function DailyClosingView({
         <Card>
           <h2 className="text-sm font-medium text-text-secondary">Enter Actual Collection</h2>
           <div className="mt-3 flex flex-col gap-4">
+            {closingBlocked && (
+              <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
+                {!isOnline ? (
+                  <WifiOff className="mt-0.5 h-4 w-4 shrink-0" />
+                ) : (
+                  <RefreshCw className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
+                )}
+                <p>
+                  {!isOnline
+                    ? "You're offline. Today's system total is calculated from synced payments, so closing has to wait until you're back online."
+                    : `${unsyncedCount} payment${unsyncedCount === 1 ? "" : "s"} from today ${unsyncedCount === 1 ? "hasn't" : "haven't"} finished syncing yet — closing now would use a total that's about to change. Wait for the sync to finish.`}
+                </p>
+              </div>
+            )}
             <Input
               type="number"
               step="0.01"
@@ -279,7 +303,7 @@ export function DailyClosingView({
             <div>
               <Button
                 onClick={handleSubmit}
-                disabled={!actualTotal}
+                disabled={!actualTotal || closingBlocked}
                 isLoading={submitClosing.isPending}
               >
                 Submit Closing

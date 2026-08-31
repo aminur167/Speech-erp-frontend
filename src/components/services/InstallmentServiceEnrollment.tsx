@@ -21,6 +21,7 @@ import { usePayInstallment } from "@/hooks/enrollments/usePayInstallment";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
+import { generateIdempotencyKey } from "@/lib/offline/idempotency";
 import type { Patient, Service, PaymentMethod, Payment, InstallmentPlan } from "@/types/domain";
 
 type Step = "service" | "patient" | "plan" | "schedule" | "payment" | "receipt";
@@ -87,7 +88,7 @@ export function InstallmentServiceEnrollment() {
     if (!installment) return;
     // One atomic call -- see the same note in MonthlyServiceEnrollment.
     payInstallmentMutation.mutate(
-      { planId: plan.id, installmentId: installment.id, method },
+      { planId: plan.id, installmentId: installment.id, method, idempotencyKey: generateIdempotencyKey() },
       {
         onSuccess: ({ payment: createdPayment, plan: updated }) => {
           setPlan(updated);

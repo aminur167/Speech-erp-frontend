@@ -19,6 +19,7 @@ import { useCreateBooking } from "@/hooks/enrollments/useCreateBooking";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
+import { generateIdempotencyKey } from "@/lib/offline/idempotency";
 import type { Patient, Service, PaymentMethod, Payment, Booking } from "@/types/domain";
 
 type Step = "service" | "patient" | "datetime" | "confirmation" | "receipt";
@@ -82,6 +83,7 @@ export function OnlineServiceEnrollment() {
         date,
         time: formatTimeLabel(time),
         method,
+        idempotencyKey: generateIdempotencyKey(),
       },
       {
         onSuccess: ({ booking: created, payment: createdPayment }) => {

@@ -8,6 +8,7 @@ export function usePayInstallment() {
     ApiError,
     { planId: string; installmentId: string; method: string; idempotencyKey?: string }
   >({
+    mutationKey: ["payInstallment"],
     mutationFn: ({ planId, installmentId, method, idempotencyKey }) =>
       payInstallment(planId, installmentId, method, idempotencyKey),
   });

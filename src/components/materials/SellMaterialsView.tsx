@@ -31,6 +31,7 @@ import { useSellMaterials } from "@/hooks/materials/useSellMaterials";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
+import { generateIdempotencyKey } from "@/lib/offline/idempotency";
 import type { Material, MaterialUnit, Patient, Payment, PaymentMethod } from "@/types/domain";
 
 type Stage = "cart" | "checkout" | "receipt";
@@ -171,7 +172,7 @@ export function SellMaterialsView() {
       return;
     }
     createPatient.mutate(
-      { name, phone },
+      { name, phone, idempotencyKey: generateIdempotencyKey() },
       {
         onSuccess: (patient) => {
           setSelectedPatient(patient);
@@ -194,6 +195,7 @@ export function SellMaterialsView() {
         })),
         patientId: selectedPatient.id,
         method,
+        idempotencyKey: generateIdempotencyKey(),
       },
       {
         onSuccess: ({ payment: createdPayment }) => {

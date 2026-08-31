@@ -20,6 +20,7 @@ import { useDeleteMaterial } from "@/hooks/materials/useDeleteMaterial";
 import { useAdjustStock } from "@/hooks/materials/useAdjustStock";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
+import { generateIdempotencyKey } from "@/lib/offline/idempotency";
 import type { Material, MaterialMovementType } from "@/types/domain";
 import type { MaterialInput } from "@/lib/api/materials";
 
@@ -70,7 +71,7 @@ export function MaterialListView({
   const handleAdjust = (input: { type: MaterialMovementType; quantity: number; note?: string }) => {
     if (!adjustingMaterial) return;
     adjustStockMutation.mutate(
-      { materialId: adjustingMaterial.id, ...input },
+      { materialId: adjustingMaterial.id, ...input, idempotencyKey: generateIdempotencyKey() },
       { onSuccess: () => setAdjustingMaterial(null) },
     );
   };

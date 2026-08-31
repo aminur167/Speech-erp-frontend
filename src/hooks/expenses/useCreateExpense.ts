@@ -8,6 +8,7 @@ export function useCreateExpense() {
   const queryClient = useQueryClient();
 
   return useMutation<Expense, ApiError, CreateExpenseInput>({
+    mutationKey: ["createExpense"],
     mutationFn: createExpense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all });

@@ -21,24 +21,44 @@ apiClient.interceptors.request.use((config) => {
 // user is actually logged out — silently refresh once and retry the original
 // request before giving up. Concurrent 401s share the same in-flight refresh
 // so a page firing several requests at once doesn't trigger several refreshes.
+//
+// Critically, this promise is also exported and reused by `restoreSession()`
+// (lib/api/auth.ts) rather than each doing its own separate call. The
+// backend rotates+blacklists refresh tokens on every use, so two independent,
+// uncoordinated `/auth/refresh/` calls racing on page load -- one from
+// session restore, one from an interceptor reacting to a 401 fired before
+// restore finished (e.g. a resumed offline mutation) -- isn't just wasteful:
+// whichever call loses the race is using a token the winner has already
+// rotated away, fails, and its catch block wipes the (still-valid) refresh
+// token the winner just wrote, killing an otherwise-healthy session.
 let refreshInFlight: Promise<string | null> | null = null;
 
-async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) return null;
+export async function refreshAccessToken(): Promise<string | null> {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return null;
+
+    try {
+      const { data } = await axios.post(
+        `${apiClient.defaults.baseURL}/auth/refresh/`,
+        { refreshToken },
+      );
+      useAuthTokenStore.getState().setAccessToken(data.accessToken);
+      setRefreshToken(data.refreshToken);
+      return data.accessToken as string;
+    } catch {
+      setRefreshToken(null);
+      useAuthTokenStore.getState().setAccessToken(null);
+      return null;
+    }
+  })();
 
   try {
-    const { data } = await axios.post(
-      `${apiClient.defaults.baseURL}/auth/refresh/`,
-      { refreshToken },
-    );
-    useAuthTokenStore.getState().setAccessToken(data.accessToken);
-    setRefreshToken(data.refreshToken);
-    return data.accessToken as string;
-  } catch {
-    setRefreshToken(null);
-    useAuthTokenStore.getState().setAccessToken(null);
-    return null;
+    return await refreshInFlight;
+  } finally {
+    refreshInFlight = null;
   }
 }
 
@@ -51,9 +71,7 @@ apiClient.interceptors.response.use(
 
     if (error.response?.status === 401 && !original?._retried && !isAuthEndpoint) {
       original._retried = true;
-      refreshInFlight = refreshInFlight ?? refreshAccessToken();
-      const newAccessToken = await refreshInFlight;
-      refreshInFlight = null;
+      const newAccessToken = await refreshAccessToken();
 
       if (newAccessToken) {
         original.headers.Authorization = `Bearer ${newAccessToken}`;

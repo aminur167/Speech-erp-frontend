@@ -1,5 +1,5 @@
 import type { AuthUser } from "@/types/domain";
-import { apiClient } from "@/lib/api/client";
+import { apiClient, refreshAccessToken } from "@/lib/api/client";
 import { useAuthTokenStore } from "@/store/authTokenStore";
 import { useAuthStore } from "@/store/authStore";
 import { getRefreshToken, setRefreshToken } from "@/lib/api/authTokenPersistence";
@@ -61,22 +61,20 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
  * since the only caller is `AuthProvider`, which just needs this to resolve.
  */
 export async function restoreSession(): Promise<void> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) return;
+  if (!getRefreshToken()) return;
 
-  try {
-    const { data } = await apiClient.post("/auth/refresh/", { refreshToken });
-    useAuthTokenStore.getState().setAccessToken(data.accessToken);
-    setRefreshToken(data.refreshToken);
+  // Goes through the same single-flight `refreshAccessToken()` the response
+  // interceptor uses, rather than its own separate `/auth/refresh/` call --
+  // see the comment on that function for why an uncoordinated second refresh
+  // here can destroy an otherwise-valid session (rotate+blacklist means the
+  // race's loser wipes the winner's token).
+  const accessToken = await refreshAccessToken();
+  if (!accessToken) return;
 
-    const user = await getCurrentUser();
-    if (user) {
-      useAuthStore.getState().login(user, data.accessToken);
-    } else {
-      setRefreshToken(null);
-      useAuthTokenStore.getState().setAccessToken(null);
-    }
-  } catch {
+  const user = await getCurrentUser();
+  if (user) {
+    useAuthStore.getState().login(user, accessToken);
+  } else {
     setRefreshToken(null);
     useAuthTokenStore.getState().setAccessToken(null);
   }

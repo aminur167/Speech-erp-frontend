@@ -8,6 +8,7 @@ export function useCreatePatient() {
   const queryClient = useQueryClient();
 
   return useMutation<Patient, ApiError, CreatePatientInput>({
+    mutationKey: ["createPatient"],
     mutationFn: createPatient,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.patients.all });

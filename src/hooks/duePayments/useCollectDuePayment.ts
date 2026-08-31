@@ -8,6 +8,7 @@ export function useCollectDuePayment() {
   const queryClient = useQueryClient();
 
   return useMutation<Payment, ApiError, CollectDuePaymentInput>({
+    mutationKey: ["collectDuePayment"],
     mutationFn: collectDuePayment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.duePayments.all });

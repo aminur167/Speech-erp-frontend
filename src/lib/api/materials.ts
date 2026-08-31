@@ -81,12 +81,19 @@ export interface AdjustStockInput {
   type: MaterialMovementType;
   quantity: number;
   note?: string;
+  /** Offline-queue replay support (docs/00) — generated once, when the manager submits. */
+  idempotencyKey?: string;
 }
 
 export async function adjustStock(input: AdjustStockInput): Promise<Material> {
   const { data } = await apiClient.post<RawMaterial>(
     `/materials/${input.materialId}/adjust-stock/`,
-    { type: input.type, quantity: input.quantity, note: input.note },
+    {
+      type: input.type,
+      quantity: input.quantity,
+      note: input.note,
+      idempotencyKey: input.idempotencyKey,
+    },
   );
   return normalizeMaterial(data);
 }

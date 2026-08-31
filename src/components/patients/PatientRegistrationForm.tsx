@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { useCreatePatient } from "@/hooks/patients/useCreatePatient";
+import { generateIdempotencyKey } from "@/lib/offline/idempotency";
 import type { ApiError } from "@/types/api";
 import type { Patient } from "@/types/domain";
 
@@ -66,6 +67,7 @@ export function PatientRegistrationForm({
         gender: values.gender || undefined,
         bloodGroup: values.bloodGroup || undefined,
         guardianRelation: values.guardianRelation || undefined,
+        idempotencyKey: generateIdempotencyKey(),
       },
       {
         onSuccess,

@@ -11,6 +11,7 @@ export function useSellMaterials() {
   const queryClient = useQueryClient();
 
   return useMutation<MaterialsSaleResult, ApiError, SellMaterialsInput>({
+    mutationKey: ["sellMaterials"],
     mutationFn: sellMaterials,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.materials.all });
