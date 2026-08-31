@@ -13,13 +13,17 @@ import {
   Users,
   IdCard,
   FileText,
+  Pencil,
   type LucideIcon,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/states";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { OverdueBadge } from "@/components/patients/OverdueBadge";
+import { PatientEditForm } from "@/components/patients/PatientEditForm";
 import { ScheduleList } from "@/components/services/ScheduleList";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { Pagination } from "@/components/ui/Pagination";
@@ -84,6 +88,7 @@ export function PatientProfileView({
   const { data: branches } = useBranches();
   const [servicePage, setServicePage] = useState(1);
   const [paymentPage, setPaymentPage] = useState(1);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const { data: transactions, isLoading: transactionsLoading } = useTransactions({
     patientId,
     page: paymentPage,
@@ -145,6 +150,10 @@ export function PatientProfileView({
             </div>
           </div>
           <div className="flex gap-6 sm:flex-col sm:items-end sm:gap-3">
+            <Button variant="secondary" onClick={() => setIsEditOpen(true)}>
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Button>
             <div className="text-left sm:text-right">
               <p className="text-xs text-text-secondary">Branch</p>
               <p className="text-sm font-medium text-text-primary">{branchName}</p>
@@ -283,6 +292,21 @@ export function PatientProfileView({
           )}
         </div>
       </Card>
+
+      <Modal
+        open={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        title="Edit Patient"
+        description="Update the patient's details below."
+        className="max-w-2xl"
+        dismissible={false}
+      >
+        <PatientEditForm
+          patient={patient}
+          onSuccess={() => setIsEditOpen(false)}
+          onCancel={() => setIsEditOpen(false)}
+        />
+      </Modal>
     </div>
   );
 }

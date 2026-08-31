@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
-import { useCreatePatient } from "@/hooks/patients/useCreatePatient";
+import { useUpdatePatient } from "@/hooks/patients/useUpdatePatient";
 import type { ApiError } from "@/types/api";
 import type { Patient } from "@/types/domain";
 
@@ -17,8 +17,6 @@ const patientSchema = z.object({
   name: z.string().min(2, "Full name is required."),
   phone: z.string().min(6, "Enter a valid phone number."),
   email: z.union([z.string().email("Enter a valid email address."), z.literal("")]).optional(),
-  // Required on create (docs/02) — matching client-side here so the error
-  // shows instantly instead of only after a round trip to the server.
   gender: z.enum(["male", "female"], { message: "Gender is required." }),
   bloodGroup: z.union([z.enum(BLOOD_GROUPS), z.literal("")]).optional(),
   dateOfBirth: z.string().min(1, "Date of birth is required."),
@@ -27,10 +25,9 @@ const patientSchema = z.object({
     z.enum(["father", "mother", "guardian", "other"]),
     z.literal(""),
   ]).optional(),
-  // Not marked required here: whether it's actually needed depends on the
-  // patient's age, and the backend is the one that knows the cutoff and
-  // enforces it (docs/02) — a validation error comes back on this field when
-  // it applies, surfaced the same way as any other server-side error below.
+  // Whether this is actually required depends on the patient's age; the
+  // backend enforces that cutoff and returns a field error here when it
+  // applies, same as on registration (docs/02).
   guardianPhone: z.string().optional(),
   emergencyContact: z.string().optional(),
   address: z.string().min(1, "Address is required."),
@@ -42,30 +39,61 @@ const patientSchema = z.object({
 
 type PatientFormValues = z.infer<typeof patientSchema>;
 
-export function PatientRegistrationForm({
+export function PatientEditForm({
+  patient,
   onSuccess,
   onCancel,
 }: {
+  patient: Patient;
   onSuccess: (patient: Patient) => void;
   onCancel: () => void;
 }) {
-  const createPatient = useCreatePatient();
+  const updatePatient = useUpdatePatient();
 
   const {
     register,
     handleSubmit,
     setError,
     formState: { errors },
-  } = useForm<PatientFormValues>({ resolver: zodResolver(patientSchema) });
+  } = useForm<PatientFormValues>({
+    resolver: zodResolver(patientSchema),
+    defaultValues: {
+      name: patient.name,
+      phone: patient.phone,
+      email: patient.email ?? "",
+      // A legacy record could still hold the retired "other" value (e.g. set
+      // via the Django admin, which still allows it) -- the dropdown no
+      // longer offers it, so fall back to unset rather than lie about the
+      // type; the manager must actively pick Male or Female to save.
+      gender:
+        patient.gender === "male" || patient.gender === "female"
+          ? patient.gender
+          : (undefined as unknown as PatientFormValues["gender"]),
+      bloodGroup: patient.bloodGroup ?? "",
+      dateOfBirth: patient.dateOfBirth ?? "",
+      guardianName: patient.guardianName ?? "",
+      guardianRelation: patient.guardianRelation ?? "",
+      guardianPhone: patient.guardianPhone ?? "",
+      emergencyContact: patient.emergencyContact ?? "",
+      address: patient.address ?? "",
+      referredBy: patient.referredBy ?? "",
+      nationalId: patient.nationalId ?? "",
+      chiefComplaint: patient.chiefComplaint ?? "",
+      notes: patient.notes ?? "",
+    },
+  });
 
   const onSubmit = (values: PatientFormValues) => {
-    createPatient.mutate(
+    updatePatient.mutate(
       {
-        ...values,
-        email: values.email || undefined,
-        gender: values.gender || undefined,
-        bloodGroup: values.bloodGroup || undefined,
-        guardianRelation: values.guardianRelation || undefined,
+        id: patient.id,
+        input: {
+          ...values,
+          email: values.email || undefined,
+          gender: values.gender || undefined,
+          bloodGroup: values.bloodGroup || undefined,
+          guardianRelation: values.guardianRelation || undefined,
+        },
       },
       {
         onSuccess,
@@ -177,8 +205,8 @@ export function PatientRegistrationForm({
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" isLoading={createPatient.isPending}>
-          Register Patient
+        <Button type="submit" isLoading={updatePatient.isPending}>
+          Save Changes
         </Button>
       </div>
     </form>

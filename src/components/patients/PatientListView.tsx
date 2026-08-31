@@ -204,7 +204,6 @@ export function PatientListView({
           <option value="">All genders</option>
           <option value="male">Male</option>
           <option value="female">Female</option>
-          <option value="other">Other</option>
         </Select>
         <Select
           value={serviceCategory}
@@ -372,6 +371,8 @@ export function PatientListView({
           onClose={() => setIsModalOpen(false)}
           title="Register Patient"
           description="Enter the patient's details below. A unique Patient ID is generated automatically."
+          className="max-w-2xl"
+          dismissible={false}
         >
           <PatientRegistrationForm
             onSuccess={(patient) => {
