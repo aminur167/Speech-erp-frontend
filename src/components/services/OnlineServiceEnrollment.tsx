@@ -19,6 +19,7 @@ import { useCreateBooking } from "@/hooks/enrollments/useCreateBooking";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
+import { formatTimeLabel } from "@/utils/time";
 import { generateIdempotencyKey } from "@/lib/offline/idempotency";
 import type { Patient, Service, PaymentMethod, Payment, Booking } from "@/types/domain";
 
@@ -37,15 +38,6 @@ const STEP_LABELS: Record<Step, string> = {
 const BOOKING_TIME_RANGE = { min: "10:00", max: "18:00" };
 const BOOKING_TIME_RANGE_LABEL = "10:00 AM – 6:00 PM";
 const ADVANCE_RATIO = 0.5;
-
-/** Converts a native time-input value ("HH:MM", 24-hour) into a friendly 12-hour label. */
-function formatTimeLabel(value: string): string {
-  const [hourStr, minuteStr] = value.split(":");
-  const hour = Number(hourStr);
-  const period = hour >= 12 ? "PM" : "AM";
-  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-  return `${displayHour}:${minuteStr} ${period}`;
-}
 
 export function OnlineServiceEnrollment() {
   const router = useRouter();
@@ -81,7 +73,13 @@ export function OnlineServiceEnrollment() {
         patientId: selectedPatient.id,
         serviceId: selectedService.id,
         date,
-        time: formatTimeLabel(time),
+        // Raw 24-hour "HH:MM" from the native time input -- the backend's
+        // _validate_booking_slot() parses this with int(hour):int(minute)
+        // and rejects anything else (including the 12-hour "2:30 PM" label
+        // formatTimeLabel() produces for display). That mismatch used to
+        // make every real booking fail server-side; formatTimeLabel() is
+        // now only ever used for what's shown on screen, never sent.
+        time,
         method,
         idempotencyKey: generateIdempotencyKey(),
       },
@@ -216,7 +214,7 @@ export function OnlineServiceEnrollment() {
               <div className="flex justify-between">
                 <span className="text-text-secondary">Date &amp; Time</span>
                 <span className="font-medium text-text-primary">
-                  {booking.date} at {booking.time}
+                  {booking.date} at {formatTimeLabel(booking.time)}
                 </span>
               </div>
             </div>

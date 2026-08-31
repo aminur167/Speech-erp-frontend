@@ -84,9 +84,11 @@ export const adminNav: NavItem[] = [
   { label: "Branches", href: "/admin/branches", icon: Building2 },
   { label: "Patients", href: "/admin/patients", icon: UserPlus },
   { label: "Services", href: "/admin/services", icon: ClipboardList },
+  { label: "Appointments", href: "/admin/appointments", icon: CalendarCheck },
   { label: "Expenses", href: "/admin/expenses", icon: Receipt },
   { label: "Transactions", href: "/admin/transactions", icon: History },
   { label: "Refund Approvals", href: "/admin/refund-approvals", icon: Undo2 },
   { label: "Reports", href: "/admin/reports", icon: BarChart3 },
+  { label: "Audit Log", href: "/admin/audit-log", icon: History },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];

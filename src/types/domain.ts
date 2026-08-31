@@ -247,7 +247,11 @@ export interface Booking {
   id: string;
   bookingCode: string; // e.g. BKG-2026-00001
   patientId: string;
+  patientName: string;
   serviceId: string;
+  serviceName: string;
+  branchId: string;
+  branchName: string;
   date: string;
   time: string;
   advanceAmount: number;
@@ -307,5 +311,33 @@ export interface MaterialMovement {
   note?: string;
   branchId: string;
   createdBy: string;
+  createdAt: string;
+}
+
+export type AuditLogAction =
+  | "create"
+  | "update"
+  | "soft_delete"
+  | "approve"
+  | "reject"
+  | "void"
+  | "refund_request"
+  | "refund_approve"
+  | "refund_reject"
+  | "terminate"
+  | "amend"
+  | "write_off"
+  | "login";
+
+export interface AuditLogEntry {
+  id: string;
+  actorEmail: string;
+  action: AuditLogAction;
+  targetType: string;
+  targetId: string;
+  branchId: string | null;
+  branchName: string | null;
+  reason: string;
+  changes: Record<string, { from: unknown; to: unknown }>;
   createdAt: string;
 }

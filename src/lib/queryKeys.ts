@@ -73,4 +73,12 @@ export const queryKeys = {
   auth: {
     currentUser: ["auth", "current-user"] as const,
   },
+  bookings: {
+    all: ["bookings"] as const,
+    list: (params?: object) => ["bookings", "list", params] as const,
+  },
+  auditLogs: {
+    all: ["audit-logs"] as const,
+    list: (params?: object) => ["audit-logs", "list", params] as const,
+  },
 };
