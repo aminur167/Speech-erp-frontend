@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { DraftRestoreBanner } from "@/components/ui/DraftRestoreBanner";
 import { useCreatePatient } from "@/hooks/patients/useCreatePatient";
+import { useDraftAutosave } from "@/hooks/offline/useDraftAutosave";
 import { generateIdempotencyKey } from "@/lib/offline/idempotency";
 import type { ApiError } from "@/types/api";
 import type { Patient } from "@/types/domain";
@@ -56,8 +58,16 @@ export function PatientRegistrationForm({
     register,
     handleSubmit,
     setError,
+    watch,
+    reset,
     formState: { errors },
   } = useForm<PatientFormValues>({ resolver: zodResolver(patientSchema) });
+
+  const { hasDraft, draftSavedAt, restoreDraft, discardDraft, clearDraft } = useDraftAutosave(
+    "patient-registration",
+    watch,
+    reset,
+  );
 
   const onSubmit = (values: PatientFormValues) => {
     createPatient.mutate(
@@ -70,7 +80,10 @@ export function PatientRegistrationForm({
         idempotencyKey: generateIdempotencyKey(),
       },
       {
-        onSuccess,
+        onSuccess: (patient) => {
+          clearDraft();
+          onSuccess(patient);
+        },
         onError: (error: ApiError) => {
           if (error.fieldErrors) {
             Object.entries(error.fieldErrors).forEach(([field, messages]) => {
@@ -84,6 +97,13 @@ export function PatientRegistrationForm({
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+      {hasDraft && draftSavedAt && (
+        <DraftRestoreBanner
+          savedAt={draftSavedAt}
+          onRestore={restoreDraft}
+          onDiscard={discardDraft}
+        />
+      )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input placeholder="Full Name *" error={errors.name?.message} {...register("name")} />
         <Input placeholder="Phone *" error={errors.phone?.message} {...register("phone")} />
@@ -176,7 +196,14 @@ export function PatientRegistrationForm({
         {...register("notes")}
       />
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="secondary" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => {
+            clearDraft();
+            onCancel();
+          }}
+        >
           Cancel
         </Button>
         <Button type="submit" isLoading={createPatient.isPending}>

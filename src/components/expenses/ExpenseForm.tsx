@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { DraftRestoreBanner } from "@/components/ui/DraftRestoreBanner";
 import { useCreateExpense } from "@/hooks/expenses/useCreateExpense";
+import { useDraftAutosave } from "@/hooks/offline/useDraftAutosave";
 import { EXPENSE_AUTO_APPROVE_THRESHOLD } from "@/lib/api/expenses";
 import { formatCurrency } from "@/utils/currency";
 import { generateIdempotencyKey } from "@/lib/offline/idempotency";
@@ -57,11 +59,18 @@ export function ExpenseForm({
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors },
   } = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     defaultValues: { category: "supplies", paymentMethod: "cash" },
   });
+
+  const { hasDraft, draftSavedAt, restoreDraft, discardDraft, clearDraft } = useDraftAutosave(
+    "expense-entry",
+    watch,
+    reset,
+  );
 
   const amountValue = watch("amount");
   const willRequireApproval = Number(amountValue || 0) >= EXPENSE_AUTO_APPROVE_THRESHOLD;
@@ -69,12 +78,24 @@ export function ExpenseForm({
   const onSubmit = (values: ExpenseFormValues) => {
     createExpense.mutate(
       { ...values, amount: Number(values.amount), idempotencyKey: generateIdempotencyKey() },
-      { onSuccess },
+      {
+        onSuccess: () => {
+          clearDraft();
+          onSuccess();
+        },
+      },
     );
   };
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+      {hasDraft && draftSavedAt && (
+        <DraftRestoreBanner
+          savedAt={draftSavedAt}
+          onRestore={restoreDraft}
+          onDiscard={discardDraft}
+        />
+      )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-xs font-medium text-text-secondary">Category</label>
@@ -160,7 +181,14 @@ export function ExpenseForm({
       </p>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="secondary" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => {
+            clearDraft();
+            onCancel();
+          }}
+        >
           Cancel
         </Button>
         <Button type="submit" isLoading={createExpense.isPending}>
