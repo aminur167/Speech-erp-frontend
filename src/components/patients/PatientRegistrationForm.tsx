@@ -92,8 +92,16 @@ export function PatientRegistrationForm({
         {...register("dateOfBirth")}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input placeholder="Guardian Name (optional)" {...register("guardianName")} />
-        <Select defaultValue="" {...register("guardianRelation")}>
+        <Input
+          placeholder="Guardian Name (optional)"
+          error={errors.guardianName?.message}
+          {...register("guardianName")}
+        />
+        <Select
+          defaultValue=""
+          error={errors.guardianRelation?.message}
+          {...register("guardianRelation")}
+        >
           <option value="">Relation (optional)</option>
           <option value="father">Father</option>
           <option value="mother">Mother</option>
