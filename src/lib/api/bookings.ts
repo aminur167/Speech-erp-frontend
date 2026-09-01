@@ -82,3 +82,12 @@ export async function listBookings(
   );
   return { ...data, results: data.results.map(normalizeBooking) };
 }
+
+/** Never touches the booking's payment — see apps/enrollments/services.py::cancel_booking. */
+export async function cancelBooking(bookingId: string, reason?: string): Promise<Booking> {
+  const { data } = await apiClient.post<RawBooking>(
+    `/enrollments/bookings/${bookingId}/cancel/`,
+    { reason },
+  );
+  return normalizeBooking(data);
+}

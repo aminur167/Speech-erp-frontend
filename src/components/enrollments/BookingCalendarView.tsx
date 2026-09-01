@@ -1,16 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw, CalendarDays, CheckCircle2, XCircle, Search } from "lucide-react";
 import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
 import { LoadingState, ErrorState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/dashboard/StatCard";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
+import { CancelBookingModal } from "@/components/enrollments/CancelBookingModal";
 import { useBookings } from "@/hooks/enrollments/useBookings";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
@@ -49,6 +52,7 @@ export function BookingCalendarView({
 }) {
   const user = useAuthStore((state) => state.user);
   const isAdmin = user?.role === "admin";
+  const isManager = user?.role === "manager";
   const canPickBranch = isAdmin && !branchIdOverride;
 
   const [selectedBranch, setSelectedBranch] = useState("");
@@ -57,11 +61,13 @@ export function BookingCalendarView({
     (user?.role === "manager" ? (user.branchId ?? undefined) : selectedBranch || undefined);
 
   const [status, setStatus] = useState<Booking["status"] | "">("");
+  const [search, setSearch] = useState("");
   const [cursor, setCursor] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [cancellingBooking, setCancellingBooking] = useState<Booking | null>(null);
 
   const grid = useMemo(() => buildCalendarGrid(cursor.year, cursor.month), [cursor]);
   const dateFrom = toISODate(grid[0]);
@@ -75,15 +81,39 @@ export function BookingCalendarView({
     branchId,
   });
 
+  const visibleBookings = useMemo(() => {
+    const all = data?.results ?? [];
+    const term = search.trim().toLowerCase();
+    if (!term) return all;
+    return all.filter(
+      (booking) =>
+        booking.patientName.toLowerCase().includes(term) ||
+        booking.bookingCode.toLowerCase().includes(term),
+    );
+  }, [data, search]);
+
   const bookingsByDate = useMemo(() => {
     const map = new Map<string, Booking[]>();
-    for (const booking of data?.results ?? []) {
+    for (const booking of visibleBookings) {
       const list = map.get(booking.date) ?? [];
       list.push(booking);
       map.set(booking.date, list);
     }
     return map;
-  }, [data]);
+  }, [visibleBookings]);
+
+  const monthStats = useMemo(() => {
+    const inMonth = visibleBookings.filter((b) => {
+      const d = new Date(b.date);
+      return d.getFullYear() === cursor.year && d.getMonth() === cursor.month;
+    });
+    return {
+      total: inMonth.length,
+      confirmed: inMonth.filter((b) => b.status === "confirmed").length,
+      cancelled: inMonth.filter((b) => b.status === "cancelled").length,
+      today: (bookingsByDate.get(todayISO) ?? []).length,
+    };
+  }, [visibleBookings, cursor, bookingsByDate, todayISO]);
 
   const monthLabel = new Date(cursor.year, cursor.month, 1).toLocaleDateString("en-US", {
     month: "long",
@@ -108,6 +138,28 @@ export function BookingCalendarView({
         subtitle="Online service bookings across the schedule."
       />
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Today" value={String(monthStats.today)} icon={CalendarDays} tone="info" />
+        <StatCard
+          label={monthLabel}
+          value={String(monthStats.total)}
+          icon={CalendarDays}
+          tone="primary"
+        />
+        <StatCard
+          label="Confirmed"
+          value={String(monthStats.confirmed)}
+          icon={CheckCircle2}
+          tone="success"
+        />
+        <StatCard
+          label="Cancelled"
+          value={String(monthStats.cancelled)}
+          icon={XCircle}
+          tone="danger"
+        />
+      </div>
+
       <FilterBar>
         {canPickBranch && (
           <BranchFilterSelect
@@ -124,11 +176,20 @@ export function BookingCalendarView({
           <option value="confirmed">Confirmed</option>
           <option value="cancelled">Cancelled</option>
         </Select>
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-text-secondary" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search patient or booking code…"
+            className="pl-8"
+          />
+        </div>
       </FilterBar>
 
       <Card>
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Button variant="secondary" onClick={() => goToMonth(-1)} aria-label="Previous month">
                 <ChevronLeft className="h-4 w-4" />
@@ -140,19 +201,29 @@ export function BookingCalendarView({
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                const now = new Date();
-                setCursor({ year: now.getFullYear(), month: now.getMonth() });
-              }}
-            >
-              Today
-            </Button>
-            <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 text-xs text-text-secondary">
+                <span className="h-2 w-2 rounded-full bg-info" /> Confirmed
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-text-secondary">
+                <span className="h-2 w-2 rounded-full bg-danger" /> Cancelled
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  const now = new Date();
+                  setCursor({ year: now.getFullYear(), month: now.getMonth() });
+                }}
+              >
+                Today
+              </Button>
+              <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
+                <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
+                Refresh
+              </Button>
+            </div>
           </div>
 
           {isLoading && <LoadingState label="Loading appointments…" />}
@@ -171,6 +242,7 @@ export function BookingCalendarView({
               {grid.map((day) => {
                 const iso = toISODate(day);
                 const inMonth = day.getMonth() === cursor.month;
+                const isPast = iso < todayISO;
                 const dayBookings = bookingsByDate.get(iso) ?? [];
                 const overflow = dayBookings.length - MAX_VISIBLE_PER_DAY;
 
@@ -182,6 +254,7 @@ export function BookingCalendarView({
                     className={clsx(
                       "flex min-h-[92px] flex-col gap-1 bg-surface p-1.5 text-left align-top transition-colors",
                       !inMonth && "bg-background/60 text-text-secondary/50",
+                      inMonth && isPast && "bg-background/30",
                       dayBookings.length > 0 && "cursor-pointer hover:bg-primary-light/40",
                     )}
                   >
@@ -231,7 +304,7 @@ export function BookingCalendarView({
           {selectedDayBookings.map((booking) => (
             <div
               key={booking.id}
-              className="flex flex-col gap-1 rounded-lg border border-border p-3 text-sm"
+              className="flex flex-col gap-1.5 rounded-lg border border-border p-3 text-sm"
             >
               <div className="flex items-center justify-between">
                 <span className="font-medium text-text-primary">{booking.patientName}</span>
@@ -253,10 +326,26 @@ export function BookingCalendarView({
                 {booking.branchName} · Advance {formatCurrency(booking.advanceAmount)} ·{" "}
                 {booking.bookingCode}
               </p>
+              {isManager && booking.status === "confirmed" && (
+                <div className="mt-1 flex justify-end">
+                  <Button
+                    variant="secondary"
+                    className="px-3 py-1.5 text-xs"
+                    onClick={() => setCancellingBooking(booking)}
+                  >
+                    Cancel Appointment
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>
       </Modal>
+
+      <CancelBookingModal
+        booking={cancellingBooking}
+        onClose={() => setCancellingBooking(null)}
+      />
     </div>
   );
 }
