@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import type { Service, ServiceCategory } from "@/types/domain";
 import type { ServiceInput } from "@/lib/api/services";
+import type { ApiError } from "@/types/api";
 
 const CATEGORY_LABELS: Record<ServiceCategory, string> = {
   daily: "Daily",
@@ -46,6 +48,7 @@ export function ServiceForm({
   onSubmit,
   onCancel,
   isSubmitting,
+  apiError,
 }: {
   initialValues?: Service;
   /** When set, the category is locked to this value (shown read-only) instead of a picker. */
@@ -54,12 +57,15 @@ export function ServiceForm({
   onSubmit: (input: ServiceInput) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  /** A failed submit (e.g. a duplicate code, or a permission error) — field errors map onto the matching input, anything else shows as a banner. Never silently swallowed. */
+  apiError?: ApiError;
 }) {
   const lockedCategory = fixedCategory ?? initialValues?.category;
 
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceSchema),
@@ -79,6 +85,14 @@ export function ServiceForm({
       : { category: fixedCategory ?? "daily", isOnline: false },
   });
 
+  useEffect(() => {
+    if (apiError?.fieldErrors) {
+      Object.entries(apiError.fieldErrors).forEach(([field, messages]) => {
+        setError(field as keyof ServiceFormValues, { message: messages[0] });
+      });
+    }
+  }, [apiError, setError]);
+
   const submit = (values: ServiceFormValues) => {
     onSubmit({
       name: values.name,
@@ -96,6 +110,9 @@ export function ServiceForm({
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(submit)}>
+      {apiError && !apiError.fieldErrors && (
+        <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{apiError.message}</p>
+      )}
       <Input placeholder="Service Name" error={errors.name?.message} {...register("name")} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input placeholder="Service Code" error={errors.code?.message} {...register("code")} />

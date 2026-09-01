@@ -8,8 +8,26 @@ import { indexedDbPersister } from "@/lib/offline/persister";
 import { startConnectivityDetection } from "@/lib/offline/connectivity";
 import { registerServiceWorker } from "@/lib/offline/registerServiceWorker";
 import { registerOfflineMutationDefaults } from "@/lib/offline/mutationDefaults";
+import type { ApiError } from "@/types/api";
 
 const SEVEN_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
+
+/**
+ * Retries a genuine network failure (no response at all -- `status` is
+ * undefined) or a possibly-transient server error (5xx) once, but never a
+ * definitive client error (400 validation, 401/403/404/409...). A 400 for a
+ * duplicate code will fail exactly the same way a second time -- retrying it
+ * doesn't fix anything, it just sits the user in front of a stuck "Loading"
+ * button for a retry cycle before the real error they need to see finally
+ * shows up. A plain `retry: 1` (this project's original default) doesn't
+ * make that distinction and retries everything, including errors that can
+ * never succeed.
+ */
+function shouldRetry(failureCount: number, error: unknown): boolean {
+  const status = (error as ApiError | undefined)?.status;
+  if (status !== undefined && status < 500) return false;
+  return failureCount < 1;
+}
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => {
@@ -17,7 +35,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       defaultOptions: {
         queries: {
           staleTime: 60 * 1000,
-          retry: 1,
+          retry: shouldRetry,
           refetchOnWindowFocus: false,
           // A query attempted offline serves whatever's cached instead of
           // failing outright — the manager can still browse the patient
@@ -30,7 +48,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
           // outbox. Never silently drop the item; see the auto-resume
           // wiring below.
           networkMode: "offlineFirst",
-          retry: 1,
+          retry: shouldRetry,
         },
       },
     });

@@ -6,6 +6,7 @@ import { ServiceCategoryPicker } from "@/components/services/ServiceCategoryPick
 import { ServiceForm } from "@/components/services/ServiceForm";
 import type { ServiceCategory } from "@/types/domain";
 import type { ServiceInput } from "@/lib/api/services";
+import type { ApiError } from "@/types/api";
 
 const CATEGORY_LABELS: Record<ServiceCategory, string> = {
   daily: "Daily Services",
@@ -19,11 +20,13 @@ export function AddPackageModal({
   onClose,
   onSubmit,
   isSubmitting,
+  apiError,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (input: ServiceInput) => void;
   isSubmitting?: boolean;
+  apiError?: ApiError;
 }) {
   const [category, setCategory] = useState<ServiceCategory | null>(null);
 
@@ -59,6 +62,7 @@ export function AddPackageModal({
             onSubmit={onSubmit}
             onCancel={handleClose}
             isSubmitting={isSubmitting}
+            apiError={apiError}
           />
         </div>
       )}

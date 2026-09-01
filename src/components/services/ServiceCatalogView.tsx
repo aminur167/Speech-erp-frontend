@@ -80,7 +80,9 @@ export function ServiceCatalogView({
   const [categoryFilter, setCategoryFilter] = useState<ServiceCategory | "">("");
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "">("");
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [addError, setAddError] = useState<ApiError | undefined>();
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [editError, setEditError] = useState<ApiError | undefined>();
   const [deletingService, setDeletingService] = useState<Service | null>(null);
   const [deleteBlocked, setDeleteBlocked] = useState<{ service: Service; message: string } | null>(
     null,
@@ -117,14 +119,22 @@ export function ServiceCatalogView({
   const hasFilters = Boolean(search || categoryFilter || statusFilter);
 
   const handleCreate = (input: ServiceInput) => {
-    createService.mutate(input, { onSuccess: () => setIsAddOpen(false) });
+    setAddError(undefined);
+    createService.mutate(input, {
+      onSuccess: () => setIsAddOpen(false),
+      onError: (error: ApiError) => setAddError(error),
+    });
   };
 
   const handleUpdate = (input: ServiceInput) => {
     if (!editingService) return;
+    setEditError(undefined);
     updateService.mutate(
       { id: editingService.id, input },
-      { onSuccess: () => setEditingService(null) },
+      {
+        onSuccess: () => setEditingService(null),
+        onError: (error: ApiError) => setEditError(error),
+      },
     );
   };
 
@@ -176,10 +186,12 @@ export function ServiceCatalogView({
         title={title}
         subtitle={subtitle}
         action={
-          <Button onClick={() => setIsAddOpen(true)}>
-            <Plus className="h-4 w-4" />
-            {addLabel}
-          </Button>
+          canManage ? (
+            <Button onClick={() => setIsAddOpen(true)}>
+              <Plus className="h-4 w-4" />
+              {addLabel}
+            </Button>
+          ) : undefined
         }
       />
 
@@ -317,18 +329,27 @@ export function ServiceCatalogView({
           ) : null,
         )}
 
-      <AddPackageModal
-        open={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        onSubmit={handleCreate}
-        isSubmitting={createService.isPending}
-      />
+      {canManage && (
+        <AddPackageModal
+          open={isAddOpen}
+          onClose={() => {
+            setIsAddOpen(false);
+            setAddError(undefined);
+          }}
+          onSubmit={handleCreate}
+          isSubmitting={createService.isPending}
+          apiError={addError}
+        />
+      )}
 
       {canManage && (
         <>
           <Modal
             open={Boolean(editingService)}
-            onClose={() => setEditingService(null)}
+            onClose={() => {
+              setEditingService(null);
+              setEditError(undefined);
+            }}
             title="Edit Package"
             description="Package details are shown across enrollment flows and the catalog."
           >
@@ -336,8 +357,12 @@ export function ServiceCatalogView({
               <ServiceForm
                 initialValues={editingService}
                 onSubmit={handleUpdate}
-                onCancel={() => setEditingService(null)}
+                onCancel={() => {
+                  setEditingService(null);
+                  setEditError(undefined);
+                }}
                 isSubmitting={updateService.isPending}
+                apiError={editError}
               />
             )}
           </Modal>
