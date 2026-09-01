@@ -68,13 +68,27 @@ export function ServiceCard({
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <Badge tone="info" label={CATEGORY_LABEL[service.category]} />
-          {service.isActive ? (
-            <Badge tone="success" label="Available" />
-          ) : (
-            <Badge tone="neutral" label="Inactive" />
-          )}
+          {service.reviewStatus === "pending" && <Badge tone="warning" label="Pending Review" />}
+          {service.reviewStatus === "rejected" && <Badge tone="danger" label="Rejected" />}
+          {service.reviewStatus === "approved" &&
+            (service.isActive ? (
+              <Badge tone="success" label="Available" />
+            ) : (
+              <Badge tone="neutral" label="Inactive" />
+            ))}
         </div>
       </div>
+
+      {service.reviewStatus === "pending" && service.proposedBy && (
+        <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
+          Proposed by {service.proposedBy} — awaiting Admin review.
+        </p>
+      )}
+      {service.reviewStatus === "rejected" && service.reviewNote && (
+        <p className="rounded-lg bg-danger/10 px-3 py-2 text-xs text-danger">
+          Rejected: {service.reviewNote}
+        </p>
+      )}
 
       {service.description && (
         <p className="text-sm text-text-secondary">{service.description}</p>

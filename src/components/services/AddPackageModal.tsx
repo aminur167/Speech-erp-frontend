@@ -21,12 +21,15 @@ export function AddPackageModal({
   onSubmit,
   isSubmitting,
   apiError,
+  requiresApproval,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (input: ServiceInput) => void;
   isSubmitting?: boolean;
   apiError?: ApiError;
+  /** A Manager's package is a proposal, not a live catalog entry — shown as a notice, and reflected in the submit button's label. */
+  requiresApproval?: boolean;
 }) {
   const [category, setCategory] = useState<ServiceCategory | null>(null);
 
@@ -39,7 +42,13 @@ export function AddPackageModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title={category ? `Add Package — ${CATEGORY_LABELS[category]}` : "Add Package"}
+      title={
+        category
+          ? `${requiresApproval ? "Propose Package" : "Add Package"} — ${CATEGORY_LABELS[category]}`
+          : requiresApproval
+            ? "Propose Package"
+            : "Add Package"
+      }
       description={
         category
           ? "Fill in the package details below."
@@ -56,9 +65,15 @@ export function AddPackageModal({
           >
             ← Change service
           </button>
+          {requiresApproval && (
+            <p className="rounded-lg bg-info/10 px-3 py-2 text-xs text-info">
+              This package won&apos;t be available for enrollment until Admin reviews and
+              approves it.
+            </p>
+          )}
           <ServiceForm
             fixedCategory={category}
-            submitLabel="Add Package"
+            submitLabel={requiresApproval ? "Propose Package" : "Add Package"}
             onSubmit={onSubmit}
             onCancel={handleClose}
             isSubmitting={isSubmitting}

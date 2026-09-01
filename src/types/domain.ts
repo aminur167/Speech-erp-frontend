@@ -82,6 +82,12 @@ export interface Service {
   expiryLabel?: string;
   /** Retired from sale — hidden from the enrollment wizards, but existing enrollments keep billing (docs/03). */
   isActive: boolean;
+  /** A Manager's proposed package starts "pending" and is invisible to enrollment until Admin reviews it. Admin's own creates are "approved" immediately. */
+  reviewStatus: "approved" | "pending" | "rejected";
+  proposedBy?: string;
+  reviewNote?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
 }
 
 export type PaymentStatus =

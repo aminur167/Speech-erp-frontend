@@ -13,6 +13,8 @@ import {
   Trash2,
   PowerOff,
   Power,
+  Check,
+  X as XIcon,
   type LucideIcon,
 } from "lucide-react";
 import { clsx } from "clsx";
@@ -27,12 +29,14 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { ServiceCard } from "@/components/services/ServiceCard";
 import { ServiceForm } from "@/components/services/ServiceForm";
 import { AddPackageModal } from "@/components/services/AddPackageModal";
+import { RejectPackageModal } from "@/components/services/RejectPackageModal";
 import { useServices } from "@/hooks/services/useServices";
 import { useServiceEnrollmentCounts } from "@/hooks/services/useServiceEnrollmentCounts";
 import { useCreateService } from "@/hooks/services/useCreateService";
 import { useUpdateService } from "@/hooks/services/useUpdateService";
 import { useDeleteService } from "@/hooks/services/useDeleteService";
 import { useToggleServiceActive } from "@/hooks/services/useToggleServiceActive";
+import { useReviewService } from "@/hooks/services/useReviewService";
 import { exportToCsv } from "@/utils/exportCsv";
 import type { Service, ServiceCategory } from "@/types/domain";
 import type { ServiceInput } from "@/lib/api/services";
@@ -69,12 +73,21 @@ export function ServiceCatalogView({
   addLabel: string;
   canManage: boolean;
 }) {
-  const { data: services, isLoading, isFetching, refetch } = useServices(undefined, canManage);
+  // includePending: Admin sees every proposal awaiting a decision; a Manager
+  // sees only their own (see apps/services/views.py's get_queryset) -- either
+  // way, an enrollment picker elsewhere in the app never passes this, so a
+  // pending package can't be selected there regardless of who's looking.
+  const { data: services, isLoading, isFetching, refetch } = useServices(
+    undefined,
+    canManage,
+    true,
+  );
   const { data: enrollmentCounts } = useServiceEnrollmentCounts();
   const createService = useCreateService();
   const updateService = useUpdateService();
   const deleteService = useDeleteService();
   const toggleServiceActive = useToggleServiceActive();
+  const reviewService = useReviewService();
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<ServiceCategory | "">("");
@@ -87,6 +100,7 @@ export function ServiceCatalogView({
   const [deleteBlocked, setDeleteBlocked] = useState<{ service: Service; message: string } | null>(
     null,
   );
+  const [rejectingService, setRejectingService] = useState<Service | null>(null);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<ServiceCategory, number> = { daily: 0, monthly: 0, installment: 0, online: 0 };
@@ -152,6 +166,10 @@ export function ServiceCatalogView({
     });
   };
 
+  const handleApprove = (service: Service) => {
+    reviewService.mutate({ id: service.id, approve: true });
+  };
+
   const handleDeactivateInstead = () => {
     if (!deleteBlocked) return;
     toggleServiceActive.mutate(
@@ -186,12 +204,10 @@ export function ServiceCatalogView({
         title={title}
         subtitle={subtitle}
         action={
-          canManage ? (
-            <Button onClick={() => setIsAddOpen(true)}>
-              <Plus className="h-4 w-4" />
-              {addLabel}
-            </Button>
-          ) : undefined
+          <Button onClick={() => setIsAddOpen(true)}>
+            <Plus className="h-4 w-4" />
+            {addLabel}
+          </Button>
         }
       />
 
@@ -281,7 +297,38 @@ export function ServiceCatalogView({
                     service={service}
                     enrolledCount={enrollmentCounts?.[service.id]}
                     actions={
-                      canManage ? (
+                      canManage && service.reviewStatus === "pending" ? (
+                        <div className="flex w-full gap-2">
+                          <Button
+                            className="flex-1"
+                            onClick={() => handleApprove(service)}
+                            isLoading={
+                              reviewService.isPending &&
+                              reviewService.variables?.id === service.id
+                            }
+                          >
+                            <Check className="h-4 w-4" />
+                            Approve
+                          </Button>
+                          <Button
+                            variant="danger"
+                            className="flex-1"
+                            onClick={() => setRejectingService(service)}
+                          >
+                            <XIcon className="h-4 w-4" />
+                            Reject
+                          </Button>
+                        </div>
+                      ) : canManage && service.reviewStatus === "rejected" ? (
+                        <Button
+                          variant="danger"
+                          className="w-full"
+                          onClick={() => setDeletingService(service)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Remove from catalog
+                        </Button>
+                      ) : canManage ? (
                         <div className="flex w-full flex-col gap-2">
                           <div className="flex gap-2">
                             <Button
@@ -329,18 +376,17 @@ export function ServiceCatalogView({
           ) : null,
         )}
 
-      {canManage && (
-        <AddPackageModal
-          open={isAddOpen}
-          onClose={() => {
-            setIsAddOpen(false);
-            setAddError(undefined);
-          }}
-          onSubmit={handleCreate}
-          isSubmitting={createService.isPending}
-          apiError={addError}
-        />
-      )}
+      <AddPackageModal
+        open={isAddOpen}
+        onClose={() => {
+          setIsAddOpen(false);
+          setAddError(undefined);
+        }}
+        onSubmit={handleCreate}
+        isSubmitting={createService.isPending}
+        apiError={addError}
+        requiresApproval={!canManage}
+      />
 
       {canManage && (
         <>
@@ -384,6 +430,10 @@ export function ServiceCatalogView({
             description={deleteBlocked?.message}
             confirmLabel="Deactivate Instead"
             isLoading={toggleServiceActive.isPending}
+          />
+          <RejectPackageModal
+            service={rejectingService}
+            onClose={() => setRejectingService(null)}
           />
         </>
       )}

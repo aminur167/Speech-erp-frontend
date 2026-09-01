@@ -8,8 +8,8 @@ export function ManagerPackagesView() {
       homeHref="/manager/dashboard"
       roleLabel="Branch Manager"
       title="Packages"
-      subtitle="Browse the service catalog available for enrollment. Only Admin can add or edit packages."
-      addLabel="Add Package"
+      subtitle="Browse the service catalog, or propose a new package for Admin to review."
+      addLabel="Propose Package"
       canManage={false}
     />
   );

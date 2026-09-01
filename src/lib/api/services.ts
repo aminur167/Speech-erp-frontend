@@ -29,9 +29,16 @@ function normalizeService(raw: RawService): Service {
 export async function listServices(
   category?: ServiceCategory,
   includeInactive?: boolean,
+  /** Also returns pending/rejected proposals: every one of them for Admin, only the caller's own for a Manager. Never set this for an enrollment picker — a pending package must not be selectable. */
+  includePending?: boolean,
 ): Promise<Service[]> {
   const { data } = await apiClient.get<PaginatedResponse<RawService>>("/services/", {
-    params: { category, pageSize: 200, includeInactive: includeInactive || undefined },
+    params: {
+      category,
+      pageSize: 200,
+      includeInactive: includeInactive || undefined,
+      includePending: includePending || undefined,
+    },
   });
   return data.results.map(normalizeService);
 }
@@ -76,5 +83,20 @@ export async function deactivateService(id: string): Promise<Service> {
 
 export async function activateService(id: string): Promise<Service> {
   const { data } = await apiClient.post<RawService>(`/services/${id}/activate/`);
+  return normalizeService(data);
+}
+
+export interface ReviewServiceInput {
+  id: string;
+  approve: boolean;
+  reviewNote?: string;
+}
+
+/** Admin approves or rejects a Manager's proposed package. */
+export async function reviewService(input: ReviewServiceInput): Promise<Service> {
+  const { data } = await apiClient.post<RawService>(`/services/${input.id}/review/`, {
+    approve: input.approve,
+    reviewNote: input.reviewNote,
+  });
   return normalizeService(data);
 }
