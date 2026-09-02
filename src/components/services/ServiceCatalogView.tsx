@@ -9,12 +9,8 @@ import {
   CalendarDays,
   Layers,
   Globe,
-  Pencil,
-  Trash2,
-  PowerOff,
-  Power,
-  Check,
-  X as XIcon,
+  LayoutGrid,
+  Rows3,
   type LucideIcon,
 } from "lucide-react";
 import { clsx } from "clsx";
@@ -30,6 +26,8 @@ import { ServiceCard } from "@/components/services/ServiceCard";
 import { ServiceForm } from "@/components/services/ServiceForm";
 import { AddPackageModal } from "@/components/services/AddPackageModal";
 import { RejectPackageModal } from "@/components/services/RejectPackageModal";
+import { PackageActions } from "@/components/services/PackageActions";
+import { PackageTable } from "@/components/services/PackageTable";
 import { useServices } from "@/hooks/services/useServices";
 import { useServiceEnrollmentCounts } from "@/hooks/services/useServiceEnrollmentCounts";
 import { useCreateService } from "@/hooks/services/useCreateService";
@@ -89,6 +87,7 @@ export function ServiceCatalogView({
   const toggleServiceActive = useToggleServiceActive();
   const reviewService = useReviewService();
 
+  const [view, setView] = useState<"table" | "card">("table");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<ServiceCategory | "">("");
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "">("");
@@ -266,6 +265,34 @@ export function ServiceCatalogView({
                 Reset
               </button>
             )}
+            <div className="flex rounded-lg border border-border bg-background p-0.5">
+              <button
+                type="button"
+                onClick={() => setView("table")}
+                className={clsx(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  view === "table"
+                    ? "bg-surface text-primary shadow-sm"
+                    : "text-text-secondary hover:text-text-primary",
+                )}
+              >
+                <Rows3 className="h-3.5 w-3.5" />
+                Table
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("card")}
+                className={clsx(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  view === "card"
+                    ? "bg-surface text-primary shadow-sm"
+                    : "text-text-secondary hover:text-text-primary",
+                )}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Cards
+              </button>
+            </div>
             <div className="ml-auto flex gap-2">
               <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
                 <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
@@ -280,10 +307,28 @@ export function ServiceCatalogView({
 
           {isLoading && <LoadingState label="Loading packages…" />}
           {!isLoading && filtered.length === 0 && <EmptyState label="No packages found." />}
+
+          {!isLoading && filtered.length > 0 && view === "table" && (
+            <PackageTable
+              services={filtered}
+              canManage={canManage}
+              enrollmentCounts={enrollmentCounts}
+              onApprove={handleApprove}
+              onReject={setRejectingService}
+              onEdit={setEditingService}
+              onDelete={setDeletingService}
+              onToggleActive={(service) =>
+                toggleServiceActive.mutate({ id: service.id, makeActive: !service.isActive })
+              }
+              approvingId={reviewService.isPending ? reviewService.variables?.id : undefined}
+              togglingId={toggleServiceActive.isPending ? toggleServiceActive.variables?.id : undefined}
+            />
+          )}
         </div>
       </Card>
 
       {!isLoading &&
+        view === "card" &&
         CATEGORY_ORDER.map((category) =>
           grouped[category]?.length ? (
             <div key={category} className="flex flex-col gap-3">
@@ -297,76 +342,25 @@ export function ServiceCatalogView({
                     service={service}
                     enrolledCount={enrollmentCounts?.[service.id]}
                     actions={
-                      canManage && service.reviewStatus === "pending" ? (
-                        <div className="flex w-full gap-2">
-                          <Button
-                            className="flex-1"
-                            onClick={() => handleApprove(service)}
-                            isLoading={
-                              reviewService.isPending &&
-                              reviewService.variables?.id === service.id
-                            }
-                          >
-                            <Check className="h-4 w-4" />
-                            Approve
-                          </Button>
-                          <Button
-                            variant="danger"
-                            className="flex-1"
-                            onClick={() => setRejectingService(service)}
-                          >
-                            <XIcon className="h-4 w-4" />
-                            Reject
-                          </Button>
-                        </div>
-                      ) : canManage && service.reviewStatus === "rejected" ? (
-                        <Button
-                          variant="danger"
-                          className="w-full"
-                          onClick={() => setDeletingService(service)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Remove from catalog
-                        </Button>
-                      ) : canManage ? (
-                        <div className="flex w-full flex-col gap-2">
-                          <div className="flex gap-2">
-                            <Button
-                              variant="secondary"
-                              className="flex-1"
-                              onClick={() => setEditingService(service)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                              Edit
-                            </Button>
-                            <Button
-                              variant="danger"
-                              className="flex-1"
-                              onClick={() => setDeletingService(service)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Delete
-                            </Button>
-                          </div>
-                          <Button
-                            variant="secondary"
-                            className="w-full"
-                            onClick={() =>
-                              toggleServiceActive.mutate({
-                                id: service.id,
-                                makeActive: !service.isActive,
-                              })
-                            }
-                            disabled={toggleServiceActive.isPending}
-                          >
-                            {service.isActive ? (
-                              <PowerOff className="h-4 w-4" />
-                            ) : (
-                              <Power className="h-4 w-4" />
-                            )}
-                            {service.isActive ? "Deactivate" : "Activate"}
-                          </Button>
-                        </div>
+                      canManage ? (
+                        <PackageActions
+                          service={service}
+                          canManage={canManage}
+                          onApprove={handleApprove}
+                          onReject={setRejectingService}
+                          onEdit={setEditingService}
+                          onDelete={setDeletingService}
+                          onToggleActive={(s) =>
+                            toggleServiceActive.mutate({ id: s.id, makeActive: !s.isActive })
+                          }
+                          isApproving={
+                            reviewService.isPending && reviewService.variables?.id === service.id
+                          }
+                          isToggling={
+                            toggleServiceActive.isPending &&
+                            toggleServiceActive.variables?.id === service.id
+                          }
+                        />
                       ) : undefined
                     }
                   />

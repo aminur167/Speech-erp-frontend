@@ -100,3 +100,9 @@ export async function reviewService(input: ReviewServiceInput): Promise<Service>
   });
   return normalizeService(data);
 }
+
+/** Admin-only — powers the sidebar's Services badge. */
+export async function getPendingPackageCount(): Promise<number> {
+  const { data } = await apiClient.get<{ count: number }>("/services/pending-count/");
+  return data.count;
+}

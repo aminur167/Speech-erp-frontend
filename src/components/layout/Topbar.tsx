@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
 import { useBranches } from "@/hooks/branches/useBranches";
 import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export function Topbar() {
   const router = useRouter();
@@ -38,6 +39,7 @@ export function Topbar() {
 
       <div className="flex items-center gap-4">
         <SyncStatusIndicator />
+        <NotificationBell />
         <div className="text-right">
           <p className="text-sm font-medium text-text-primary">{user?.name}</p>
           <p className="text-xs capitalize text-text-secondary">

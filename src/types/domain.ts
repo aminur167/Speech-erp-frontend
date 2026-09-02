@@ -90,6 +90,16 @@ export interface Service {
   reviewedAt?: string;
 }
 
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  /** Relative path to navigate to on click, e.g. "/admin/services" — blank if there's nowhere useful to go. */
+  link: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 export type PaymentStatus =
   | "paid"
   | "due"

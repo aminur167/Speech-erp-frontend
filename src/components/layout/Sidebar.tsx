@@ -10,6 +10,7 @@ import { isNavGroup, type NavGroup, type NavItem } from "@/config/navigation";
 import { useUiStore } from "@/store/uiStore";
 import { useAuthStore } from "@/store/authStore";
 import { useBranches } from "@/hooks/branches/useBranches";
+import { usePendingPackageCount } from "@/hooks/services/usePendingPackageCount";
 
 function collectHrefs(items: NavItem[]): string[] {
   return items.flatMap((item) => (isNavGroup(item) ? item.children.map((child) => child.href) : item.href));
@@ -28,6 +29,7 @@ function NavLinkRow({
   active,
   collapsed,
   onNavigate,
+  badge,
 }: {
   href: string;
   label: string;
@@ -35,6 +37,8 @@ function NavLinkRow({
   active: boolean;
   collapsed: boolean;
   onNavigate: () => void;
+  /** A pending-count style badge, e.g. packages awaiting Admin review. Omitted (not zero) when there's nothing to flag. */
+  badge?: number;
 }) {
   return (
     <Link
@@ -52,8 +56,24 @@ function NavLinkRow({
       {active && (
         <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
       )}
-      {Icon && <Icon className="h-[18px] w-[18px] shrink-0" />}
-      {!collapsed && <span className="truncate">{label}</span>}
+      <span className="relative shrink-0">
+        {Icon && <Icon className="h-[18px] w-[18px]" />}
+        {collapsed && Boolean(badge) && (
+          <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-danger text-[8px] font-semibold text-white">
+            {badge && badge > 9 ? "9+" : badge}
+          </span>
+        )}
+      </span>
+      {!collapsed && (
+        <>
+          <span className="flex-1 truncate">{label}</span>
+          {Boolean(badge) && (
+            <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-danger px-1 text-[11px] font-semibold text-white">
+              {badge && badge > 99 ? "99+" : badge}
+            </span>
+          )}
+        </>
+      )}
     </Link>
   );
 }
@@ -141,6 +161,13 @@ export function Sidebar({
     : undefined;
   const branchName = contextLabel ?? managerBranchName;
 
+  // Packages awaiting Admin review, shown as a notification-style badge on
+  // the Services nav item — independent of whatever page is currently open.
+  const { data: pendingPackageCount } = usePendingPackageCount(user?.role === "admin");
+  const badges: Record<string, number> = pendingPackageCount
+    ? { "/admin/services": pendingPackageCount }
+    : {};
+
   return (
     <>
       {isMobileOpen && (
@@ -205,6 +232,7 @@ export function Sidebar({
                 active={item.href === activeHref}
                 collapsed={isCollapsed}
                 onNavigate={closeMobileSidebar}
+                badge={badges[item.href]}
               />
             ),
           )}

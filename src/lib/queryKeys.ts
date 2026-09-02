@@ -81,4 +81,12 @@ export const queryKeys = {
     all: ["audit-logs"] as const,
     list: (params?: object) => ["audit-logs", "list", params] as const,
   },
+  notifications: {
+    all: ["notifications"] as const,
+    list: (params?: object) => ["notifications", "list", params] as const,
+    unreadCount: ["notifications", "unread-count"] as const,
+  },
+  pendingPackages: {
+    count: ["pending-packages", "count"] as const,
+  },
 };
