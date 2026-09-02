@@ -7,9 +7,10 @@ export function useServices(
   category?: ServiceCategory,
   includeInactive?: boolean,
   includePending?: boolean,
+  branchId?: string,
 ) {
   return useQuery({
-    queryKey: queryKeys.services.list({ category, includeInactive, includePending }),
-    queryFn: () => listServices(category, includeInactive, includePending),
+    queryKey: queryKeys.services.list({ category, includeInactive, includePending, branchId }),
+    queryFn: () => listServices(category, includeInactive, includePending, branchId),
   });
 }

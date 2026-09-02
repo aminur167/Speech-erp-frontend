@@ -16,6 +16,7 @@ const CATEGORY_LABEL: Record<ServiceCategory, string> = {
 export function PackageTable({
   services,
   canManage,
+  showBranchColumn,
   enrollmentCounts,
   onApprove,
   onReject,
@@ -27,6 +28,8 @@ export function PackageTable({
 }: {
   services: Service[];
   canManage: boolean;
+  /** Admin's org-wide overview mixes packages from every branch — show which one each row belongs to. */
+  showBranchColumn?: boolean;
   enrollmentCounts?: Record<string, number>;
   onApprove: (service: Service) => void;
   onReject: (service: Service) => void;
@@ -42,6 +45,7 @@ export function PackageTable({
         <thead>
           <tr className="border-b border-border text-xs font-medium text-text-secondary">
             <th className="py-2 pr-3">Package</th>
+            {showBranchColumn && <th className="py-2 pr-3">Branch</th>}
             <th className="py-2 pr-3">Category</th>
             <th className="py-2 pr-3">Fee</th>
             <th className="py-2 pr-3">Status</th>
@@ -62,6 +66,9 @@ export function PackageTable({
                   <p className="mt-0.5 text-[11px] text-danger">Rejected: {service.reviewNote}</p>
                 )}
               </td>
+              {showBranchColumn && (
+                <td className="py-2.5 pr-3 text-text-secondary">{service.branchName}</td>
+              )}
               <td className="py-2.5 pr-3 text-text-secondary">
                 {CATEGORY_LABEL[service.category]}
               </td>

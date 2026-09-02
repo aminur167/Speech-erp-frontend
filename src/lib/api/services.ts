@@ -31,6 +31,8 @@ export async function listServices(
   includeInactive?: boolean,
   /** Also returns pending/rejected proposals: every one of them for Admin, only the caller's own for a Manager. Never set this for an enrollment picker — a pending package must not be selectable. */
   includePending?: boolean,
+  /** Admin only — narrows the org-wide catalog to one branch. A Manager is always scoped to their own branch server-side regardless of this. */
+  branchId?: string,
 ): Promise<Service[]> {
   const { data } = await apiClient.get<PaginatedResponse<RawService>>("/services/", {
     params: {
@@ -38,6 +40,7 @@ export async function listServices(
       pageSize: 200,
       includeInactive: includeInactive || undefined,
       includePending: includePending || undefined,
+      branch: branchId || undefined,
     },
   });
   return data.results.map(normalizeService);
@@ -59,6 +62,8 @@ export interface ServiceInput {
   durationLabel?: string;
   sessionsLabel?: string;
   expiryLabel?: string;
+  /** Required when Admin creates directly (no "own branch" to default to); ignored for a Manager's proposal, which always files under their own branch server-side. */
+  branch?: string;
 }
 
 export async function createService(input: ServiceInput): Promise<Service> {

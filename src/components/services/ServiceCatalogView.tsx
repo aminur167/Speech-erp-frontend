@@ -63,6 +63,7 @@ export function ServiceCatalogView({
   subtitle,
   addLabel,
   canManage,
+  branchId,
 }: {
   homeHref: string;
   roleLabel: string;
@@ -70,7 +71,14 @@ export function ServiceCatalogView({
   subtitle: string;
   addLabel: string;
   canManage: boolean;
+  /** Admin's branch drill-down page passes this to scope the catalog (and creates) to one branch. Unset for Admin's org-wide overview and always for a Manager, who's scoped to their own branch server-side regardless. */
+  branchId?: string;
 }) {
+  // Admin has no "own branch" to create for -- creating is only offered once
+  // a specific branch is in view (the drill-down page). A Manager always
+  // proposes into their own branch, so it's always available to them.
+  const canCreate = !canManage || Boolean(branchId);
+
   // includePending: Admin sees every proposal awaiting a decision; a Manager
   // sees only their own (see apps/services/views.py's get_queryset) -- either
   // way, an enrollment picker elsewhere in the app never passes this, so a
@@ -79,6 +87,7 @@ export function ServiceCatalogView({
     undefined,
     canManage,
     true,
+    branchId,
   );
   const { data: enrollmentCounts } = useServiceEnrollmentCounts();
   const createService = useCreateService();
@@ -133,10 +142,13 @@ export function ServiceCatalogView({
 
   const handleCreate = (input: ServiceInput) => {
     setAddError(undefined);
-    createService.mutate(input, {
-      onSuccess: () => setIsAddOpen(false),
-      onError: (error: ApiError) => setAddError(error),
-    });
+    createService.mutate(
+      canManage ? { ...input, branch: branchId } : input,
+      {
+        onSuccess: () => setIsAddOpen(false),
+        onError: (error: ApiError) => setAddError(error),
+      },
+    );
   };
 
   const handleUpdate = (input: ServiceInput) => {
@@ -203,10 +215,12 @@ export function ServiceCatalogView({
         title={title}
         subtitle={subtitle}
         action={
-          <Button onClick={() => setIsAddOpen(true)}>
-            <Plus className="h-4 w-4" />
-            {addLabel}
-          </Button>
+          canCreate ? (
+            <Button onClick={() => setIsAddOpen(true)}>
+              <Plus className="h-4 w-4" />
+              {addLabel}
+            </Button>
+          ) : undefined
         }
       />
 
@@ -312,6 +326,7 @@ export function ServiceCatalogView({
             <PackageTable
               services={filtered}
               canManage={canManage}
+              showBranchColumn={canManage && !branchId}
               enrollmentCounts={enrollmentCounts}
               onApprove={handleApprove}
               onReject={setRejectingService}
@@ -370,17 +385,19 @@ export function ServiceCatalogView({
           ) : null,
         )}
 
-      <AddPackageModal
-        open={isAddOpen}
-        onClose={() => {
-          setIsAddOpen(false);
-          setAddError(undefined);
-        }}
-        onSubmit={handleCreate}
-        isSubmitting={createService.isPending}
-        apiError={addError}
-        requiresApproval={!canManage}
-      />
+      {canCreate && (
+        <AddPackageModal
+          open={isAddOpen}
+          onClose={() => {
+            setIsAddOpen(false);
+            setAddError(undefined);
+          }}
+          onSubmit={handleCreate}
+          isSubmitting={createService.isPending}
+          apiError={addError}
+          requiresApproval={!canManage}
+        />
+      )}
 
       {canManage && (
         <>

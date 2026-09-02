@@ -66,6 +66,8 @@ export type ServiceCategory = "daily" | "monthly" | "installment" | "online";
 
 export interface Service {
   id: string;
+  branchId: string;
+  branchName: string;
   name: string;
   code: string;
   category: ServiceCategory;

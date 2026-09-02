@@ -8,7 +8,7 @@ export function AdminServicesView() {
       homeHref="/admin/dashboard"
       roleLabel="Admin"
       title="Services"
-      subtitle="Manage the service catalog offered across all branches."
+      subtitle="Every branch's packages, in one place. Open a branch to add or manage its own."
       addLabel="Add Package"
       canManage
     />

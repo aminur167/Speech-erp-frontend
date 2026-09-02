@@ -11,9 +11,10 @@ export default async function AdminBranchPackagesPage({
       homeHref={`/admin/branches/${id}`}
       roleLabel="Admin"
       title="Packages"
-      subtitle="The shared service catalog — every branch offers the same packages."
+      subtitle="This branch's package catalog."
       addLabel="Add Package"
       canManage
+      branchId={id}
     />
   );
 }
