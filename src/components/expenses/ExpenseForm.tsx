@@ -138,6 +138,7 @@ export function ExpenseForm({
           <label className="mb-1 block text-xs font-medium text-text-secondary">Paid To</label>
           <Input
             placeholder="Vendor or payee name"
+            autoComplete="off"
             error={errors.paidTo?.message}
             {...register("paidTo")}
           />

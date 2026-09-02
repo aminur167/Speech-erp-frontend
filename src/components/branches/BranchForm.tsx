@@ -106,7 +106,12 @@ export function BranchForm({
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(submit)}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input placeholder="Branch Name" error={errors.name?.message} {...register("name")} />
+        <Input
+          placeholder="Branch Name"
+          autoComplete="off"
+          error={errors.name?.message}
+          {...register("name")}
+        />
         <Input
           placeholder="Branch Code (e.g. BR-DHK-002)"
           error={errors.code?.message}

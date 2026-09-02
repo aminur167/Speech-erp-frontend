@@ -105,7 +105,12 @@ export function PatientRegistrationForm({
         />
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input placeholder="Full Name *" error={errors.name?.message} {...register("name")} />
+        <Input
+          placeholder="Full Name *"
+          autoComplete="off"
+          error={errors.name?.message}
+          {...register("name")}
+        />
         <Input placeholder="Phone *" error={errors.phone?.message} {...register("phone")} />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -139,6 +144,7 @@ export function PatientRegistrationForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
           placeholder="Guardian Name (optional)"
+          autoComplete="off"
           error={errors.guardianName?.message}
           {...register("guardianName")}
         />

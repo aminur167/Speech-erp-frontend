@@ -79,7 +79,12 @@ export function MaterialForm({
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(submit)}>
       <MaterialImagePicker value={imageUrl} onChange={setImageUrl} />
-      <Input placeholder="Material Name" error={errors.name?.message} {...register("name")} />
+      <Input
+        placeholder="Material Name"
+        autoComplete="off"
+        error={errors.name?.message}
+        {...register("name")}
+      />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Select {...register("unit")}>
           <option value="piece">Piece</option>
