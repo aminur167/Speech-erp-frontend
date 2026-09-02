@@ -9,6 +9,25 @@ import { collectDuePayment } from "@/lib/api/duePayments";
 import { queryKeys } from "@/lib/queryKeys";
 
 /**
+ * The mutation keys registered below — the only mutations that actually get
+ * paused/queued while offline and replayed later. `useOfflineQueueStatus`
+ * uses this same list to scope its "waiting to sync" / "failed to sync"
+ * indicator, so an ordinary online validation error (e.g. a wrong password,
+ * a duplicate code) on some other mutation never gets mistaken for a sync
+ * failure.
+ */
+export const OFFLINE_MUTATION_KEYS: readonly string[] = [
+  "payMonthlyBill",
+  "payInstallment",
+  "createPatient",
+  "createExpense",
+  "adjustStock",
+  "sellMaterials",
+  "createBooking",
+  "collectDuePayment",
+];
+
+/**
  * Registers a `mutationFn` for every offline-queueable mutation, keyed by
  * `mutationKey`.
  *

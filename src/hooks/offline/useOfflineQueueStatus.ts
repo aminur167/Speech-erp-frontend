@@ -1,4 +1,10 @@
 import { useMutationState, useQueryClient } from "@tanstack/react-query";
+import { OFFLINE_MUTATION_KEYS } from "@/lib/offline/mutationDefaults";
+
+function isOfflineQueueableMutation(mutationKey: readonly unknown[] | undefined): boolean {
+  const key = mutationKey?.[0];
+  return typeof key === "string" && OFFLINE_MUTATION_KEYS.includes(key);
+}
 
 export interface FailedMutation {
   id: number;
@@ -24,12 +30,18 @@ export function useOfflineQueueStatus() {
   const queryClient = useQueryClient();
 
   const pending = useMutationState({
-    filters: { status: "pending" },
+    filters: {
+      status: "pending",
+      predicate: (mutation) => isOfflineQueueableMutation(mutation.options.mutationKey),
+    },
     select: (mutation) => ({ isPaused: mutation.state.isPaused }),
   });
 
   const failed: FailedMutation[] = useMutationState({
-    filters: { status: "error" },
+    filters: {
+      status: "error",
+      predicate: (mutation) => isOfflineQueueableMutation(mutation.options.mutationKey),
+    },
     select: (mutation) => ({
       id: mutation.mutationId,
       label:
