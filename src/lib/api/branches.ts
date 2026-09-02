@@ -64,12 +64,22 @@ export interface BranchOverview {
   monthlyRevenue: number;
 }
 
-interface RawBranchOverview extends Omit<BranchOverview, "branch"> {
+interface RawBranchOverview extends Omit<BranchOverview, "branch" | "totalCollected" | "monthlyRevenue"> {
   branch: RawBranch;
+  // DRF's DecimalField serializes as a JSON string ("21480.00"), not a
+  // number -- summing two of these with `+` silently does string
+  // concatenation instead of addition (see BranchesView's totals reduce).
+  totalCollected: string | number;
+  monthlyRevenue: string | number;
 }
 
 function normalizeOverview(raw: RawBranchOverview): BranchOverview {
-  return { ...raw, branch: normalizeBranch(raw.branch) };
+  return {
+    ...raw,
+    branch: normalizeBranch(raw.branch),
+    totalCollected: Number(raw.totalCollected),
+    monthlyRevenue: Number(raw.monthlyRevenue),
+  };
 }
 
 export async function getBranchesOverview(): Promise<BranchOverview[]> {
