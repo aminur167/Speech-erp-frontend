@@ -11,6 +11,10 @@ export function useCreateService() {
     mutationFn: createService,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.services.all });
+      // An Admin creating for a branch they're viewing doesn't change the
+      // pending count, but a Manager proposing does -- and the same Admin
+      // may be the one looking at the badge in another tab.
+      queryClient.invalidateQueries({ queryKey: queryKeys.pendingPackages.count });
     },
   });
 }

@@ -11,6 +11,11 @@ export function useReviewService() {
     mutationFn: reviewService,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.services.all });
+      // The sidebar badge and the bell are driven by their own queries --
+      // without these, the Admin who just decided still sees the old
+      // pending count until the next poll, which reads as "it didn't work".
+      queryClient.invalidateQueries({ queryKey: queryKeys.pendingPackages.count });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
     },
   });
 }

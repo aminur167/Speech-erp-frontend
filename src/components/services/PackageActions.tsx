@@ -43,10 +43,14 @@ export function PackageActions({
   if (service.reviewStatus === "pending") {
     return (
       <div className={clsx("flex gap-2", compact ? "" : "w-full")}>
+        {/* Compact renders these icon-only, so the label has to come from
+            aria-label or the button has no accessible name at all. */}
         <Button
           className={clsx(btnClass, !compact && "flex-1")}
           onClick={() => onApprove(service)}
           isLoading={isApproving}
+          aria-label={`Approve ${service.name}`}
+          title="Approve"
         >
           <Check className="h-4 w-4" />
           {!compact && "Approve"}
@@ -55,6 +59,8 @@ export function PackageActions({
           variant="danger"
           className={clsx(btnClass, !compact && "flex-1")}
           onClick={() => onReject(service)}
+          aria-label={`Reject ${service.name}`}
+          title="Reject"
         >
           <XIcon className="h-4 w-4" />
           {!compact && "Reject"}
@@ -79,10 +85,22 @@ export function PackageActions({
   if (compact) {
     return (
       <div className="flex gap-1.5">
-        <Button variant="secondary" className={btnClass} onClick={() => onEdit(service)}>
+        <Button
+          variant="secondary"
+          className={btnClass}
+          onClick={() => onEdit(service)}
+          aria-label={`Edit ${service.name}`}
+          title="Edit"
+        >
           <Pencil className="h-4 w-4" />
         </Button>
-        <Button variant="danger" className={btnClass} onClick={() => onDelete(service)}>
+        <Button
+          variant="danger"
+          className={btnClass}
+          onClick={() => onDelete(service)}
+          aria-label={`Delete ${service.name}`}
+          title="Delete"
+        >
           <Trash2 className="h-4 w-4" />
         </Button>
         <Button
@@ -90,6 +108,8 @@ export function PackageActions({
           className={btnClass}
           onClick={() => onToggleActive(service)}
           disabled={isToggling}
+          aria-label={`${service.isActive ? "Deactivate" : "Activate"} ${service.name}`}
+          title={service.isActive ? "Deactivate" : "Activate"}
         >
           {service.isActive ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
         </Button>
