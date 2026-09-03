@@ -299,6 +299,7 @@ export function BranchesView() {
           onSubmit={handleCreate}
           onCancel={() => setIsCreateOpen(false)}
           isSubmitting={createBranch.isPending}
+          existingCodes={(overview ?? []).map((item) => item.branch.code)}
         />
       </Modal>
     </div>

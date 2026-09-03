@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { buildBranchCodes } from "@/utils/branchCode";
 import type { Branch } from "@/types/domain";
 import type { BranchInput } from "@/lib/api/branches";
 
@@ -50,16 +52,21 @@ export function BranchForm({
   onSubmit,
   onCancel,
   isSubmitting,
+  existingCodes = [],
 }: {
   initialValues?: Branch;
   onSubmit: (input: BranchInput) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  /** Every branch code already in use — the suggested code is numbered past these. */
+  existingCodes?: string[];
 }) {
   const isEditing = Boolean(initialValues);
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<BranchFormValues>({
     resolver: zodResolver(buildBranchSchema(isEditing)),
@@ -85,6 +92,28 @@ export function BranchForm({
           openedAt: todayDateString(),
         },
   });
+
+  // Suggested codes follow the branch name until either field is edited by
+  // hand, at which point that field is the operator's and stays untouched.
+  const [codeTouched, setCodeTouched] = useState(false);
+  const [managerCodeTouched, setManagerCodeTouched] = useState(false);
+  const nameValue = watch("name");
+
+  const suggested = useMemo(
+    // Never on edit: an existing branch's code is already baked into every
+    // patient and receipt code issued under it.
+    () => (isEditing ? null : buildBranchCodes(nameValue ?? "", existingCodes)),
+    [isEditing, nameValue, existingCodes],
+  );
+
+  useEffect(() => {
+    if (!suggested) return;
+    if (!codeTouched) setValue("code", suggested.branchCode);
+    if (!managerCodeTouched) setValue("managerCode", suggested.managerCode);
+  }, [suggested, codeTouched, managerCodeTouched, setValue]);
+
+  const codeField = register("code");
+  const managerCodeField = register("managerCode");
 
   const submit = (values: BranchFormValues) => {
     onSubmit({
@@ -114,8 +143,13 @@ export function BranchForm({
         />
         <Input
           placeholder="Branch Code (e.g. BR-DHK-002)"
+          autoComplete="off"
           error={errors.code?.message}
-          {...register("code")}
+          {...codeField}
+          onChange={(event) => {
+            setCodeTouched(true);
+            return codeField.onChange(event);
+          }}
         />
       </div>
 
@@ -135,8 +169,13 @@ export function BranchForm({
         />
         <Input
           placeholder="Manager Code (e.g. MGR-DHK-002)"
+          autoComplete="off"
           error={errors.managerCode?.message}
-          {...register("managerCode")}
+          {...managerCodeField}
+          onChange={(event) => {
+            setManagerCodeTouched(true);
+            return managerCodeField.onChange(event);
+          }}
         />
       </div>
 
