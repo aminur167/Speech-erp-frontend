@@ -258,6 +258,9 @@ export interface InstallmentPlan {
   totalAmount: number;
   installments: Installment[];
   status: EnrollmentStatus;
+  /** The agreed window the plan must be cleared in. Null on plans created before it existed. */
+  startsOn: string | null;
+  endsOn: string | null;
   createdAt: string;
 }
 

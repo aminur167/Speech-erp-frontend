@@ -6,10 +6,17 @@ export function usePayInstallment() {
   return useMutation<
     PayInstallmentResult,
     ApiError,
-    { planId: string; installmentId: string; method: string; idempotencyKey?: string }
+    {
+      planId: string;
+      installmentId: string;
+      method: string;
+      idempotencyKey?: string;
+      /** Omitted collects the scheduled figure. */
+      amount?: number;
+    }
   >({
     mutationKey: ["payInstallment"],
-    mutationFn: ({ planId, installmentId, method, idempotencyKey }) =>
-      payInstallment(planId, installmentId, method, idempotencyKey),
+    mutationFn: ({ planId, installmentId, method, idempotencyKey, amount }) =>
+      payInstallment(planId, installmentId, method, idempotencyKey, amount),
   });
 }

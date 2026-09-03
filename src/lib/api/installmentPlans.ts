@@ -49,6 +49,9 @@ export interface CreateInstallmentPlanInput {
   patientId: string;
   serviceId: string;
   numberOfInstallments: number;
+  /** The window the plan must be cleared in — due dates are spread across it. */
+  startsOn?: string;
+  endsOn?: string;
 }
 
 export async function createInstallmentPlan(
@@ -60,6 +63,8 @@ export async function createInstallmentPlan(
     patient: input.patientId,
     service: input.serviceId,
     numberOfInstallments: input.numberOfInstallments,
+    startsOn: input.startsOn,
+    endsOn: input.endsOn,
   });
   return normalizePlan(data);
 }
@@ -69,16 +74,23 @@ export interface PayInstallmentResult {
   plan: InstallmentPlan;
 }
 
-/** One atomic call — charges the payment and marks the installment paid together. */
+/**
+ * One atomic call — charges the payment and settles the installment together.
+ *
+ * `amount` lets the manager take whatever the patient actually has today;
+ * omitted, it collects the scheduled figure. Anything short of it is carried
+ * into the later installments server-side, so the plan total never moves.
+ */
 export async function payInstallment(
   planId: string,
   installmentId: string,
   method: string,
   idempotencyKey?: string,
+  amount?: number,
 ): Promise<PayInstallmentResult> {
   const { data } = await apiClient.post<{ payment: RawPayment; plan: RawPlan }>(
     `/enrollments/installments/${planId}/installments/${installmentId}/pay/`,
-    { method, idempotencyKey },
+    { method, idempotencyKey, amount },
   );
   return {
     payment: normalizePayment(data.payment),

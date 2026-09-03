@@ -93,6 +93,12 @@ export interface CollectDuePaymentInput {
   item: Pick<DuePaymentItem, "type" | "refId" | "itemId">;
   method: PaymentMethod;
   idempotencyKey?: string;
+  /**
+   * Installments only — collect whatever the patient can pay today, with the
+   * rest carried into the later installments. Monthly bills stay all-or-
+   * nothing (the confirmed rule is full payment by the 5th).
+   */
+  amount?: number;
 }
 
 /**
@@ -109,7 +115,7 @@ export async function collectDuePayment(input: CollectDuePaymentInput): Promise<
     return payment;
   }
   const { payment } = await payInstallment(
-    input.item.refId, input.item.itemId, input.method, input.idempotencyKey,
+    input.item.refId, input.item.itemId, input.method, input.idempotencyKey, input.amount,
   );
   return payment;
 }

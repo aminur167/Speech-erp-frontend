@@ -63,7 +63,17 @@ export function registerOfflineMutationDefaults(queryClient: QueryClient): void 
       installmentId: string;
       method: string;
       idempotencyKey?: string;
-    }) => payInstallment(vars.planId, vars.installmentId, vars.method, vars.idempotencyKey),
+      // Carried through deliberately: a partial collection queued offline
+      // has to replay for the amount actually taken, not the scheduled one.
+      amount?: number;
+    }) =>
+      payInstallment(
+        vars.planId,
+        vars.installmentId,
+        vars.method,
+        vars.idempotencyKey,
+        vars.amount,
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.duePayments.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
