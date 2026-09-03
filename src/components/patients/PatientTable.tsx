@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { OverdueBadge } from "@/components/patients/OverdueBadge";
+import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import type { PatientDirectoryItem } from "@/lib/api/patientDirectory";
 import type { ServiceCategory } from "@/types/domain";
 
@@ -54,6 +57,10 @@ export function PatientTable({
   basePath: string;
   columns: PatientTableColumns;
 }) {
+  // The name is a link to the full patient page; clicking anywhere else on
+  // the row opens the summary without leaving the directory.
+  const detail = useRowDetail<PatientDirectoryItem>();
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
@@ -73,7 +80,7 @@ export function PatientTable({
         </thead>
         <tbody>
           {patients.map((patient) => (
-            <tr key={patient.id} className="border-b border-border last:border-0">
+            <tr key={patient.id} {...detail.rowProps(patient)}>
               <td className="py-2 pr-4 font-mono text-xs text-text-secondary">
                 {patient.patientCode}
               </td>
@@ -139,6 +146,24 @@ export function PatientTable({
           ))}
         </tbody>
       </table>
+
+      <RowDetailDrawer
+        open={detail.isOpen}
+        onClose={detail.close}
+        title={detail.selected?.name ?? ""}
+        subtitle={detail.selected?.patientCode ?? undefined}
+        data={detail.selected}
+        footer={
+          detail.selected ? (
+            <Link
+              href={`${basePath}/${detail.selected.id}`}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Open full patient record →
+            </Link>
+          ) : undefined
+        }
+      />
     </div>
   );
 }

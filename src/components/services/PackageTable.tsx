@@ -3,6 +3,7 @@
 import { clsx } from "clsx";
 import { Badge } from "@/components/ui/Badge";
 import { PackageActions } from "@/components/services/PackageActions";
+import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { formatCurrency } from "@/utils/currency";
 import type { Service, ServiceCategory } from "@/types/domain";
 
@@ -39,6 +40,8 @@ export function PackageTable({
   approvingId?: string;
   togglingId?: string;
 }) {
+  const detail = useRowDetail<Service>();
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
@@ -55,7 +58,7 @@ export function PackageTable({
         </thead>
         <tbody>
           {services.map((service) => (
-            <tr key={service.id} className="border-b border-border/60 align-top">
+            <tr key={service.id} {...detail.rowProps(service, "align-top")}>
               <td className="py-2.5 pr-3">
                 <p className="font-medium text-text-primary">{service.name}</p>
                 <p className="font-mono text-[11px] text-text-secondary">{service.code}</p>
@@ -122,6 +125,14 @@ export function PackageTable({
           ))}
         </tbody>
       </table>
+
+      <RowDetailDrawer
+        open={detail.isOpen}
+        onClose={detail.close}
+        title={detail.selected?.name ?? ""}
+        subtitle={detail.selected?.code ?? undefined}
+        data={detail.selected}
+      />
     </div>
   );
 }

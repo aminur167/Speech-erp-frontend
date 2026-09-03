@@ -1,6 +1,9 @@
+"use client";
+
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { OverdueBadge } from "@/components/patients/OverdueBadge";
+import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { formatCurrency } from "@/utils/currency";
 import type { DuePaymentItem } from "@/lib/api/duePayments";
 
@@ -15,6 +18,7 @@ export function DuePaymentTable({
   onTerminate?: (item: DuePaymentItem) => void;
 }) {
   const showActions = Boolean(onCollectPayment || onTerminate);
+  const detail = useRowDetail<DuePaymentItem>();
 
   return (
     <div className="overflow-x-auto">
@@ -32,7 +36,7 @@ export function DuePaymentTable({
         </thead>
         <tbody>
           {items.map((item) => (
-            <tr key={item.key} className="border-b border-border last:border-0">
+            <tr key={item.key} {...detail.rowProps(item)}>
               <td className="py-2 pr-4">
                 <p className="font-medium text-text-primary">{item.patientName}</p>
                 <p className="font-mono text-xs text-text-secondary">{item.patientCode}</p>
@@ -68,6 +72,15 @@ export function DuePaymentTable({
           ))}
         </tbody>
       </table>
+
+      <RowDetailDrawer
+        open={detail.isOpen}
+        onClose={detail.close}
+        title={detail.selected?.patientName ?? ""}
+        subtitle={detail.selected?.serviceName ?? undefined}
+        data={detail.selected}
+        hiddenFields={["key"]}
+      />
     </div>
   );
 }

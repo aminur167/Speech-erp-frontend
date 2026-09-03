@@ -1,5 +1,8 @@
+"use client";
+
 import { Ban, Undo2 } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { formatCurrency } from "@/utils/currency";
 import type { TransactionItem } from "@/lib/api/transactions";
 
@@ -22,6 +25,7 @@ export function TransactionTable({
   onRequestRefund?: (transaction: TransactionItem) => void;
 }) {
   const showActions = canVoid || canRequestRefund;
+  const detail = useRowDetail<TransactionItem>();
 
   return (
     <div className="overflow-x-auto">
@@ -41,7 +45,7 @@ export function TransactionTable({
           {transactions.map((transaction) => {
             const actionable = ACTIONABLE_STATUSES.has(transaction.status);
             return (
-              <tr key={transaction.id} className="border-b border-border last:border-0">
+              <tr key={transaction.id} {...detail.rowProps(transaction)}>
                 <td className="py-2 pr-4 font-mono text-xs text-text-secondary">
                   {transaction.receiptNumber}
                 </td>
@@ -92,6 +96,14 @@ export function TransactionTable({
           })}
         </tbody>
       </table>
+
+      <RowDetailDrawer
+        open={detail.isOpen}
+        onClose={detail.close}
+        title={detail.selected?.receiptNumber ?? ""}
+        subtitle={detail.selected?.patientName ?? undefined}
+        data={detail.selected}
+      />
     </div>
   );
 }

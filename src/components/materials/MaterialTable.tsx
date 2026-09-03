@@ -1,6 +1,9 @@
+"use client";
+
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { MaterialThumb } from "@/components/materials/MaterialThumb";
+import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { formatCurrency } from "@/utils/currency";
 import type { Material } from "@/types/domain";
 
@@ -16,6 +19,7 @@ export function MaterialTable({
   onDelete?: (material: Material) => void;
 }) {
   const hasActions = Boolean(onAdjustStock || onEdit || onDelete);
+  const detail = useRowDetail<Material>();
 
   return (
     <div className="overflow-x-auto">
@@ -39,7 +43,7 @@ export function MaterialTable({
           {materials.map((material) => {
             const isLow = material.quantity <= material.reorderLevel;
             return (
-              <tr key={material.id} className="border-b border-border last:border-0">
+              <tr key={material.id} {...detail.rowProps(material)}>
                 <td className="w-12 py-2 pr-3">
                   <MaterialThumb src={material.imageUrl} alt={material.name} />
                 </td>
@@ -82,6 +86,15 @@ export function MaterialTable({
           })}
         </tbody>
       </table>
+
+      <RowDetailDrawer
+        open={detail.isOpen}
+        onClose={detail.close}
+        title={detail.selected?.name ?? ""}
+        subtitle={detail.selected?.code ?? undefined}
+        data={detail.selected}
+        hiddenFields={["imageUrl"]}
+      />
     </div>
   );
 }

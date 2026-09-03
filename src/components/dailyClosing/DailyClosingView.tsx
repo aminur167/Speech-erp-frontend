@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { AmendClosingModal } from "@/components/dailyClosing/AmendClosingModal";
+import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { useTodaySystemCollection } from "@/hooks/dailyClosing/useTodaySystemCollection";
 import { useDailyClosingHistory } from "@/hooks/dailyClosing/useDailyClosingHistory";
 import { useSubmitDailyClosing } from "@/hooks/dailyClosing/useSubmitDailyClosing";
@@ -50,6 +51,7 @@ export function DailyClosingView({
 
   const [actualTotal, setActualTotal] = useState("");
   const [amendingClosing, setAmendingClosing] = useState<DailyClosing | null>(null);
+  const detail = useRowDetail<DailyClosing>();
 
   const { data: summary, isLoading: summaryLoading } = useTodaySystemCollection(branchId);
   const { data: history, isLoading: historyLoading } = useDailyClosingHistory(branchId);
@@ -340,7 +342,7 @@ export function DailyClosingView({
                 <tbody>
                   {history.map((closing) => (
                     <Fragment key={closing.id}>
-                      <tr className="border-b border-border last:border-0">
+                      <tr {...detail.rowProps(closing)}>
                         <td className="py-2 pr-4">
                           {closing.date}
                           {closing.isAmended && (
@@ -396,6 +398,15 @@ export function DailyClosingView({
       </Card>
 
       <AmendClosingModal closing={amendingClosing} onClose={() => setAmendingClosing(null)} />
+
+      <RowDetailDrawer
+        open={detail.isOpen}
+        onClose={detail.close}
+        title={detail.selected ? `Closing · ${detail.selected.date}` : ""}
+        subtitle={detail.selected ? statusLabel[detail.selected.status] : undefined}
+        data={detail.selected}
+        hiddenFields={["amendments"]}
+      />
     </div>
   );
 }

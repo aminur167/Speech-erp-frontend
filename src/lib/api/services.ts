@@ -14,7 +14,8 @@ import type { Service, ServiceCategory } from "@/types/domain";
 interface RawService extends Omit<Service, "id" | "fee" | "originalFee"> {
   id: number | string;
   fee: number | string;
-  originalFee?: number | string;
+  // A package with no pre-discount price sends `null`, not an absent key.
+  originalFee?: number | string | null;
 }
 
 function normalizeService(raw: RawService): Service {
@@ -22,7 +23,9 @@ function normalizeService(raw: RawService): Service {
     ...raw,
     id: String(raw.id),
     fee: Number(raw.fee),
-    originalFee: raw.originalFee === undefined ? undefined : Number(raw.originalFee),
+    // `== null` covers both null and undefined: Number(null) is 0, which
+    // would read as a real ৳0 pre-discount price rather than "not set".
+    originalFee: raw.originalFee == null ? undefined : Number(raw.originalFee),
   };
 }
 

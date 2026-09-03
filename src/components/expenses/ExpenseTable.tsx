@@ -1,6 +1,9 @@
+"use client";
+
 import { formatCurrency } from "@/utils/currency";
 import { ExpenseStatusBadge } from "@/components/expenses/ExpenseStatusBadge";
 import { Button } from "@/components/ui/Button";
+import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import type { Expense } from "@/types/domain";
 
 export function ExpenseTable({
@@ -16,6 +19,8 @@ export function ExpenseTable({
   onReject?: (id: string) => void;
   isMutating?: boolean;
 }) {
+  const detail = useRowDetail<Expense>();
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
@@ -34,7 +39,7 @@ export function ExpenseTable({
         </thead>
         <tbody>
           {expenses.map((expense) => (
-            <tr key={expense.id} className="border-b border-border last:border-0">
+            <tr key={expense.id} {...detail.rowProps(expense)}>
               <td className="py-2 pr-4 font-mono text-xs text-text-secondary">
                 {expense.expenseCode}
               </td>
@@ -99,6 +104,14 @@ export function ExpenseTable({
           ))}
         </tbody>
       </table>
+
+      <RowDetailDrawer
+        open={detail.isOpen}
+        onClose={detail.close}
+        title={detail.selected?.expenseCode ?? ""}
+        subtitle={detail.selected?.description ?? undefined}
+        data={detail.selected}
+      />
     </div>
   );
 }

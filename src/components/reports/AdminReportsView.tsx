@@ -21,6 +21,7 @@ import { usePatientDirectorySummary } from "@/hooks/patients/usePatientDirectory
 import { useDailyClosingHistory } from "@/hooks/dailyClosing/useDailyClosingHistory";
 import { useRefundsAndVoids } from "@/hooks/transactions/useRefundsAndVoids";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
+import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { formatCurrency } from "@/utils/currency";
 import type { SummaryPeriod } from "@/lib/api/transactions";
 
@@ -66,6 +67,7 @@ export function AdminReportsView() {
   const netRevenue = totalCollected - totalExpenses;
   const mismatches = closings?.filter((closing) => closing.status !== "matched") ?? [];
   const maxMethodAmount = transactions?.byMethod[0]?.amount ?? 0;
+  const mismatchDetail = useRowDetail<(typeof mismatches)[number]>();
 
   return (
     <div className="flex flex-col gap-6">
@@ -204,7 +206,7 @@ export function AdminReportsView() {
                 </thead>
                 <tbody>
                   {mismatches.map((closing) => (
-                    <tr key={closing.id} className="border-b border-border last:border-0">
+                    <tr key={closing.id} {...mismatchDetail.rowProps(closing)}>
                       <td className="py-2 pr-4">{closing.date}</td>
                       <td className="py-2 pr-4">{closing.branchId}</td>
                       <td className="py-2 pr-4">{formatCurrency(closing.systemTotal)}</td>
@@ -260,6 +262,15 @@ export function AdminReportsView() {
           </div>
         </div>
       </Card>
+
+      <RowDetailDrawer
+        open={mismatchDetail.isOpen}
+        onClose={mismatchDetail.close}
+        title={mismatchDetail.selected ? `Closing · ${mismatchDetail.selected.date}` : ""}
+        subtitle={mismatchDetail.selected?.status.toUpperCase()}
+        data={mismatchDetail.selected}
+        hiddenFields={["amendments"]}
+      />
     </div>
   );
 }

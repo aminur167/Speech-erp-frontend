@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
@@ -10,8 +10,9 @@ import { Pagination } from "@/components/ui/Pagination";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
+import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { useAuditLogs } from "@/hooks/audit/useAuditLogs";
-import type { AuditLogAction } from "@/types/domain";
+import type { AuditLogAction, AuditLogEntry } from "@/types/domain";
 
 const PAGE_SIZE = 10;
 
@@ -96,7 +97,7 @@ function ChangeRow({ field, value }: { field: string; value: unknown }) {
 export function AuditLogView({ homeHref }: { homeHref: string }) {
   const [action, setAction] = useState<AuditLogAction | "">("");
   const [page, setPage] = useState(1);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const detail = useRowDetail<AuditLogEntry>();
 
   const { data, isLoading, isFetching, isError, refetch } = useAuditLogs({
     action: action || undefined,
@@ -161,59 +162,29 @@ export function AuditLogView({ homeHref }: { homeHref: string }) {
                   </thead>
                   <tbody>
                     {data.results.map((entry) => (
-                      <Fragment key={entry.id}>
-                        <tr
-                          className={clsx(
-                            "border-b border-border/60",
-                            Object.keys(entry.changes).length > 0 &&
-                              "cursor-pointer hover:bg-primary-light/30",
-                          )}
-                          onClick={() =>
-                            Object.keys(entry.changes).length > 0 &&
-                            setExpandedId(expandedId === entry.id ? null : entry.id)
-                          }
-                        >
-                          <td className="py-2 pr-3 whitespace-nowrap text-text-secondary">
-                            {new Date(entry.createdAt).toLocaleString()}
-                          </td>
-                          <td className="py-2 pr-3">{entry.actorEmail || "System"}</td>
-                          <td className="py-2 pr-3">
-                            <span
-                              className={clsx(
-                                "rounded-full px-2 py-0.5 text-xs font-medium",
-                                ACTION_TONE[entry.action],
-                              )}
-                            >
-                              {ACTION_LABELS[entry.action]}
-                            </span>
-                          </td>
-                          <td className="py-2 pr-3 font-mono text-xs text-text-secondary">
-                            {entry.targetType}#{entry.targetId}
-                          </td>
-                          <td className="py-2 pr-3 text-text-secondary">
-                            {entry.branchName ?? "—"}
-                          </td>
-                          <td className="py-2 pr-3 text-text-secondary">{entry.reason || "—"}</td>
-                        </tr>
-                        {expandedId === entry.id && (
-                          <tr className="border-b border-border/60 bg-background">
-                            <td colSpan={6} className="px-3 py-3">
-                              <p className="mb-1.5 text-xs font-medium text-text-secondary">
-                                {/* An approval and an edit both carry from/to
-                                    pairs; a create just records values. */}
-                                {Object.values(entry.changes).some(isTransition)
-                                  ? "What changed"
-                                  : "What was recorded"}
-                              </p>
-                              <div className="flex flex-col gap-1 text-xs">
-                                {Object.entries(entry.changes).map(([field, value]) => (
-                                  <ChangeRow key={field} field={field} value={value} />
-                                ))}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
+                      <tr key={entry.id} {...detail.rowProps(entry)}>
+                        <td className="py-2 pr-3 whitespace-nowrap text-text-secondary">
+                          {new Date(entry.createdAt).toLocaleString()}
+                        </td>
+                        <td className="py-2 pr-3">{entry.actorEmail || "System"}</td>
+                        <td className="py-2 pr-3">
+                          <span
+                            className={clsx(
+                              "rounded-full px-2 py-0.5 text-xs font-medium",
+                              ACTION_TONE[entry.action],
+                            )}
+                          >
+                            {ACTION_LABELS[entry.action]}
+                          </span>
+                        </td>
+                        <td className="py-2 pr-3 font-mono text-xs text-text-secondary">
+                          {entry.targetType}#{entry.targetId}
+                        </td>
+                        <td className="py-2 pr-3 text-text-secondary">
+                          {entry.branchName ?? "—"}
+                        </td>
+                        <td className="py-2 pr-3 text-text-secondary">{entry.reason || "—"}</td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
@@ -228,6 +199,40 @@ export function AuditLogView({ homeHref }: { homeHref: string }) {
           )}
         </div>
       </Card>
+
+      <RowDetailDrawer
+        open={detail.isOpen}
+        onClose={detail.close}
+        title={
+          detail.selected
+            ? `${ACTION_LABELS[detail.selected.action]} · ${detail.selected.targetType}#${detail.selected.targetId}`
+            : ""
+        }
+        subtitle={
+          detail.selected ? new Date(detail.selected.createdAt).toLocaleString() : undefined
+        }
+        // `changes` needs the from/to treatment below, and the heading
+        // duplicates what the drawer title already says.
+        data={detail.selected}
+        hiddenFields={["changes", "targetType", "targetId"]}
+      >
+        {detail.selected && Object.keys(detail.selected.changes).length > 0 && (
+          <div className="mb-4 rounded-lg border border-border bg-background p-3">
+            <p className="mb-2 text-xs font-medium text-text-secondary">
+              {/* An approval and an edit both carry from/to pairs; a create
+                  just records values. */}
+              {Object.values(detail.selected.changes).some(isTransition)
+                ? "What changed"
+                : "What was recorded"}
+            </p>
+            <div className="flex flex-col gap-1.5 text-xs">
+              {Object.entries(detail.selected.changes).map(([field, value]) => (
+                <ChangeRow key={field} field={field} value={value} />
+              ))}
+            </div>
+          </div>
+        )}
+      </RowDetailDrawer>
     </div>
   );
 }
