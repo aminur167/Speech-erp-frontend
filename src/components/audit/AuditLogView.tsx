@@ -47,6 +47,52 @@ const ACTION_TONE: Record<AuditLogAction, string> = {
   login: "bg-info/10 text-info",
 };
 
+/** `receipt_number` -> "Receipt number", `patient_code` -> "Patient code". */
+function humanizeField(field: string): string {
+  const spaced = field.replace(/_/g, " ").replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
+}
+
+/** Renders a recorded value readably — never the literal "undefined"/"null". */
+function formatValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  return String(value);
+}
+
+/**
+ * A `{from, to}` pair, or a bare recorded value.
+ *
+ * Both shapes are legitimate (see AuditLogEntry.changes). Rendering a bare
+ * value through the pair branch is what printed "undefined → undefined" for
+ * every create entry, which is most of the log.
+ */
+function isTransition(value: unknown): value is { from: unknown; to: unknown } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    ("from" in value || "to" in value)
+  );
+}
+
+function ChangeRow({ field, value }: { field: string; value: unknown }) {
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-1.5">
+      <span className="text-text-secondary">{humanizeField(field)}:</span>
+      {isTransition(value) ? (
+        <>
+          <span className="text-danger line-through">{formatValue(value.from)}</span>
+          <span className="text-text-secondary">→</span>
+          <span className="font-medium text-success">{formatValue(value.to)}</span>
+        </>
+      ) : (
+        <span className="font-medium text-text-primary">{formatValue(value)}</span>
+      )}
+    </div>
+  );
+}
+
 export function AuditLogView({ homeHref }: { homeHref: string }) {
   const [action, setAction] = useState<AuditLogAction | "">("");
   const [page, setPage] = useState(1);
@@ -153,17 +199,15 @@ export function AuditLogView({ homeHref }: { homeHref: string }) {
                           <tr className="border-b border-border/60 bg-background">
                             <td colSpan={6} className="px-3 py-3">
                               <p className="mb-1.5 text-xs font-medium text-text-secondary">
-                                What changed
+                                {/* An approval and an edit both carry from/to
+                                    pairs; a create just records values. */}
+                                {Object.values(entry.changes).some(isTransition)
+                                  ? "What changed"
+                                  : "What was recorded"}
                               </p>
-                              <div className="flex flex-col gap-1 font-mono text-xs">
-                                {Object.entries(entry.changes).map(([field, diff]) => (
-                                  <div key={field}>
-                                    <span className="text-text-secondary">{field}:</span>{" "}
-                                    <span className="text-danger line-through">
-                                      {String(diff.from)}
-                                    </span>{" "}
-                                    → <span className="text-success">{String(diff.to)}</span>
-                                  </div>
+                              <div className="flex flex-col gap-1 text-xs">
+                                {Object.entries(entry.changes).map(([field, value]) => (
+                                  <ChangeRow key={field} field={field} value={value} />
                                 ))}
                               </div>
                             </td>

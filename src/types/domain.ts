@@ -356,6 +356,11 @@ export interface AuditLogEntry {
   branchId: string | null;
   branchName: string | null;
   reason: string;
-  changes: Record<string, { from: unknown; to: unknown }>;
+  /**
+   * Two shapes, both used deliberately by the backend (apps/common/audit.py):
+   * a `{from, to}` pair for a field that moved (an update, an approval), and
+   * a bare value for a field simply recorded as-is (what a create wrote).
+   */
+  changes: Record<string, { from: unknown; to: unknown } | unknown>;
   createdAt: string;
 }
