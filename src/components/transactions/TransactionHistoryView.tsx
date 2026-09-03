@@ -21,6 +21,7 @@ import { useTransactionsSummary } from "@/hooks/transactions/useTransactionsSumm
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { exportToCsv } from "@/utils/exportCsv";
+import { toLocalDateString } from "@/utils/time";
 import type { PaymentMethod, PaymentStatus } from "@/types/domain";
 import type { SummaryPeriod, TransactionItem } from "@/lib/api/transactions";
 
@@ -103,7 +104,7 @@ export function TransactionHistoryView({
               setPage(1);
             }}
             containerClassName={FILTER_FIELD_WIDTH}
-            max={new Date().toISOString().slice(0, 10)}
+            max={toLocalDateString()}
           />
         }
       >

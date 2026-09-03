@@ -23,6 +23,7 @@ import { usePatientDirectorySummary } from "@/hooks/patients/usePatientDirectory
 import { useAuthStore } from "@/store/authStore";
 import { exportToCsv } from "@/utils/exportCsv";
 import { PAYMENT_METHOD_OPTIONS } from "@/utils/paymentMethod";
+import { toLocalDateString } from "@/utils/time";
 import type { PatientCareStatus, PatientTimeRange } from "@/lib/api/patientDirectory";
 import type { Gender, PaymentMethod, ServiceCategory } from "@/types/domain";
 
@@ -180,7 +181,7 @@ export function PatientListView({
               setPage(1);
             }}
             containerClassName={FILTER_FIELD_WIDTH}
-            max={new Date().toISOString().slice(0, 10)}
+            max={toLocalDateString()}
           />
         }
       >

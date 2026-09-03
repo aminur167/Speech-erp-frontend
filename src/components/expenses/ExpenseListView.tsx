@@ -23,6 +23,7 @@ import { useUpdateExpenseStatus } from "@/hooks/expenses/useUpdateExpenseStatus"
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { exportToCsv } from "@/utils/exportCsv";
+import { toLocalDateString } from "@/utils/time";
 import type { Expense, ExpenseStatus } from "@/types/domain";
 import type { SummaryPeriod } from "@/lib/api/expenses";
 
@@ -121,7 +122,7 @@ export function ExpenseListView({
               setPage(1);
             }}
             containerClassName={FILTER_FIELD_WIDTH}
-            max={new Date().toISOString().slice(0, 10)}
+            max={toLocalDateString()}
           />
         }
       >

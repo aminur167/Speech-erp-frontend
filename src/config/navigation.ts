@@ -38,6 +38,9 @@ export function isNavGroup(item: NavItem): item is NavGroup {
 
 export const managerNav: NavItem[] = [
   { label: "Dashboard", href: "/manager/dashboard", icon: LayoutDashboard },
+  // Next to Dashboard on purpose: the dashboard answers "how is today
+  // going", Summary answers the same question for any range you pick.
+  { label: "Summary", href: "/manager/summary", icon: BarChart3 },
   { label: "Patients", href: "/manager/patients", icon: UserPlus },
   {
     label: "Enroll Service",
@@ -71,6 +74,7 @@ export function branchNav(branchId: string): NavItem[] {
   return [
     { label: "All Branches", href: "/admin/branches", icon: ArrowLeft },
     { label: "Overview", href: base, icon: LayoutDashboard },
+    { label: "Summary", href: `${base}/summary`, icon: BarChart3 },
     { label: "Patients", href: `${base}/patients`, icon: UserPlus },
     { label: "Packages", href: `${base}/packages`, icon: Package },
     { label: "Appointments", href: `${base}/appointments`, icon: CalendarClock },

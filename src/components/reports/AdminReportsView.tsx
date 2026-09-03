@@ -22,6 +22,7 @@ import { useDailyClosingHistory } from "@/hooks/dailyClosing/useDailyClosingHist
 import { useRefundsAndVoids } from "@/hooks/transactions/useRefundsAndVoids";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
+import { toLocalDateString } from "@/utils/time";
 import { formatCurrency } from "@/utils/currency";
 import type { SummaryPeriod } from "@/lib/api/transactions";
 
@@ -88,7 +89,7 @@ export function AdminReportsView() {
               setPeriod("");
             }}
             containerClassName={FILTER_FIELD_WIDTH}
-            max={new Date().toISOString().slice(0, 10)}
+            max={toLocalDateString()}
           />
         }
       >

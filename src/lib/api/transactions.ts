@@ -176,3 +176,80 @@ export async function getNetRevenue(branchId?: string, date?: string): Promise<N
   });
   return data;
 }
+
+export interface BranchSummaryRow {
+  label: string;
+  amount: number;
+}
+
+export interface BranchSummary {
+  dateFrom: string;
+  dateTo: string;
+  grossCollected: number;
+  refunded: number;
+  expenses: number;
+  netRevenue: number;
+  outstandingDue: number;
+  paymentCount: number;
+  patientsSeen: number;
+  newPatients: number;
+  totalPatients: number;
+  expenseCount: number;
+  refundCount: number;
+  closingsSubmitted: number;
+  closingsMismatched: number;
+  byMethod: BranchSummaryRow[];
+  byCategory: BranchSummaryRow[];
+}
+
+/**
+ * Everything one branch did between two dates — the Summary page.
+ *
+ * Every money field is a DRF DecimalField and therefore arrives as a JSON
+ * string; they're converted here rather than trusted, because the type says
+ * `number` and a string that reaches an arithmetic expression concatenates
+ * instead of adding (the bug that made branch revenue totals render NaN).
+ */
+export async function getBranchSummary(params: {
+  branchId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<BranchSummary> {
+  const { data } = await apiClient.get<Record<string, unknown>>(
+    "/transactions/branch-summary/",
+    {
+      params: {
+        branch: params.branchId,
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+      },
+    },
+  );
+
+  const money = (value: unknown) => Number(value ?? 0);
+  const rows = (value: unknown, key: "method" | "category"): BranchSummaryRow[] =>
+    ((value ?? []) as Record<string, unknown>[]).map((row) => ({
+      label: String(row[key] ?? ""),
+      amount: money(row.amount),
+    }));
+
+  return {
+    dateFrom: String(data.dateFrom),
+    dateTo: String(data.dateTo),
+    grossCollected: money(data.grossCollected),
+    refunded: money(data.refunded),
+    expenses: money(data.expenses),
+    netRevenue: money(data.netRevenue),
+    outstandingDue: money(data.outstandingDue),
+    paymentCount: Number(data.paymentCount ?? 0),
+    patientsSeen: Number(data.patientsSeen ?? 0),
+    newPatients: Number(data.newPatients ?? 0),
+    totalPatients: Number(data.totalPatients ?? 0),
+    expenseCount: Number(data.expenseCount ?? 0),
+    refundCount: Number(data.refundCount ?? 0),
+    closingsSubmitted: Number(data.closingsSubmitted ?? 0),
+    closingsMismatched: Number(data.closingsMismatched ?? 0),
+    byMethod: rows(data.byMethod, "method"),
+    byCategory: rows(data.byCategory, "category"),
+  };
+}

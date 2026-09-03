@@ -41,6 +41,8 @@ export const queryKeys = {
       ["transactions", "by-category-month", branchId] as const,
     dashboardMetrics: (branchId?: string, date?: string) =>
       ["transactions", "dashboard-metrics", branchId, date] as const,
+    branchSummary: (branchId?: string, dateFrom?: string, dateTo?: string) =>
+      ["transactions", "branch-summary", branchId, dateFrom, dateTo] as const,
     collectionForDate: (branchId: string | undefined, date: string) =>
       ["transactions", "collection-for-date", branchId, date] as const,
   },
