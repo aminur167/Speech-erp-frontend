@@ -27,7 +27,10 @@ export interface DuePaymentItem {
   serviceName: string;
   branchId: string;
   label: string;
+  /** Payable right now — the current bill or installment only. */
   amount: number;
+  /** Everything still unpaid on the enrollment/plan — what terminating writes off. */
+  outstandingTotal: number;
   dueDate: string;
   status: string;
   /** Installment-only: this due installment's position and how many remain in the plan. */
@@ -36,13 +39,26 @@ export interface DuePaymentItem {
   installmentsRemaining?: number;
 }
 
-interface RawDuePaymentItem extends Omit<DuePaymentItem, "refId" | "itemId"> {
+// `amount`/`outstandingTotal` are DRF DecimalFields, so they arrive as JSON
+// strings despite the `number` type above. Converted here rather than trusted:
+// formatCurrency coerces on display, but a raw string reaching a comparison or
+// a sum silently misbehaves (the bug that rendered branch totals as NaN).
+interface RawDuePaymentItem
+  extends Omit<DuePaymentItem, "refId" | "itemId" | "amount" | "outstandingTotal"> {
   refId: number | string;
   itemId: number | string;
+  amount: number | string;
+  outstandingTotal: number | string;
 }
 
 function normalizeItem(raw: RawDuePaymentItem): DuePaymentItem {
-  return { ...raw, refId: String(raw.refId), itemId: String(raw.itemId) };
+  return {
+    ...raw,
+    refId: String(raw.refId),
+    itemId: String(raw.itemId),
+    amount: Number(raw.amount),
+    outstandingTotal: Number(raw.outstandingTotal),
+  };
 }
 
 export interface DuePaymentListParams {

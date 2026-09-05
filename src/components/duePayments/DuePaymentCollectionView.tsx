@@ -6,12 +6,12 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Pagination } from "@/components/ui/Pagination";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DuePaymentTable } from "@/components/duePayments/DuePaymentTable";
 import { CollectDuePaymentModal } from "@/components/duePayments/CollectDuePaymentModal";
+import { TerminateServiceModal } from "@/components/duePayments/TerminateServiceModal";
 import { useDuePayments } from "@/hooks/duePayments/useDuePayments";
 import { useDuePaymentsSummary } from "@/hooks/duePayments/useDuePaymentsSummary";
 import { useTerminateService } from "@/hooks/duePayments/useTerminateService";
@@ -43,7 +43,7 @@ export function DuePaymentCollectionView({
   const [page, setPage] = useState(1);
   const [selectedItem, setSelectedItem] = useState<DuePaymentItem | null>(null);
   const [terminatingItem, setTerminatingItem] = useState<DuePaymentItem | null>(null);
-  const [terminateBlockedReason, setTerminateBlockedReason] = useState<string | null>(null);
+  const [terminateError, setTerminateError] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = useDuePayments({
     search,
@@ -57,25 +57,21 @@ export function DuePaymentCollectionView({
 
   const closeTerminateDialog = () => {
     setTerminatingItem(null);
-    setTerminateBlockedReason(null);
+    setTerminateError(null);
   };
 
   const handleConfirmTerminate = () => {
     if (!terminatingItem) return;
 
-    if (terminateBlockedReason) {
-      // Already blocked once -- the confirm button now offers the remedy
-      // instead of retrying the same call.
-      setSelectedItem(terminatingItem);
-      closeTerminateDialog();
-      return;
-    }
-
     terminateService.mutate(
       { type: terminatingItem.type, refId: terminatingItem.refId },
       {
+        // Closing on success is what makes the modal feel finished; the list
+        // behind it refetches from the mutation's own invalidation.
         onSuccess: closeTerminateDialog,
-        onError: (error: ApiError) => setTerminateBlockedReason(error.message),
+        // An outstanding balance no longer refuses, so anything landing here
+        // is a genuine failure worth showing rather than a workflow branch.
+        onError: (error: ApiError) => setTerminateError(error.message),
       },
     );
   };
@@ -150,7 +146,7 @@ export function DuePaymentCollectionView({
                   readOnly
                     ? undefined
                     : (item) => {
-                        setTerminateBlockedReason(null);
+                        setTerminateError(null);
                         setTerminatingItem(item);
                       }
                 }
@@ -168,20 +164,12 @@ export function DuePaymentCollectionView({
 
       <CollectDuePaymentModal item={selectedItem} onClose={() => setSelectedItem(null)} />
 
-      <ConfirmDialog
-        open={Boolean(terminatingItem)}
-        onClose={closeTerminateDialog}
+      <TerminateServiceModal
+        item={terminatingItem}
         onConfirm={handleConfirmTerminate}
-        title={terminateBlockedReason ? "Can't terminate this service" : "Terminate this service?"}
-        description={
-          terminateBlockedReason ??
-          (terminatingItem
-            ? `${terminatingItem.patientName}'s ${terminatingItem.serviceName} (${terminatingItem.type}) will stop generating due bills. This can't be undone.`
-            : undefined)
-        }
-        confirmLabel={terminateBlockedReason ? "Collect Payment" : "Terminate"}
-        danger={!terminateBlockedReason}
-        isLoading={terminateService.isPending}
+        onClose={closeTerminateDialog}
+        isTerminating={terminateService.isPending}
+        error={terminateError}
       />
     </div>
   );
