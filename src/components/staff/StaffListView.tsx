@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarOff, Download, Plus, UserCheck, Users, Wallet } from "lucide-react";
+import { CalendarOff, Plus, UserCheck, Users, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -15,17 +15,13 @@ import { StaffDetailDrawer } from "@/components/staff/StaffDetailDrawer";
 import { useStaff } from "@/hooks/staff/useStaff";
 import { useStaffSummary } from "@/hooks/staff/useStaffSummary";
 import { useTodayAttendance } from "@/hooks/staff/useTodayAttendance";
-import { useMonthlyStaffReport } from "@/hooks/staff/useMonthlyStaffReport";
 import { useCreateStaff } from "@/hooks/staff/useCreateStaff";
 import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useDeleteStaff } from "@/hooks/staff/useDeleteStaff";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
-import { exportToCsv } from "@/utils/exportCsv";
 import type { StaffInput } from "@/lib/api/staff";
 import type { StaffMember } from "@/types/domain";
-
-const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
 /**
  * One branch's team.
@@ -52,7 +48,6 @@ export function StaffListView({
   const { data: staff, isLoading } = useStaff(branchId);
   const { data: summary } = useStaffSummary(branchId);
   const { data: todayAttendance } = useTodayAttendance(branchId);
-  const { data: monthlyReport } = useMonthlyStaffReport(branchId, currentMonth);
   const createStaff = useCreateStaff(branchId);
   const updateStaff = useUpdateStaff(branchId);
   const deleteStaffMutation = useDeleteStaff(branchId);
@@ -81,24 +76,6 @@ export function StaffListView({
     deleteStaffMutation.mutate(deletingStaff.id, { onSuccess: () => setDeletingStaff(null) });
   };
 
-  const handleExport = () => {
-    exportToCsv(
-      `staff-monthly-report-${currentMonth}.csv`,
-      (monthlyReport ?? []).map((row) => ({
-        "Staff Code": row.staffCode,
-        Name: row.name,
-        Designation: row.designation,
-        "Monthly Salary": row.monthlySalary,
-        Bonus: row.bonusTotal,
-        "Net Payable": row.netPayable,
-        Present: row.presentCount,
-        Late: row.lateCount,
-        Absent: row.absentCount,
-        "On Leave": row.leaveCount,
-      })),
-    );
-  };
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -107,20 +84,10 @@ export function StaffListView({
         title="Staff"
         subtitle="Manage the team, track daily attendance, and handle salary and bonuses."
         action={
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={handleExport}
-              disabled={!monthlyReport || monthlyReport.length === 0}
-            >
-              <Download className="h-4 w-4" />
-              Export Monthly Report
-            </Button>
-            <Button onClick={() => setIsAddOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Add Staff
-            </Button>
-          </div>
+          <Button onClick={() => setIsAddOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Add Staff
+          </Button>
         }
       />
 

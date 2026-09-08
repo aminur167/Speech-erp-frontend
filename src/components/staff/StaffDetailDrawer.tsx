@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { StaffAvatar } from "@/components/staff/StaffAvatar";
-import { SalaryPaymentSection } from "@/components/staff/SalaryPaymentSection";
 import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useAddBonus } from "@/hooks/staff/useAddBonus";
 import { useStaffBonuses } from "@/hooks/staff/useStaffBonuses";
@@ -171,8 +170,6 @@ export function StaffDetailDrawer({
             </div>
           )}
         </section>
-
-        <SalaryPaymentSection staff={staff} />
 
         <section className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
