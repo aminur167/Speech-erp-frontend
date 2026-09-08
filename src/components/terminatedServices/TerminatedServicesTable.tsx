@@ -56,9 +56,11 @@ export function TerminatedServicesTable({
                 </p>
               </td>
               <td className="py-2 pr-4">
-                {service.terminatedKind === "manual" ? (
-                  <Badge tone="neutral" label="Stopped by manager" />
-                ) : (
+                {/* Tested for the automatic kind rather than the manual one:
+                    services stopped before this field existed carry a blank,
+                    and reading a blank as "unpaid due" would accuse the
+                    clinic of a debt that was never there. */}
+                {service.terminatedKind === "unpaid_due" ? (
                   <>
                     <Badge tone="warning" label="Unpaid due" />
                     {service.terminatedMonthLabel && (
@@ -67,6 +69,8 @@ export function TerminatedServicesTable({
                       </p>
                     )}
                   </>
+                ) : (
+                  <Badge tone="neutral" label="Stopped by manager" />
                 )}
               </td>
               <td className="whitespace-nowrap py-2 pr-4 text-text-secondary">
