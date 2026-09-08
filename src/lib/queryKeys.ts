@@ -98,5 +98,7 @@ export const queryKeys = {
     todayAttendance: (branchId?: string) => ["staff", "today-attendance", branchId] as const,
     attendanceHistory: (staffId: string) => ["staff", "attendance-history", staffId] as const,
     bonuses: (staffId: string) => ["staff", "bonuses", staffId] as const,
+    monthlyReport: (branchId?: string, month?: string) =>
+      ["staff", "monthly-report", branchId, month] as const,
   },
 };

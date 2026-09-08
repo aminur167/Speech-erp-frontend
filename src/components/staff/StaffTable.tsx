@@ -19,14 +19,12 @@ function cameFromControl(event: { target: EventTarget | null; currentTarget: Eve
 }
 
 export function StaffTable({
-  branchId,
   staff,
   todayAttendance,
   onViewDetails,
   onEdit,
   onDelete,
 }: {
-  branchId: string;
   staff: StaffMember[];
   todayAttendance: Record<string, StaffAttendance>;
   onViewDetails: (member: StaffMember) => void;
@@ -85,11 +83,7 @@ export function StaffTable({
                 {formatCurrency(member.monthlySalary)}
               </td>
               <td className="py-3 pr-4">
-                <AttendanceCell
-                  branchId={branchId}
-                  staffId={member.id}
-                  record={todayAttendance[member.id]}
-                />
+                <AttendanceCell staffId={member.id} record={todayAttendance[member.id]} />
               </td>
               <td className="py-3 pr-4">
                 <Badge

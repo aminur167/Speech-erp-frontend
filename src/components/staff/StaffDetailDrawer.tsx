@@ -13,7 +13,6 @@ import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useAddBonus } from "@/hooks/staff/useAddBonus";
 import { useStaffBonuses } from "@/hooks/staff/useStaffBonuses";
 import { useStaffAttendanceHistory } from "@/hooks/staff/useStaffAttendanceHistory";
-import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { humanizeField } from "@/utils/fields";
 import type { StaffAttendance, StaffMember } from "@/types/domain";
@@ -39,19 +38,16 @@ function formatTime(iso: string | null): string {
 }
 
 export function StaffDetailDrawer({
-  branchId,
   staff,
   onClose,
 }: {
-  branchId: string;
   staff: StaffMember | null;
   onClose: () => void;
 }) {
-  const currentUser = useAuthStore((state) => state.user);
-  const updateStaff = useUpdateStaff(branchId);
-  const addBonus = useAddBonus(branchId);
-  const { data: bonuses, isLoading: bonusesLoading } = useStaffBonuses(branchId, staff?.id);
-  const { data: history, isLoading: historyLoading } = useStaffAttendanceHistory(branchId, staff?.id);
+  const updateStaff = useUpdateStaff();
+  const addBonus = useAddBonus();
+  const { data: bonuses, isLoading: bonusesLoading } = useStaffBonuses(staff?.id);
+  const { data: history, isLoading: historyLoading } = useStaffAttendanceHistory(staff?.id);
 
   const [isEditingSalary, setIsEditingSalary] = useState(false);
   const [salaryDraft, setSalaryDraft] = useState("");
@@ -90,7 +86,7 @@ export function StaffDetailDrawer({
     const amount = Number(bonusAmount);
     if (!Number.isFinite(amount) || amount <= 0 || !bonusReason.trim()) return;
     addBonus.mutate(
-      { staffId: staff.id, amount, reason: bonusReason.trim(), awardedBy: currentUser?.name ?? "Branch Manager" },
+      { staffId: staff.id, amount, reason: bonusReason.trim() },
       {
         onSuccess: () => {
           setIsAddingBonus(false);
