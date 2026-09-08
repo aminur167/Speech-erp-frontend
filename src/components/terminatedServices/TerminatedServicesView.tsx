@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
-import { FilterBar } from "@/components/ui/FilterBar";
+import { Select } from "@/components/ui/Select";
+import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MonthCyclePicker } from "@/components/duePayments/MonthCyclePicker";
 import { toMonthKey } from "@/utils/months";
@@ -16,18 +17,23 @@ import { useTerminatedServices } from "@/hooks/terminatedServices/useTerminatedS
 import { useResumeMonthlyService } from "@/hooks/terminatedServices/useResumeMonthlyService";
 import { useAuthStore } from "@/store/authStore";
 import type { ApiError } from "@/types/api";
-import type { TerminatedMonthlyService } from "@/lib/api/monthlyEnrollments";
+import type {
+  TerminatedMonthlyService,
+  TerminationKind,
+} from "@/lib/api/monthlyEnrollments";
 import type { PaymentMethod } from "@/types/domain";
 
 const PAGE_SIZE = 10;
 
 /**
- * Monthly services the nightly job stopped because a month's due went unpaid
- * to the end of that month — and the one screen that can restart them.
+ * Every monthly service that is no longer running, and the one screen that
+ * can restart one.
  *
- * A manager's own termination never appears here: that one already forgave
- * the debt and closed the service deliberately, so the honest way back is a
- * fresh enrollment, not a reinstatement.
+ * Both kinds are here — the nightly job's, for a month's due that went
+ * unpaid, and a manager's own — because both say the same thing to whoever
+ * is looking: this patient's monthly service has stopped. The Reason column
+ * and the kind filter tell them apart, and what actually differs is only
+ * what resuming costs.
  */
 export function TerminatedServicesView({
   branchId: branchIdOverride,
@@ -46,6 +52,7 @@ export function TerminatedServicesView({
   const branchId = branchIdOverride ?? user?.branchId ?? undefined;
 
   const [search, setSearch] = useState("");
+  const [kind, setKind] = useState<TerminationKind | "">("");
   // Off by default: a manager arrives looking for one patient, not for a
   // particular month, and pre-filtering would hide the very row they came for.
   const [month, setMonth] = useState<string | null>(null);
@@ -56,6 +63,7 @@ export function TerminatedServicesView({
 
   const { data, isLoading, isError, refetch } = useTerminatedServices({
     search: search || undefined,
+    kind: kind || undefined,
     month: month || undefined,
     branchId,
     page,
@@ -95,7 +103,7 @@ export function TerminatedServicesView({
         homeHref={homeHref}
         breadcrumb={[roleLabel, "Terminated Services"]}
         title="Terminated Services"
-        subtitle="Monthly services stopped automatically because a month's due went unpaid."
+        subtitle="Monthly services that have stopped — automatically for an unpaid due, or by a manager."
       />
 
       <FilterBar
@@ -135,6 +143,19 @@ export function TerminatedServicesView({
           placeholder="Patient ID, name, phone, or service ID…"
           containerClassName="w-full sm:w-80 shrink-0"
         />
+        <Select
+          value={kind}
+          aria-label="Termination reason"
+          onChange={(event) => {
+            setKind(event.target.value as TerminationKind | "");
+            setPage(1);
+          }}
+          containerClassName={FILTER_FIELD_WIDTH}
+        >
+          <option value="">All reasons</option>
+          <option value="unpaid_due">Unpaid due</option>
+          <option value="manual">Stopped by manager</option>
+        </Select>
       </FilterBar>
 
       <Card>
@@ -144,9 +165,9 @@ export function TerminatedServicesView({
           {!isLoading && !isError && data?.results.length === 0 && (
             <EmptyState
               label={
-                search || month
+                search || month || kind
                   ? "No terminated service matches that."
-                  : "No service has been terminated — every monthly due is being cleared on time."
+                  : "No monthly service has been stopped."
               }
             />
           )}

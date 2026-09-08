@@ -100,12 +100,13 @@ export async function terminateMonthlyEnrollment(
 }
 
 /**
- * A monthly service the nightly job stopped because a month's due was never
- * cleared — the rows behind the Terminated Services screen.
+ * A monthly service that is no longer running — the rows behind the
+ * Terminated Services screen.
  *
- * Only that kind appears: a service a manager stopped by hand already had its
- * debt written off and was closed deliberately, so there is nothing to
- * collect and nothing to reinstate.
+ * Both kinds appear. `terminatedKind` says which: "unpaid_due" is the
+ * nightly job acting on a month's due that was never cleared, "manual" is a
+ * manager stopping it. What differs is only what resuming costs — stopping
+ * it by hand already wrote the debt off, so there is nothing left to collect.
  */
 export interface TerminatedMonthlyService {
   id: string;
@@ -121,10 +122,10 @@ export interface TerminatedMonthlyService {
   status: string;
   /** ISO datetime the service was stopped. */
   terminatedAt: string;
-  /** The cycle whose unpaid due ended it, as "YYYY-MM". */
+  /** The cycle whose unpaid due ended it, as "YYYY-MM". Blank for a manual stop. */
   terminatedMonth: string;
   terminatedMonthLabel: string;
-  terminatedKind: string;
+  terminatedKind: TerminationKind | string;
   /** Everything still owed — what "resume with previous due" would collect. */
   previousDue: number;
   /** The month labels that due is made up of. */
@@ -150,11 +151,15 @@ function normalizeTerminated(raw: RawTerminatedService): TerminatedMonthlyServic
   };
 }
 
+/** Who stopped it: the nightly unpaid-due job, or a manager. */
+export type TerminationKind = "unpaid_due" | "manual";
+
 export interface TerminatedServiceListParams {
   /** Patient name, patient code, phone, or service code/name. */
   search?: string;
   /** Terminated cycle, as "YYYY-MM". */
   month?: string;
+  kind?: TerminationKind;
   branchId?: string;
   page?: number;
   pageSize?: number;
@@ -169,6 +174,7 @@ export async function listTerminatedServices(
       params: {
         search: params.search,
         month: params.month,
+        kind: params.kind,
         branch: params.branchId,
         page: params.page,
         pageSize: params.pageSize,

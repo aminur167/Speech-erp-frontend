@@ -18,6 +18,10 @@ import type { PaymentMethod } from "@/types/domain";
  * collects real money, the other forgives it. Nothing is submitted until the
  * manager has picked one and pressed Confirm — waiving several thousand taka
  * should not be one stray click away.
+ *
+ * With nothing outstanding — which is every service a manager stopped by
+ * hand, since stopping it already wrote the debt off — the choice disappears
+ * instead of being shown greyed out or leading to the same place twice.
  */
 export function ResumeServiceModal({
   service,
@@ -84,29 +88,29 @@ export function ResumeServiceModal({
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <ResumeOption
-              selected={carryDue}
-              onSelect={() => setCarryDue(true)}
-              title="Collect the previous due"
-              detail={
-                hasDue
-                  ? `Take ${formatCurrency(previousDue)} now — one receipt per unpaid month — then restart the service.`
-                  : "Nothing is outstanding, so this simply restarts the service."
-              }
-            />
-            <ResumeOption
-              selected={!carryDue}
-              onSelect={() => setCarryDue(false)}
-              tone="danger"
-              title="Waive the previous due"
-              detail={
-                hasDue
-                  ? `Write off ${formatCurrency(previousDue)} and restart clean. It leaves Outstanding Due for good and is recorded in the audit log.`
-                  : "Nothing is outstanding to waive."
-              }
-            />
-          </div>
+          {hasDue ? (
+            <div className="flex flex-col gap-2">
+              <ResumeOption
+                selected={carryDue}
+                onSelect={() => setCarryDue(true)}
+                title="Collect the previous due"
+                detail={`Take ${formatCurrency(previousDue)} now — one receipt per unpaid month — then restart the service.`}
+              />
+              <ResumeOption
+                selected={!carryDue}
+                onSelect={() => setCarryDue(false)}
+                tone="danger"
+                title="Waive the previous due"
+                detail={`Write off ${formatCurrency(previousDue)} and restart clean. It leaves Outstanding Due for good and is recorded in the audit log.`}
+              />
+            </div>
+          ) : (
+            <p className="text-sm text-text-secondary">
+              {service.terminatedKind === "manual"
+                ? "Nothing is outstanding — stopping this service already wrote off what was owed."
+                : "Nothing is outstanding on this service."}
+            </p>
+          )}
 
           {carryDue && hasDue && (
             <div className="flex flex-col gap-2">

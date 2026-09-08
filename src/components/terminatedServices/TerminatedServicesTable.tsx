@@ -7,7 +7,7 @@ import { formatCurrency } from "@/utils/currency";
 import type { TerminatedMonthlyService } from "@/lib/api/monthlyEnrollments";
 
 /**
- * Services the nightly job stopped for an unpaid due.
+ * Every monthly service that is no longer running, however it stopped.
  *
  * The columns are ordered the way a manager reads the screen: they arrive
  * holding a patient's name or phone, confirm it is the right person and the
@@ -30,7 +30,7 @@ export function TerminatedServicesTable({
             <th className="py-2 pr-4 font-medium">Patient</th>
             <th className="py-2 pr-4 font-medium">Phone</th>
             <th className="py-2 pr-4 font-medium">Service</th>
-            <th className="py-2 pr-4 font-medium">Stopped After</th>
+            <th className="py-2 pr-4 font-medium">Reason</th>
             <th className="py-2 pr-4 font-medium">Terminated On</th>
             <th className="py-2 pr-4 text-right font-medium">Previous Due</th>
             <th className="py-2 pr-4 font-medium">Status</th>
@@ -55,15 +55,32 @@ export function TerminatedServicesTable({
                   {service.serviceCode}
                 </p>
               </td>
-              <td className="whitespace-nowrap py-2 pr-4">
-                {service.terminatedMonthLabel || "—"}
+              <td className="py-2 pr-4">
+                {service.terminatedKind === "manual" ? (
+                  <Badge tone="neutral" label="Stopped by manager" />
+                ) : (
+                  <>
+                    <Badge tone="warning" label="Unpaid due" />
+                    {service.terminatedMonthLabel && (
+                      <p className="mt-0.5 text-xs text-text-secondary">
+                        after {service.terminatedMonthLabel}
+                      </p>
+                    )}
+                  </>
+                )}
               </td>
               <td className="whitespace-nowrap py-2 pr-4 text-text-secondary">
                 {service.terminatedAt
                   ? new Date(service.terminatedAt).toLocaleDateString()
                   : "—"}
               </td>
-              <td className="py-2 pr-4 text-right font-medium tabular-nums text-danger">
+              <td
+                className={
+                  service.previousDue > 0
+                    ? "py-2 pr-4 text-right font-medium tabular-nums text-danger"
+                    : "py-2 pr-4 text-right tabular-nums text-text-secondary"
+                }
+              >
                 {formatCurrency(service.previousDue)}
               </td>
               <td className="py-2 pr-4">
