@@ -382,6 +382,35 @@ export interface StaffBonus {
   awardedAt: string; // ISO datetime
 }
 
+/**
+ * A pre-spend authorization, not a spending record — the opposite of
+ * Expense's own pending/approved (docs/08: a pending expense is cash that
+ * has already left the clinic). Nothing is spent until `paid`; only then
+ * does an Expense get created for it.
+ */
+export type SalaryPaymentStatus = "pending_approval" | "approved" | "rejected" | "paid";
+
+export interface SalaryPayment {
+  id: string;
+  staffId: string;
+  staffName: string;
+  staffCode: string;
+  branchId: string;
+  branchName: string;
+  month: string; // ISO "YYYY-MM"
+  amount: number;
+  status: SalaryPaymentStatus;
+  requestedBy: string;
+  reviewNote: string;
+  reviewedBy: string;
+  reviewedAt: string | null;
+  paymentMethod: string;
+  paidAt: string | null;
+  expenseId: string | null;
+  expenseCode: string;
+  createdAt: string;
+}
+
 export type AuditLogAction =
   | "create"
   | "update"
