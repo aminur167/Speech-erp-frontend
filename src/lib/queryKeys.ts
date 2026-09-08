@@ -101,4 +101,8 @@ export const queryKeys = {
     monthlyReport: (branchId?: string, month?: string) =>
       ["staff", "monthly-report", branchId, month] as const,
   },
+  salaryPayments: {
+    all: ["salary-payments"] as const,
+    list: (params?: object) => ["salary-payments", "list", params] as const,
+  },
 };
