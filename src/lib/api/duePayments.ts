@@ -27,6 +27,8 @@ export interface DuePaymentItem {
   serviceName: string;
   branchId: string;
   label: string;
+  /** Monthly only: the cycle this payable bill belongs to, as "YYYY-MM". */
+  month?: string;
   /** Payable right now — the current bill or installment only. */
   amount: number;
   /** Everything still unpaid on the enrollment/plan — what terminating writes off. */
@@ -65,23 +67,43 @@ export interface DuePaymentListParams {
   search?: string;
   type?: DuePaymentType;
   branchId?: string;
+  /**
+   * Cycle month as "YYYY-MM". Keeps monthly rows whose payable bill is that
+   * month or earlier — who owes as of the end of it. Installments ignore it,
+   * so the two tables can share one endpoint.
+   */
+  month?: string;
   page?: number;
   pageSize?: number;
 }
 
+/** The list response carries what every matched row adds up to, not just this page's. */
+export interface DuePaymentPage extends PaginatedResponse<DuePaymentItem> {
+  totalAmount: number;
+}
+
 export async function listDuePayments(
   params: DuePaymentListParams = {},
-): Promise<PaginatedResponse<DuePaymentItem>> {
-  const { data } = await apiClient.get<PaginatedResponse<RawDuePaymentItem>>("/due-payments/", {
+): Promise<DuePaymentPage> {
+  const { data } = await apiClient.get<
+    PaginatedResponse<RawDuePaymentItem> & { totalAmount: number | string }
+  >("/due-payments/", {
     params: {
       search: params.search,
       type: params.type,
       branch: params.branchId,
+      month: params.month,
       page: params.page,
       pageSize: params.pageSize,
     },
   });
-  return { ...data, results: data.results.map(normalizeItem) };
+  return {
+    ...data,
+    // A DecimalField, so a JSON string on the wire — same conversion as the
+    // per-row amounts below, and for the same reason.
+    totalAmount: Number(data.totalAmount ?? 0),
+    results: data.results.map(normalizeItem),
+  };
 }
 
 export interface DuePaymentsSummary {
