@@ -91,4 +91,12 @@ export const queryKeys = {
   pendingPackages: {
     count: ["pending-packages", "count"] as const,
   },
+  staff: {
+    all: ["staff"] as const,
+    list: (branchId?: string) => ["staff", "list", branchId] as const,
+    summary: (branchId?: string) => ["staff", "summary", branchId] as const,
+    todayAttendance: (branchId?: string) => ["staff", "today-attendance", branchId] as const,
+    attendanceHistory: (staffId: string) => ["staff", "attendance-history", staffId] as const,
+    bonuses: (staffId: string) => ["staff", "bonuses", staffId] as const,
+  },
 };
