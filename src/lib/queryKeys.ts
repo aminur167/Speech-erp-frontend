@@ -48,6 +48,10 @@ export const queryKeys = {
     collectionForDate: (branchId: string | undefined, date: string) =>
       ["transactions", "collection-for-date", branchId, date] as const,
   },
+  terminatedServices: {
+    all: ["terminated-services"] as const,
+    list: (params?: object) => ["terminated-services", "list", params] as const,
+  },
   duePayments: {
     all: ["due-payments"] as const,
     list: (params?: object) => ["due-payments", "list", params] as const,

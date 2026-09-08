@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { AlertCircle, Wallet, Receipt as ReceiptIcon } from "lucide-react";
+import Link from "next/link";
+import { AlertCircle, Wallet, Receipt as ReceiptIcon, Ban } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { FilterBar } from "@/components/ui/FilterBar";
@@ -106,11 +108,14 @@ export function DuePaymentCollectionView({
   homeHref = "/manager/dashboard",
   roleLabel = "Branch Manager",
   readOnly = false,
+  terminatedHref = "/manager/terminated-services",
 }: {
   /** Scopes the view to one branch regardless of the logged-in user — used when Admin is browsing a specific branch. */
   branchId?: string;
   homeHref?: string;
   roleLabel?: string;
+  /** Where the "Terminated Services" button goes — the Admin drill-down has its own copy. */
+  terminatedHref?: string;
   /** Hides the collect and terminate actions — Admin can view dues but shouldn't act on a branch's behalf. */
   readOnly?: boolean;
 } = {}) {
@@ -197,6 +202,18 @@ export function DuePaymentCollectionView({
         breadcrumb={[roleLabel, "Due Payment Collection"]}
         title="Due Payment Collection"
         subtitle="Installment plans on the left, this month's monthly cycle on the right."
+        action={
+          // The two screens are the same story either side of a deadline:
+          // what is still collectable, and what stopped because it wasn't
+          // collected in time. Reaching one from the other is how a manager
+          // actually moves between them.
+          <Link href={terminatedHref}>
+            <Button variant="secondary">
+              <Ban className="h-4 w-4" />
+              Terminated Services
+            </Button>
+          </Link>
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
