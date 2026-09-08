@@ -98,3 +98,121 @@ export async function terminateMonthlyEnrollment(
   );
   return normalizeEnrollment(data);
 }
+
+/**
+ * A monthly service that is no longer running — the rows behind the
+ * Terminated Services screen.
+ *
+ * Both kinds appear. `terminatedKind` says which: "unpaid_due" is the
+ * nightly job acting on a month's due that was never cleared, "manual" is a
+ * manager stopping it. What differs is only what resuming costs — stopping
+ * it by hand already wrote the debt off, so there is nothing left to collect.
+ */
+export interface TerminatedMonthlyService {
+  id: string;
+  patientId: string;
+  patientCode: string;
+  patientName: string;
+  patientPhone: string;
+  serviceId: string;
+  serviceCode: string;
+  serviceName: string;
+  monthlyFee: number;
+  branchId: string;
+  status: string;
+  /** ISO datetime the service was stopped. */
+  terminatedAt: string;
+  /** The cycle whose unpaid due ended it, as "YYYY-MM". Blank for a manual stop. */
+  terminatedMonth: string;
+  terminatedMonthLabel: string;
+  terminatedKind: TerminationKind | string;
+  /** Everything still owed — what "resume with previous due" would collect. */
+  previousDue: number;
+  /** The month labels that due is made up of. */
+  unpaidMonths: string[];
+  createdAt: string;
+}
+
+// `monthlyFee` and `previousDue` are DRF DecimalFields, so they arrive as
+// JSON strings; converted here rather than trusted, same as everywhere else.
+interface RawTerminatedService
+  extends Omit<TerminatedMonthlyService, "id" | "monthlyFee" | "previousDue"> {
+  id: number | string;
+  monthlyFee: number | string;
+  previousDue: number | string;
+}
+
+function normalizeTerminated(raw: RawTerminatedService): TerminatedMonthlyService {
+  return {
+    ...raw,
+    id: String(raw.id),
+    monthlyFee: Number(raw.monthlyFee),
+    previousDue: Number(raw.previousDue),
+  };
+}
+
+/** Who stopped it: the nightly unpaid-due job, or a manager. */
+export type TerminationKind = "unpaid_due" | "manual";
+
+export interface TerminatedServiceListParams {
+  /** Patient name, patient code, phone, or service code/name. */
+  search?: string;
+  /** Terminated cycle, as "YYYY-MM". */
+  month?: string;
+  kind?: TerminationKind;
+  branchId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export async function listTerminatedServices(
+  params: TerminatedServiceListParams = {},
+): Promise<PaginatedResponse<TerminatedMonthlyService>> {
+  const { data } = await apiClient.get<PaginatedResponse<RawTerminatedService>>(
+    "/enrollments/monthly/terminated/",
+    {
+      params: {
+        search: params.search,
+        month: params.month,
+        kind: params.kind,
+        branch: params.branchId,
+        page: params.page,
+        pageSize: params.pageSize,
+      },
+    },
+  );
+  return { ...data, results: data.results.map(normalizeTerminated) };
+}
+
+export interface ResumeMonthlyServiceInput {
+  id: string;
+  /**
+   * True collects the previous due before restarting; false waives it. The
+   * method is only meaningful for the first, and the backend refuses that one
+   * without it rather than taking money by an unnamed method.
+   */
+  carryDue: boolean;
+  method?: string;
+}
+
+export interface ResumeMonthlyServiceResult {
+  enrollment: MonthlyEnrollment;
+  /** One receipt per arrear month settled — empty when the due was waived. */
+  payments: Payment[];
+}
+
+export async function resumeMonthlyService(
+  input: ResumeMonthlyServiceInput,
+): Promise<ResumeMonthlyServiceResult> {
+  const { data } = await apiClient.post<{
+    enrollment: RawEnrollment;
+    payments: RawPayment[];
+  }>(`/enrollments/monthly/${input.id}/resume/`, {
+    carryDue: input.carryDue,
+    method: input.carryDue ? input.method : undefined,
+  });
+  return {
+    enrollment: normalizeEnrollment(data.enrollment),
+    payments: data.payments.map(normalizePayment),
+  };
+}

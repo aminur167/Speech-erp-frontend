@@ -11,11 +11,18 @@ export function DuePaymentTable({
   items,
   onCollectPayment,
   onTerminate,
+  showType = true,
 }: {
   items: DuePaymentItem[];
   onCollectPayment?: (item: DuePaymentItem) => void;
   /** Lets the manager end a patient's monthly enrollment or installment plan. */
   onTerminate?: (item: DuePaymentItem) => void;
+  /**
+   * Off when the table is already one type — the Due Payments screen puts
+   * installments and monthly bills in separate tables, where a column
+   * repeating the heading on every row is just noise in scarce width.
+   */
+  showType?: boolean;
 }) {
   const showActions = Boolean(onCollectPayment || onTerminate);
   const detail = useRowDetail<DuePaymentItem>();
@@ -26,7 +33,7 @@ export function DuePaymentTable({
         <thead>
           <tr className="border-b border-border text-text-secondary">
             <th className="py-2 pr-4 font-medium">Patient</th>
-            <th className="py-2 pr-4 font-medium">Type</th>
+            {showType && <th className="py-2 pr-4 font-medium">Type</th>}
             <th className="py-2 pr-4 font-medium">Service</th>
             <th className="py-2 pr-4 font-medium">Due</th>
             <th className="py-2 pr-4 font-medium">Amount</th>
@@ -41,9 +48,11 @@ export function DuePaymentTable({
                 <p className="font-medium text-text-primary">{item.patientName}</p>
                 <p className="font-mono text-xs text-text-secondary">{item.patientCode}</p>
               </td>
-              <td className="py-2 pr-4">
-                <Badge tone={item.type === "monthly" ? "info" : "purple"} label={item.type} />
-              </td>
+              {showType && (
+                <td className="py-2 pr-4">
+                  <Badge tone={item.type === "monthly" ? "info" : "purple"} label={item.type} />
+                </td>
+              )}
               <td className="py-2 pr-4">{item.serviceName}</td>
               <td className="py-2 pr-4">{item.label}</td>
               <td className="py-2 pr-4 font-medium">{formatCurrency(item.amount)}</td>
@@ -56,12 +65,23 @@ export function DuePaymentTable({
               </td>
               {showActions && (
                 <td className="py-2 pr-4">
-                  <div className="flex gap-2">
+                  {/* Compact so two of these tables fit side by side on the
+                      Due Payments screen without either one scrolling. */}
+                  <div className="flex gap-2 whitespace-nowrap">
                     {onCollectPayment && (
-                      <Button onClick={() => onCollectPayment(item)}>Collect Payment</Button>
+                      <Button
+                        className="px-3 py-1.5 text-xs"
+                        onClick={() => onCollectPayment(item)}
+                      >
+                        Collect
+                      </Button>
                     )}
                     {onTerminate && (
-                      <Button variant="danger" onClick={() => onTerminate(item)}>
+                      <Button
+                        variant="danger"
+                        className="px-3 py-1.5 text-xs"
+                        onClick={() => onTerminate(item)}
+                      >
                         Terminate
                       </Button>
                     )}

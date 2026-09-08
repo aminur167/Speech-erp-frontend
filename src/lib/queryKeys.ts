@@ -43,8 +43,14 @@ export const queryKeys = {
       ["transactions", "dashboard-metrics", branchId, date] as const,
     branchSummary: (branchId?: string, dateFrom?: string, dateTo?: string) =>
       ["transactions", "branch-summary", branchId, dateFrom, dateTo] as const,
+    branchDailyLedger: (branchId?: string, dateFrom?: string, dateTo?: string) =>
+      ["transactions", "branch-summary", "daily", branchId, dateFrom, dateTo] as const,
     collectionForDate: (branchId: string | undefined, date: string) =>
       ["transactions", "collection-for-date", branchId, date] as const,
+  },
+  terminatedServices: {
+    all: ["terminated-services"] as const,
+    list: (params?: object) => ["terminated-services", "list", params] as const,
   },
   duePayments: {
     all: ["due-payments"] as const,
@@ -65,6 +71,7 @@ export const queryKeys = {
     todaySummary: (branchId?: string, date?: string) =>
       ["daily-closing", "today-summary", branchId, date] as const,
     history: (branchId?: string) => ["daily-closing", "history", branchId] as const,
+    list: (params?: object) => ["daily-closing", "list", params] as const,
   },
   materials: {
     all: ["materials"] as const,

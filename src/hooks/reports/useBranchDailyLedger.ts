@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
-import { getBranchSummary } from "@/lib/api/transactions";
+import { getBranchDailyLedger } from "@/lib/api/transactions";
 
 /**
- * `branchId` is Admin's way of picking a branch; a Manager's is ignored
- * server-side, which is what keeps the same page safe for both roles.
+ * The branch's day-by-day ledger. Same scoping rule as `useBranchSummary`:
+ * `branchId` is Admin's way of picking a branch, and a Manager's is ignored
+ * server-side.
  */
-export function useBranchSummary(
+export function useBranchDailyLedger(
   params: {
     branchId?: string;
     dateFrom?: string;
@@ -15,12 +16,12 @@ export function useBranchSummary(
   options: { enabled?: boolean } = {},
 ) {
   return useQuery({
-    queryKey: queryKeys.transactions.branchSummary(
+    queryKey: queryKeys.transactions.branchDailyLedger(
       params.branchId,
       params.dateFrom,
       params.dateTo,
     ),
-    queryFn: () => getBranchSummary(params),
+    queryFn: () => getBranchDailyLedger(params),
     placeholderData: (previousData) => previousData,
     enabled: options.enabled ?? true,
   });

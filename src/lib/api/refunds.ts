@@ -73,6 +73,9 @@ export async function requestRefund(input: RequestRefundInput): Promise<RefundRe
 export interface RefundRequestListParams {
   status?: RefundRequestStatus;
   branchId?: string;
+  /** Inclusive range over when the refund was *requested*, both ends. */
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   pageSize?: number;
 }
@@ -83,7 +86,16 @@ export async function listRefundRequests(
 ): Promise<PaginatedResponse<RefundRequest>> {
   const { data } = await apiClient.get<PaginatedResponse<RawRefundRequest>>(
     "/refund-requests/",
-    { params: { status: params.status, branch: params.branchId, page: params.page, pageSize: params.pageSize } },
+    {
+      params: {
+        status: params.status,
+        branch: params.branchId,
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+        page: params.page,
+        pageSize: params.pageSize,
+      },
+    },
   );
   return { ...data, results: data.results.map(normalizeRefundRequest) };
 }

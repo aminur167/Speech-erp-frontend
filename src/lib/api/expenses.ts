@@ -24,6 +24,9 @@ export interface ExpenseListParams {
   period?: SummaryPeriod;
   /** Exact calendar date (ISO "YYYY-MM-DD") from a date picker — overrides `period` when set. */
   date?: string;
+  /** Inclusive range, both ends — the branch Summary page's window. */
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   pageSize?: number;
 }
@@ -39,6 +42,8 @@ export async function listExpenses(
       branch: params.branchId,
       period: params.period || undefined,
       date: params.date,
+      dateFrom: params.dateFrom,
+      dateTo: params.dateTo,
       page: params.page,
       pageSize: params.pageSize,
     },

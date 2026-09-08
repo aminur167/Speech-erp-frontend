@@ -29,7 +29,8 @@ const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
 export function StaffListView() {
   const user = useAuthStore((state) => state.user);
-  const branchId = user?.branchId ?? "branch-1";
+  // Undefined for a Manager, whose branch the backend already knows.
+  const branchId = branchIdOverride ?? user?.branchId ?? undefined;
 
   const { data: staff, isLoading } = useStaff(branchId);
   const { data: summary } = useStaffSummary(branchId);
@@ -84,10 +85,10 @@ export function StaffListView() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref="/manager/dashboard"
-        breadcrumb={["Branch Manager", "Staff"]}
+        homeHref={homeHref}
+        breadcrumb={[roleLabel, "Staff"]}
         title="Staff"
-        subtitle="Manage your team, track daily attendance, and handle salary and bonuses."
+        subtitle="Manage the team, track daily attendance, and handle salary and bonuses."
         action={
           <div className="flex gap-2">
             <Button
