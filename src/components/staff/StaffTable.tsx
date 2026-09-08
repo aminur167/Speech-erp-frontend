@@ -1,6 +1,7 @@
 "use client";
 
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import type { KeyboardEvent, MouseEvent } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { StaffAvatar } from "@/components/staff/StaffAvatar";
@@ -8,6 +9,14 @@ import { AttendanceCell } from "@/components/staff/AttendanceCell";
 import { humanizeField } from "@/utils/fields";
 import { formatCurrency } from "@/utils/currency";
 import type { StaffAttendance, StaffMember } from "@/types/domain";
+
+/** Anything the user can already act on (attendance buttons, edit/delete) shouldn't also open the row's details. */
+const INTERACTIVE = "a, button, input, select, textarea, label, [role='button']";
+
+function cameFromControl(event: { target: EventTarget | null; currentTarget: EventTarget }): boolean {
+  const hit = (event.target as HTMLElement | null)?.closest(INTERACTIVE);
+  return Boolean(hit) && hit !== event.currentTarget;
+}
 
 export function StaffTable({
   branchId,
@@ -40,7 +49,22 @@ export function StaffTable({
         </thead>
         <tbody>
           {staff.map((member) => (
-            <tr key={member.id} className="border-b border-border/60 last:border-0">
+            <tr
+              key={member.id}
+              onClick={(event: MouseEvent<HTMLTableRowElement>) => {
+                if (cameFromControl(event)) return;
+                onViewDetails(member);
+              }}
+              onKeyDown={(event: KeyboardEvent<HTMLTableRowElement>) => {
+                if (event.key !== "Enter" && event.key !== " ") return;
+                if (cameFromControl(event)) return;
+                event.preventDefault();
+                onViewDetails(member);
+              }}
+              tabIndex={0}
+              title="View staff details"
+              className="cursor-pointer border-b border-border/60 transition-colors last:border-0 hover:bg-primary-light/40 focus:outline-none focus-visible:bg-primary-light/40"
+            >
               <td className="py-3 pr-4">
                 <div className="flex items-center gap-3">
                   <StaffAvatar name={member.name} />
@@ -75,10 +99,6 @@ export function StaffTable({
               </td>
               <td className="py-3 pr-4">
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="secondary" onClick={() => onViewDetails(member)}>
-                    <Eye className="h-3.5 w-3.5" />
-                    Details
-                  </Button>
                   <Button variant="secondary" className="px-2" aria-label="Edit staff" onClick={() => onEdit(member)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
