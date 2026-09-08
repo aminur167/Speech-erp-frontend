@@ -126,3 +126,8 @@ export async function getSalaryPaymentBranchSummary(
     totalApprovedAmount: Number(row.totalApprovedAmount),
   }));
 }
+
+export async function getPendingSalaryPaymentCount(): Promise<number> {
+  const { data } = await apiClient.get<{ count: number }>("/staff/salary-payments/pending-count/");
+  return data.count;
+}
