@@ -11,6 +11,7 @@ import { useUiStore } from "@/store/uiStore";
 import { useAuthStore } from "@/store/authStore";
 import { useBranches } from "@/hooks/branches/useBranches";
 import { usePendingPackageCount } from "@/hooks/services/usePendingPackageCount";
+import { usePendingSalaryPaymentCount } from "@/hooks/salaryPayments/usePendingSalaryPaymentCount";
 
 function collectHrefs(items: NavItem[]): string[] {
   return items.flatMap((item) => (isNavGroup(item) ? item.children.map((child) => child.href) : item.href));
@@ -161,12 +162,15 @@ export function Sidebar({
     : undefined;
   const branchName = contextLabel ?? managerBranchName;
 
-  // Packages awaiting Admin review, shown as a notification-style badge on
-  // the Services nav item — independent of whatever page is currently open.
+  // Packages and salary payments awaiting Admin review, each shown as a
+  // notification-style badge on their own nav item — independent of
+  // whatever page is currently open.
   const { data: pendingPackageCount } = usePendingPackageCount(user?.role === "admin");
-  const badges: Record<string, number> = pendingPackageCount
-    ? { "/admin/services": pendingPackageCount }
-    : {};
+  const { data: pendingSalaryPaymentCount } = usePendingSalaryPaymentCount(user?.role === "admin");
+  const badges: Record<string, number> = {
+    ...(pendingPackageCount ? { "/admin/services": pendingPackageCount } : {}),
+    ...(pendingSalaryPaymentCount ? { "/admin/salary-approvals": pendingSalaryPaymentCount } : {}),
+  };
 
   return (
     <>
