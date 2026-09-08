@@ -19,7 +19,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      // suppressHydrationWarning: some browser extensions (antivirus/security
+      // scanners) inject attributes like `bis_skin_checked` into the DOM
+      // before React hydrates, which React otherwise flags as a mismatch —
+      // this div has no real content, so there's nothing to hide a genuine
+      // bug behind.
+      <div className="flex min-h-screen items-center justify-center" suppressHydrationWarning>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
       </div>
     );
