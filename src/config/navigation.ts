@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   ArrowLeft,
   Undo2,
+  Users,
 } from "lucide-react";
 
 export interface NavLink {
@@ -54,6 +55,7 @@ export const managerNav: NavItem[] = [
   },
   { label: "Packages", href: "/manager/packages", icon: Package },
   { label: "Appointments", href: "/manager/appointments", icon: CalendarClock },
+  { label: "Staff", href: "/manager/staff", icon: Users },
   { label: "Materials", href: "/manager/materials", icon: Boxes },
   { label: "Sell", href: "/manager/materials/sell", icon: ShoppingCart },
   { label: "Due Payment Collection", href: "/manager/due-payments", icon: Wallet },

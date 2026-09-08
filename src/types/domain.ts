@@ -335,6 +335,53 @@ export interface MaterialMovement {
   createdAt: string;
 }
 
+export type StaffDesignation =
+  | "therapist"
+  | "receptionist"
+  | "accountant"
+  | "support_staff"
+  | "cleaner"
+  | "other";
+
+export type StaffStatus = "active" | "inactive";
+
+export interface StaffMember {
+  id: string;
+  staffCode: string; // e.g. STF-DHK-0001
+  name: string;
+  designation: StaffDesignation;
+  phone: string;
+  email?: string;
+  branchId: string;
+  joinedAt: string; // ISO date
+  monthlySalary: number;
+  status: StaffStatus;
+  createdAt: string;
+}
+
+/** "late" is check-in after the branch's grace cutoff (10:00 AM) — everything else is set explicitly by the manager. */
+export type AttendanceStatus = "present" | "late" | "on_leave" | "absent";
+
+export interface StaffAttendance {
+  id: string;
+  staffId: string;
+  branchId: string;
+  date: string; // ISO "YYYY-MM-DD"
+  checkInAt: string | null; // ISO datetime
+  checkOutAt: string | null; // ISO datetime
+  status: AttendanceStatus;
+}
+
+export interface StaffBonus {
+  id: string;
+  staffId: string;
+  branchId: string;
+  amount: number;
+  reason: string;
+  awardedBy: string;
+  awardedAt: string; // ISO datetime
+}
+
 export type AuditLogAction =
   | "create"
   | "update"
