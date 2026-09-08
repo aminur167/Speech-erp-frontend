@@ -39,6 +39,9 @@ export interface TransactionListParams {
   period?: SummaryPeriod;
   /** Exact calendar date (ISO "YYYY-MM-DD") from a date picker — overrides `period` when set. */
   date?: string;
+  /** Inclusive range, both ends. Applied on top of `date`/`period`, not instead of them. */
+  dateFrom?: string;
+  dateTo?: string;
   page?: number;
   pageSize?: number;
 }
@@ -57,6 +60,8 @@ export async function listTransactions(
         patientId: params.patientId,
         period: params.period || undefined,
         date: params.date,
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
         page: params.page,
         pageSize: params.pageSize,
       },
@@ -252,4 +257,61 @@ export async function getBranchSummary(params: {
     byMethod: rows(data.byMethod, "method"),
     byCategory: rows(data.byCategory, "category"),
   };
+}
+
+
+export interface DailyLedgerRow {
+  date: string;
+  transactionCount: number;
+  patientsSeen: number;
+  collected: number;
+  refundCount: number;
+  refunded: number;
+  expenseCount: number;
+  expenses: number;
+  netRevenue: number;
+  closingsSubmitted: number;
+  /** "", "matched" or "mismatched" — empty when the day was never closed. */
+  closingStatus: string;
+  closingDifference: number;
+}
+
+/**
+ * The branch ledger, one row per day something happened on — the Summary
+ * page's opening table.
+ *
+ * Every money field is a DRF DecimalField and so arrives as a JSON string;
+ * converted here rather than trusted, for the same reason as
+ * `getBranchSummary` above.
+ */
+export async function getBranchDailyLedger(params: {
+  branchId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<DailyLedgerRow[]> {
+  const { data } = await apiClient.get<Record<string, unknown>[]>(
+    "/transactions/branch-summary/daily/",
+    {
+      params: {
+        branch: params.branchId,
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+      },
+    },
+  );
+
+  return data.map((row) => ({
+    date: String(row.date),
+    transactionCount: Number(row.transactionCount ?? 0),
+    patientsSeen: Number(row.patientsSeen ?? 0),
+    collected: Number(row.collected ?? 0),
+    refundCount: Number(row.refundCount ?? 0),
+    refunded: Number(row.refunded ?? 0),
+    expenseCount: Number(row.expenseCount ?? 0),
+    expenses: Number(row.expenses ?? 0),
+    netRevenue: Number(row.netRevenue ?? 0),
+    closingsSubmitted: Number(row.closingsSubmitted ?? 0),
+    closingStatus: String(row.closingStatus ?? ""),
+    closingDifference: Number(row.closingDifference ?? 0),
+  }));
 }

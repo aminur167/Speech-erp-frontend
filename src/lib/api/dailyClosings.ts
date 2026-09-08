@@ -1,5 +1,11 @@
 import { apiClient } from "@/lib/api/client";
-import type { DailyClosing, DailyClosingAmendment, PaymentMethod } from "@/types/domain";
+import type {
+  DailyClosing,
+  DailyClosingAmendment,
+  DailyClosingStatus,
+  PaymentMethod,
+} from "@/types/domain";
+import type { PaginatedResponse } from "@/types/api";
 
 // DailyClosingSerializer/AmendmentSerializer's amount fields are real
 // DRF DecimalFields, so they cross the wire as JSON strings
@@ -129,4 +135,35 @@ export async function amendClosing(input: AmendClosingInput): Promise<DailyClosi
     reason: input.reason,
   });
   return normalizeClosing(data);
+}
+
+export interface DailyClosingListParams {
+  branchId?: string;
+  status?: DailyClosingStatus;
+  /** Inclusive range over the closing's own date, both ends. */
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+/**
+ * The paginated closing list, filterable by range — what the branch Summary
+ * page reads. `listDailyClosings` above stays as it is: the Daily Closing
+ * screen wants the last 90 days in one go, not a page of them.
+ */
+export async function listClosings(
+  params: DailyClosingListParams = {},
+): Promise<PaginatedResponse<DailyClosing>> {
+  const { data } = await apiClient.get<PaginatedResponse<RawClosing>>("/daily-closing/", {
+    params: {
+      branch: params.branchId,
+      status: params.status,
+      dateFrom: params.dateFrom,
+      dateTo: params.dateTo,
+      page: params.page,
+      pageSize: params.pageSize,
+    },
+  });
+  return { ...data, results: data.results.map(normalizeClosing) };
 }

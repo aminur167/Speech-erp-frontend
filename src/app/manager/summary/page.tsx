@@ -5,7 +5,7 @@ export default function ManagerSummaryPage() {
     <BranchSummaryView
       homeHref="/manager/dashboard"
       breadcrumb={["Branch Manager", "Summary"]}
-      subtitle="Everything your branch did over a date range you choose."
+      subtitle="Every invoice, expense, refund and closing your branch recorded, line by line."
     />
   );
 }

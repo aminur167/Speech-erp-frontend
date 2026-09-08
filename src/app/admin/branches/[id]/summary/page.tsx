@@ -11,7 +11,7 @@ export default async function AdminBranchSummaryPage({
       homeHref={`/admin/branches/${id}`}
       breadcrumb={["Admin", "Summary"]}
       branchId={id}
-      subtitle="Everything this branch did over a date range you choose."
+      subtitle="Every invoice, expense, refund and closing this branch recorded, line by line."
     />
   );
 }
