@@ -214,3 +214,40 @@ export async function listBonuses(
   const { data } = await apiClient.get<RawBonus[]>(`/staff/${staffId}/bonuses/`);
   return data.map(normalizeBonus);
 }
+
+export interface StaffMonthlyReportRow {
+  staffId: string;
+  staffCode: string;
+  name: string;
+  designation: StaffDesignation;
+  monthlySalary: number;
+  bonusTotal: number;
+  netPayable: number;
+  presentCount: number;
+  lateCount: number;
+  absentCount: number;
+  leaveCount: number;
+}
+
+interface RawMonthlyReportRow
+  extends Omit<StaffMonthlyReportRow, "monthlySalary" | "bonusTotal" | "netPayable"> {
+  monthlySalary: number | string;
+  bonusTotal: number | string;
+  netPayable: number | string;
+}
+
+/** `month` is an ISO "YYYY-MM"; the backend defaults to the current month when omitted. Powers the roster's CSV export. */
+export async function getMonthlyReport(
+  branchId?: string,
+  month?: string,
+): Promise<StaffMonthlyReportRow[]> {
+  const { data } = await apiClient.get<RawMonthlyReportRow[]>("/staff/monthly-report/", {
+    params: { branch: branchId || undefined, month },
+  });
+  return data.map((row) => ({
+    ...row,
+    monthlySalary: Number(row.monthlySalary),
+    bonusTotal: Number(row.bonusTotal),
+    netPayable: Number(row.netPayable),
+  }));
+}
