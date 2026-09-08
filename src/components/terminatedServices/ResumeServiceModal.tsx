@@ -93,15 +93,15 @@ export function ResumeServiceModal({
               <ResumeOption
                 selected={carryDue}
                 onSelect={() => setCarryDue(true)}
-                title="Collect the previous due"
-                detail={`Take ${formatCurrency(previousDue)} now — one receipt per unpaid month — then restart the service.`}
+                title="Pay the previous due, then resume"
+                detail={`Collect ${formatCurrency(previousDue)} now — one receipt per unpaid month — and the service restarts once it is paid.`}
               />
               <ResumeOption
                 selected={!carryDue}
                 onSelect={() => setCarryDue(false)}
                 tone="danger"
-                title="Waive the previous due"
-                detail={`Write off ${formatCurrency(previousDue)} and restart clean. It leaves Outstanding Due for good and is recorded in the audit log.`}
+                title="Resume without the previous due"
+                detail={`Skip ${formatCurrency(previousDue)} and start a fresh cycle. Those months are written off — they leave Outstanding Due for good and cannot be collected later. Recorded in the audit log.`}
               />
             </div>
           ) : (
@@ -123,8 +123,10 @@ export function ResumeServiceModal({
             <div className="flex gap-3 rounded-lg border border-danger/30 bg-danger/5 p-3">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
               <p className="text-xs text-text-secondary">
-                {formatCurrency(previousDue)} will never be collectable again. Billing
-                starts fresh from this month.
+                Skipping is final: {formatCurrency(previousDue)} across{" "}
+                {service.unpaidMonths.length}{" "}
+                {service.unpaidMonths.length === 1 ? "month" : "months"} will never be
+                collectable again.
               </p>
             </div>
           )}
