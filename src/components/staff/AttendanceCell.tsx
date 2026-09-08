@@ -20,15 +20,18 @@ function formatTime(iso: string | null): string {
 }
 
 export function AttendanceCell({
+  branchId,
   staffId,
   record,
 }: {
+  /** Admin only — a Manager is scoped to their own branch server-side. */
+  branchId?: string;
   staffId: string;
   record?: StaffAttendance;
 }) {
-  const checkIn = useCheckIn();
-  const checkOut = useCheckOut();
-  const markStatus = useMarkAttendanceStatus();
+  const checkIn = useCheckIn(branchId);
+  const checkOut = useCheckOut(branchId);
+  const markStatus = useMarkAttendanceStatus(branchId);
 
   if (!record) {
     return (
