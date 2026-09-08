@@ -1,41 +1,38 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { checkInStaff, checkOutStaff, markAttendanceStatus } from "@/lib/api/staff";
 import { queryKeys } from "@/lib/queryKeys";
+import type { ApiError } from "@/types/api";
 import type { AttendanceStatus, StaffAttendance } from "@/types/domain";
 
-function useInvalidateAttendance(branchId?: string) {
+function useInvalidateStaff() {
   const queryClient = useQueryClient();
-  return (staffId: string) => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.staff.todayAttendance(branchId) });
-    queryClient.invalidateQueries({ queryKey: queryKeys.staff.summary(branchId) });
-    queryClient.invalidateQueries({ queryKey: queryKeys.staff.attendanceHistory(staffId) });
-  };
+  return () => queryClient.invalidateQueries({ queryKey: queryKeys.staff.all });
 }
 
-export function useCheckIn(branchId?: string) {
-  const invalidate = useInvalidateAttendance(branchId);
-  return useMutation<StaffAttendance, Error, string>({
-    mutationFn: (staffId) => checkInStaff(branchId, staffId),
-    onSuccess: (_, staffId) => invalidate(staffId),
+export function useCheckIn() {
+  const invalidate = useInvalidateStaff();
+  return useMutation<StaffAttendance, ApiError, string>({
+    mutationFn: checkInStaff,
+    onSuccess: invalidate,
   });
 }
 
-export function useCheckOut(branchId?: string) {
-  const invalidate = useInvalidateAttendance(branchId);
-  return useMutation<StaffAttendance, Error, string>({
-    mutationFn: (staffId) => checkOutStaff(branchId, staffId),
-    onSuccess: (_, staffId) => invalidate(staffId),
+export function useCheckOut() {
+  const invalidate = useInvalidateStaff();
+  return useMutation<StaffAttendance, ApiError, string>({
+    mutationFn: checkOutStaff,
+    onSuccess: invalidate,
   });
 }
 
-export function useMarkAttendanceStatus(branchId?: string) {
-  const invalidate = useInvalidateAttendance(branchId);
+export function useMarkAttendanceStatus() {
+  const invalidate = useInvalidateStaff();
   return useMutation<
     StaffAttendance,
-    Error,
+    ApiError,
     { staffId: string; status: Extract<AttendanceStatus, "on_leave" | "absent"> }
   >({
-    mutationFn: ({ staffId, status }) => markAttendanceStatus(branchId, staffId, status),
-    onSuccess: (_, { staffId }) => invalidate(staffId),
+    mutationFn: ({ staffId, status }) => markAttendanceStatus(staffId, status),
+    onSuccess: invalidate,
   });
 }

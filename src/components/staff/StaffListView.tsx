@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarOff, Plus, UserCheck, Users, Wallet } from "lucide-react";
+import { CalendarOff, Download, Plus, UserCheck, Users, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -15,32 +15,19 @@ import { StaffDetailDrawer } from "@/components/staff/StaffDetailDrawer";
 import { useStaff } from "@/hooks/staff/useStaff";
 import { useStaffSummary } from "@/hooks/staff/useStaffSummary";
 import { useTodayAttendance } from "@/hooks/staff/useTodayAttendance";
+import { useMonthlyStaffReport } from "@/hooks/staff/useMonthlyStaffReport";
 import { useCreateStaff } from "@/hooks/staff/useCreateStaff";
 import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useDeleteStaff } from "@/hooks/staff/useDeleteStaff";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
+import { exportToCsv } from "@/utils/exportCsv";
 import type { StaffInput } from "@/lib/api/staff";
 import type { StaffMember } from "@/types/domain";
 
-/**
- * One branch's team.
- *
- * Shared by the Manager's own Staff page and Admin's branch drill-down —
- * `branchId` is what distinguishes them. Admin gets the same actions rather
- * than a read-only view: hiring, salary and attendance are branch operations
- * either of them may have to perform.
- */
-export function StaffListView({
-  branchId: branchIdOverride,
-  homeHref = "/manager/dashboard",
-  roleLabel = "Branch Manager",
-}: {
-  /** Admin only — a Manager is scoped to their own branch server-side. */
-  branchId?: string;
-  homeHref?: string;
-  roleLabel?: string;
-} = {}) {
+const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+
+export function StaffListView() {
   const user = useAuthStore((state) => state.user);
   // Undefined for a Manager, whose branch the backend already knows.
   const branchId = branchIdOverride ?? user?.branchId ?? undefined;
@@ -48,9 +35,10 @@ export function StaffListView({
   const { data: staff, isLoading } = useStaff(branchId);
   const { data: summary } = useStaffSummary(branchId);
   const { data: todayAttendance } = useTodayAttendance(branchId);
-  const createStaff = useCreateStaff(branchId);
-  const updateStaff = useUpdateStaff(branchId);
-  const deleteStaffMutation = useDeleteStaff(branchId);
+  const { data: monthlyReport } = useMonthlyStaffReport(branchId, currentMonth);
+  const createStaff = useCreateStaff();
+  const updateStaff = useUpdateStaff();
+  const deleteStaffMutation = useDeleteStaff();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
@@ -76,6 +64,24 @@ export function StaffListView({
     deleteStaffMutation.mutate(deletingStaff.id, { onSuccess: () => setDeletingStaff(null) });
   };
 
+  const handleExport = () => {
+    exportToCsv(
+      `staff-monthly-report-${currentMonth}.csv`,
+      (monthlyReport ?? []).map((row) => ({
+        "Staff Code": row.staffCode,
+        Name: row.name,
+        Designation: row.designation,
+        "Monthly Salary": row.monthlySalary,
+        Bonus: row.bonusTotal,
+        "Net Payable": row.netPayable,
+        Present: row.presentCount,
+        Late: row.lateCount,
+        Absent: row.absentCount,
+        "On Leave": row.leaveCount,
+      })),
+    );
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -84,10 +90,20 @@ export function StaffListView({
         title="Staff"
         subtitle="Manage the team, track daily attendance, and handle salary and bonuses."
         action={
-          <Button onClick={() => setIsAddOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Add Staff
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={handleExport}
+              disabled={!monthlyReport || monthlyReport.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Export Monthly Report
+            </Button>
+            <Button onClick={() => setIsAddOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Add Staff
+            </Button>
+          </div>
         }
       />
 
@@ -119,7 +135,6 @@ export function StaffListView({
         {!isLoading && (!staff || staff.length === 0) && <EmptyState label="No staff added yet." />}
         {!isLoading && staff && staff.length > 0 && (
           <StaffTable
-            branchId={branchId}
             staff={staff}
             todayAttendance={todayAttendance ?? {}}
             onViewDetails={(member) => setViewingStaffId(member.id)}
@@ -149,7 +164,7 @@ export function StaffListView({
         )}
       </Modal>
 
-      <StaffDetailDrawer branchId={branchId} staff={viewingStaff} onClose={() => setViewingStaffId(null)} />
+      <StaffDetailDrawer staff={viewingStaff} onClose={() => setViewingStaffId(null)} />
 
       <ConfirmDialog
         open={Boolean(deletingStaff)}

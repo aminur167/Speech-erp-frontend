@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { StaffAvatar } from "@/components/staff/StaffAvatar";
+import { SalaryPaymentSection } from "@/components/staff/SalaryPaymentSection";
 import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useAddBonus } from "@/hooks/staff/useAddBonus";
 import { useStaffBonuses } from "@/hooks/staff/useStaffBonuses";
@@ -38,19 +39,16 @@ function formatTime(iso: string | null): string {
 }
 
 export function StaffDetailDrawer({
-  branchId,
   staff,
   onClose,
 }: {
-  /** Admin only — a Manager is scoped to their own branch server-side. */
-  branchId?: string;
   staff: StaffMember | null;
   onClose: () => void;
 }) {
-  const updateStaff = useUpdateStaff(branchId);
-  const addBonus = useAddBonus(branchId);
-  const { data: bonuses, isLoading: bonusesLoading } = useStaffBonuses(branchId, staff?.id);
-  const { data: history, isLoading: historyLoading } = useStaffAttendanceHistory(branchId, staff?.id);
+  const updateStaff = useUpdateStaff();
+  const addBonus = useAddBonus();
+  const { data: bonuses, isLoading: bonusesLoading } = useStaffBonuses(staff?.id);
+  const { data: history, isLoading: historyLoading } = useStaffAttendanceHistory(staff?.id);
 
   const [isEditingSalary, setIsEditingSalary] = useState(false);
   const [salaryDraft, setSalaryDraft] = useState("");
@@ -89,8 +87,6 @@ export function StaffDetailDrawer({
     const amount = Number(bonusAmount);
     if (!Number.isFinite(amount) || amount <= 0 || !bonusReason.trim()) return;
     addBonus.mutate(
-      // No `awardedBy`: the server records the authenticated user, so the
-      // browser can't credit the bonus to somebody else.
       { staffId: staff.id, amount, reason: bonusReason.trim() },
       {
         onSuccess: () => {
@@ -170,6 +166,8 @@ export function StaffDetailDrawer({
             </div>
           )}
         </section>
+
+        <SalaryPaymentSection staff={staff} />
 
         <section className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
