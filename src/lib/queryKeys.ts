@@ -104,5 +104,6 @@ export const queryKeys = {
   salaryPayments: {
     all: ["salary-payments"] as const,
     list: (params?: object) => ["salary-payments", "list", params] as const,
+    branchSummary: (month?: string) => ["salary-payments", "branch-summary", month] as const,
   },
 };

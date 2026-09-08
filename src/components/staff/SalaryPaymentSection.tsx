@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Banknote, Clock } from "lucide-react";
+import { Banknote, Clock, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -9,10 +9,11 @@ import { LoadingState } from "@/components/ui/states";
 import { useSalaryPayments } from "@/hooks/salaryPayments/useSalaryPayments";
 import { useRequestSalaryPayment } from "@/hooks/salaryPayments/useRequestSalaryPayment";
 import { useDisburseSalaryPayment } from "@/hooks/salaryPayments/useDisburseSalaryPayment";
+import { SalaryInvoiceModal } from "@/components/salaryPayments/SalaryInvoiceModal";
 import { PAYMENT_METHOD_OPTIONS } from "@/utils/paymentMethod";
 import { formatCurrency } from "@/utils/currency";
 import type { ApiError } from "@/types/api";
-import type { PaymentMethod, SalaryPaymentStatus, StaffMember } from "@/types/domain";
+import type { PaymentMethod, SalaryPayment, SalaryPaymentStatus, StaffMember } from "@/types/domain";
 
 const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
@@ -45,6 +46,7 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
   const [isChoosingMethod, setIsChoosingMethod] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [error, setError] = useState<string | undefined>();
+  const [viewingInvoice, setViewingInvoice] = useState<SalaryPayment | null>(null);
 
   const records = data?.results ?? [];
   const current = records.find((record) => record.month === currentMonth);
@@ -105,17 +107,25 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
                   <Badge tone={STATUS_TONE[current.status]} label={STATUS_LABEL[current.status]} />
                 </div>
 
-                {current.status === "approved" && !isChoosingMethod && (
-                  <Button onClick={() => setIsChoosingMethod(true)}>
-                    <Banknote className="h-3.5 w-3.5" />
-                    Give Salary
-                  </Button>
-                )}
-                {current.status === "rejected" && (
-                  <Button onClick={handleRequest} isLoading={requestPayment.isPending}>
-                    Request Again
-                  </Button>
-                )}
+                <div className="flex shrink-0 gap-2">
+                  {(current.status === "approved" || current.status === "paid") && (
+                    <Button variant="secondary" onClick={() => setViewingInvoice(current)}>
+                      <FileText className="h-3.5 w-3.5" />
+                      Invoice
+                    </Button>
+                  )}
+                  {current.status === "approved" && !isChoosingMethod && (
+                    <Button onClick={() => setIsChoosingMethod(true)}>
+                      <Banknote className="h-3.5 w-3.5" />
+                      Give Salary
+                    </Button>
+                  )}
+                  {current.status === "rejected" && (
+                    <Button onClick={handleRequest} isLoading={requestPayment.isPending}>
+                      Request Again
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {current.status === "pending_approval" && (
@@ -177,6 +187,8 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
           ))}
         </ul>
       )}
+
+      <SalaryInvoiceModal payment={viewingInvoice} onClose={() => setViewingInvoice(null)} />
     </section>
   );
 }

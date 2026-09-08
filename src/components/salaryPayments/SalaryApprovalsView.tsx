@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, FileText, X } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Select";
@@ -11,10 +11,12 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { useSalaryPayments } from "@/hooks/salaryPayments/useSalaryPayments";
+import { useSalaryPaymentBranchSummary } from "@/hooks/salaryPayments/useSalaryPaymentBranchSummary";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { ApproveSalaryPaymentModal } from "@/components/salaryPayments/ApproveSalaryPaymentModal";
 import { RejectSalaryPaymentModal } from "@/components/salaryPayments/RejectSalaryPaymentModal";
+import { SalaryInvoiceModal } from "@/components/salaryPayments/SalaryInvoiceModal";
 import type { SalaryPayment, SalaryPaymentStatus } from "@/types/domain";
 
 const PAGE_SIZE = 10;
@@ -42,6 +44,7 @@ export function SalaryApprovalsView() {
   const [page, setPage] = useState(1);
   const [approving, setApproving] = useState<SalaryPayment | null>(null);
   const [rejecting, setRejecting] = useState<SalaryPayment | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<SalaryPayment | null>(null);
 
   const { data, isLoading, isError, refetch } = useSalaryPayments({
     status: status || undefined,
@@ -49,6 +52,7 @@ export function SalaryApprovalsView() {
     page,
     pageSize: PAGE_SIZE,
   });
+  const { data: branchSummary } = useSalaryPaymentBranchSummary();
 
   return (
     <div className="flex flex-col gap-6">
@@ -58,6 +62,42 @@ export function SalaryApprovalsView() {
         title="Salary Approvals"
         subtitle="Review salary payment requests a branch manager has opened. Nothing is paid until you decide."
       />
+
+      {branchSummary && branchSummary.length > 0 && (
+        <Card>
+          <h2 className="mb-3 text-sm font-semibold text-text-primary">
+            Branch-wise Approved Salary
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-text-secondary">
+                  <th className="py-2 pr-4 font-medium">Branch</th>
+                  <th className="py-2 pr-4 font-medium">Awaiting Payment</th>
+                  <th className="py-2 pr-4 font-medium">Paid</th>
+                  <th className="py-2 pr-4 font-medium">Total Approved</th>
+                  <th className="py-2 pr-4 font-medium">Payments</th>
+                </tr>
+              </thead>
+              <tbody>
+                {branchSummary.map((row) => (
+                  <tr key={row.branchId} className="border-b border-border/60 last:border-0">
+                    <td className="py-2 pr-4 font-medium text-text-primary">{row.branchName}</td>
+                    <td className="py-2 pr-4 text-text-primary">
+                      {formatCurrency(row.approvedAmount)}
+                    </td>
+                    <td className="py-2 pr-4 text-success">{formatCurrency(row.paidAmount)}</td>
+                    <td className="py-2 pr-4 font-semibold text-text-primary">
+                      {formatCurrency(row.totalApprovedAmount)}
+                    </td>
+                    <td className="py-2 pr-4 text-text-secondary">{row.paymentCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       <FilterBar>
         <BranchFilterSelect
@@ -127,26 +167,38 @@ export function SalaryApprovalsView() {
                         </p>
                       )}
                     </div>
-                    {isAdmin && payment.status === "pending_approval" && (
-                      <div className="flex shrink-0 gap-2">
+                    <div className="flex shrink-0 gap-2">
+                      {(payment.status === "approved" || payment.status === "paid") && (
                         <button
                           type="button"
-                          onClick={() => setRejecting(payment)}
-                          className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-danger/40 hover:text-danger"
+                          onClick={() => setViewingInvoice(payment)}
+                          className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-primary/40 hover:text-primary"
                         >
-                          <X className="h-3.5 w-3.5" />
-                          Reject
+                          <FileText className="h-3.5 w-3.5" />
+                          Invoice
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setApproving(payment)}
-                          className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-dark"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                          Approve
-                        </button>
-                      </div>
-                    )}
+                      )}
+                      {isAdmin && payment.status === "pending_approval" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setRejecting(payment)}
+                            className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-danger/40 hover:text-danger"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            Reject
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setApproving(payment)}
+                            className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-dark"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            Approve
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -158,6 +210,7 @@ export function SalaryApprovalsView() {
 
       <ApproveSalaryPaymentModal payment={approving} onClose={() => setApproving(null)} />
       <RejectSalaryPaymentModal payment={rejecting} onClose={() => setRejecting(null)} />
+      <SalaryInvoiceModal payment={viewingInvoice} onClose={() => setViewingInvoice(null)} />
     </div>
   );
 }

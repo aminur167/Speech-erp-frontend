@@ -91,3 +91,38 @@ export async function disburseSalaryPayment(
   );
   return normalizeSalaryPayment(data);
 }
+
+export interface SalaryPaymentBranchSummaryRow {
+  branchId: string;
+  branchName: string;
+  /** Approved by Admin, not yet paid out. */
+  approvedAmount: number;
+  /** Already disbursed -- also logged as an Expense. */
+  paidAmount: number;
+  /** `approvedAmount + paidAmount` -- everything Admin has signed off on, regardless of disbursement stage. */
+  totalApprovedAmount: number;
+  paymentCount: number;
+}
+
+interface RawSalaryPaymentBranchSummaryRow
+  extends Omit<SalaryPaymentBranchSummaryRow, "approvedAmount" | "paidAmount" | "totalApprovedAmount"> {
+  approvedAmount: number | string;
+  paidAmount: number | string;
+  totalApprovedAmount: number | string;
+}
+
+/** `month` is an ISO "YYYY-MM"; omit for all-time totals. */
+export async function getSalaryPaymentBranchSummary(
+  month?: string,
+): Promise<SalaryPaymentBranchSummaryRow[]> {
+  const { data } = await apiClient.get<RawSalaryPaymentBranchSummaryRow[]>(
+    "/staff/salary-payments/branch-summary/",
+    { params: { month } },
+  );
+  return data.map((row) => ({
+    ...row,
+    approvedAmount: Number(row.approvedAmount),
+    paidAmount: Number(row.paidAmount),
+    totalApprovedAmount: Number(row.totalApprovedAmount),
+  }));
+}
