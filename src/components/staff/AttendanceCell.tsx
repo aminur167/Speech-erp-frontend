@@ -24,7 +24,8 @@ export function AttendanceCell({
   staffId,
   record,
 }: {
-  branchId: string;
+  /** Admin only — a Manager is scoped to their own branch server-side. */
+  branchId?: string;
   staffId: string;
   record?: StaffAttendance;
 }) {

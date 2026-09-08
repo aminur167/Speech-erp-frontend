@@ -26,7 +26,8 @@ export function StaffTable({
   onEdit,
   onDelete,
 }: {
-  branchId: string;
+  /** Admin only — a Manager is scoped to their own branch server-side. */
+  branchId?: string;
   staff: StaffMember[];
   todayAttendance: Record<string, StaffAttendance>;
   onViewDetails: (member: StaffMember) => void;

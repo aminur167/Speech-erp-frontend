@@ -23,9 +23,27 @@ import { formatCurrency } from "@/utils/currency";
 import type { StaffInput } from "@/lib/api/staff";
 import type { StaffMember } from "@/types/domain";
 
-export function StaffListView() {
+/**
+ * One branch's team.
+ *
+ * Shared by the Manager's own Staff page and Admin's branch drill-down —
+ * `branchId` is what distinguishes them. Admin gets the same actions rather
+ * than a read-only view: hiring, salary and attendance are branch operations
+ * either of them may have to perform.
+ */
+export function StaffListView({
+  branchId: branchIdOverride,
+  homeHref = "/manager/dashboard",
+  roleLabel = "Branch Manager",
+}: {
+  /** Admin only — a Manager is scoped to their own branch server-side. */
+  branchId?: string;
+  homeHref?: string;
+  roleLabel?: string;
+} = {}) {
   const user = useAuthStore((state) => state.user);
-  const branchId = user?.branchId ?? "branch-1";
+  // Undefined for a Manager, whose branch the backend already knows.
+  const branchId = branchIdOverride ?? user?.branchId ?? undefined;
 
   const { data: staff, isLoading } = useStaff(branchId);
   const { data: summary } = useStaffSummary(branchId);
@@ -61,10 +79,10 @@ export function StaffListView() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref="/manager/dashboard"
-        breadcrumb={["Branch Manager", "Staff"]}
+        homeHref={homeHref}
+        breadcrumb={[roleLabel, "Staff"]}
         title="Staff"
-        subtitle="Manage your team, track daily attendance, and handle salary and bonuses."
+        subtitle="Manage the team, track daily attendance, and handle salary and bonuses."
         action={
           <Button onClick={() => setIsAddOpen(true)}>
             <Plus className="h-4 w-4" />

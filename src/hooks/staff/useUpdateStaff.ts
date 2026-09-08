@@ -3,7 +3,7 @@ import { updateStaff, type StaffInput } from "@/lib/api/staff";
 import { queryKeys } from "@/lib/queryKeys";
 import type { StaffMember } from "@/types/domain";
 
-export function useUpdateStaff(branchId: string) {
+export function useUpdateStaff(branchId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation<StaffMember, Error, { id: string; input: StaffInput }>({

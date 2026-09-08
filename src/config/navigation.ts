@@ -70,6 +70,10 @@ export const managerNav: NavItem[] = [
  * Mirrors managerNav's structure so it feels like "browsing that branch's own space", but
  * deliberately omits the money-moving action flows (Sell, Enroll Service, Daily Closing
  * submission) — Admin can view everything, not perform branch-manager-only transactions.
+ *
+ * Staff is an exception and belongs here: hiring, salary and attendance are
+ * that branch's operations, not a transaction against a patient, and Admin
+ * running a branch has to be able to do them.
  */
 export function branchNav(branchId: string): NavItem[] {
   const base = `/admin/branches/${branchId}`;
@@ -80,6 +84,7 @@ export function branchNav(branchId: string): NavItem[] {
     { label: "Patients", href: `${base}/patients`, icon: UserPlus },
     { label: "Packages", href: `${base}/packages`, icon: Package },
     { label: "Appointments", href: `${base}/appointments`, icon: CalendarClock },
+    { label: "Staff", href: `${base}/staff`, icon: Users },
     { label: "Materials", href: `${base}/materials`, icon: Boxes },
     { label: "Due Payments", href: `${base}/due-payments`, icon: Wallet },
     { label: "Expenses", href: `${base}/expenses`, icon: Receipt },

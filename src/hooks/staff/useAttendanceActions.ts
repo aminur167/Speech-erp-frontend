@@ -3,7 +3,7 @@ import { checkInStaff, checkOutStaff, markAttendanceStatus } from "@/lib/api/sta
 import { queryKeys } from "@/lib/queryKeys";
 import type { AttendanceStatus, StaffAttendance } from "@/types/domain";
 
-function useInvalidateAttendance(branchId: string) {
+function useInvalidateAttendance(branchId?: string) {
   const queryClient = useQueryClient();
   return (staffId: string) => {
     queryClient.invalidateQueries({ queryKey: queryKeys.staff.todayAttendance(branchId) });
@@ -12,7 +12,7 @@ function useInvalidateAttendance(branchId: string) {
   };
 }
 
-export function useCheckIn(branchId: string) {
+export function useCheckIn(branchId?: string) {
   const invalidate = useInvalidateAttendance(branchId);
   return useMutation<StaffAttendance, Error, string>({
     mutationFn: (staffId) => checkInStaff(branchId, staffId),
@@ -20,7 +20,7 @@ export function useCheckIn(branchId: string) {
   });
 }
 
-export function useCheckOut(branchId: string) {
+export function useCheckOut(branchId?: string) {
   const invalidate = useInvalidateAttendance(branchId);
   return useMutation<StaffAttendance, Error, string>({
     mutationFn: (staffId) => checkOutStaff(branchId, staffId),
@@ -28,7 +28,7 @@ export function useCheckOut(branchId: string) {
   });
 }
 
-export function useMarkAttendanceStatus(branchId: string) {
+export function useMarkAttendanceStatus(branchId?: string) {
   const invalidate = useInvalidateAttendance(branchId);
   return useMutation<
     StaffAttendance,

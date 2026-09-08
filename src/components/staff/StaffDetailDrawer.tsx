@@ -13,7 +13,6 @@ import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useAddBonus } from "@/hooks/staff/useAddBonus";
 import { useStaffBonuses } from "@/hooks/staff/useStaffBonuses";
 import { useStaffAttendanceHistory } from "@/hooks/staff/useStaffAttendanceHistory";
-import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { humanizeField } from "@/utils/fields";
 import type { StaffAttendance, StaffMember } from "@/types/domain";
@@ -43,11 +42,11 @@ export function StaffDetailDrawer({
   staff,
   onClose,
 }: {
-  branchId: string;
+  /** Admin only — a Manager is scoped to their own branch server-side. */
+  branchId?: string;
   staff: StaffMember | null;
   onClose: () => void;
 }) {
-  const currentUser = useAuthStore((state) => state.user);
   const updateStaff = useUpdateStaff(branchId);
   const addBonus = useAddBonus(branchId);
   const { data: bonuses, isLoading: bonusesLoading } = useStaffBonuses(branchId, staff?.id);
@@ -90,7 +89,9 @@ export function StaffDetailDrawer({
     const amount = Number(bonusAmount);
     if (!Number.isFinite(amount) || amount <= 0 || !bonusReason.trim()) return;
     addBonus.mutate(
-      { staffId: staff.id, amount, reason: bonusReason.trim(), awardedBy: currentUser?.name ?? "Branch Manager" },
+      // No `awardedBy`: the server records the authenticated user, so the
+      // browser can't credit the bonus to somebody else.
+      { staffId: staff.id, amount, reason: bonusReason.trim() },
       {
         onSuccess: () => {
           setIsAddingBonus(false);

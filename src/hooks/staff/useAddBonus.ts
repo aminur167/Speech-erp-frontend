@@ -3,7 +3,7 @@ import { addBonus, type BonusInput } from "@/lib/api/staff";
 import { queryKeys } from "@/lib/queryKeys";
 import type { StaffBonus } from "@/types/domain";
 
-export function useAddBonus(branchId: string) {
+export function useAddBonus(branchId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation<StaffBonus, Error, BonusInput>({
