@@ -87,9 +87,19 @@ export function AttendanceCalendar({
         >
           <ChevronLeft className="h-3.5 w-3.5" />
         </button>
-        <p className="text-xs font-bold text-text-primary">
-          {cursor.toLocaleDateString(undefined, { year: "numeric", month: "long" })}
-        </p>
+        <input
+          type="month"
+          aria-label="Jump to month"
+          title="Jump to a specific month"
+          value={monthParam}
+          max={`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`}
+          onChange={(event) => {
+            const [y, m] = event.target.value.split("-").map(Number);
+            if (!y || !m) return;
+            setCursor(new Date(y, m - 1, 1));
+          }}
+          className="cursor-pointer rounded-md border-none bg-transparent px-1 text-center text-xs font-bold text-text-primary outline-none focus:ring-1 focus:ring-primary/40"
+        />
         <button
           type="button"
           aria-label="Next month"
@@ -111,7 +121,8 @@ export function AttendanceCalendar({
                 key={`${label}-${i}`}
                 className={clsx(
                   "text-center text-[10px] font-bold",
-                  i === 0 || i === 6 ? "text-primary/50" : "text-text-secondary/70",
+                  // Friday (index 5, per JS Date.getDay()) is the weekly holiday.
+                  i === 5 ? "text-primary/50" : "text-text-secondary/70",
                 )}
               >
                 {label}
@@ -125,7 +136,8 @@ export function AttendanceCalendar({
               const iso = toISODate(year, month, day);
               const record = recordsByDate.get(iso);
               const isToday = iso === todayISO;
-              const isWeekend = (leadingBlanks + i) % 7 === 0 || (leadingBlanks + i) % 7 === 6;
+              // Friday (index 5, per JS Date.getDay()) is the weekly holiday.
+              const isHoliday = (leadingBlanks + i) % 7 === 5;
               const title = record
                 ? [
                     humanizeField(record.status),
@@ -134,7 +146,9 @@ export function AttendanceCalendar({
                   ]
                     .filter(Boolean)
                     .join(" · ")
-                : undefined;
+                : isHoliday
+                  ? "Weekly holiday"
+                  : undefined;
 
               return (
                 <div
@@ -148,7 +162,7 @@ export function AttendanceCalendar({
                         ? "bg-primary text-white"
                         : clsx(
                             "font-medium",
-                            isWeekend ? "bg-background text-text-secondary/50" : "text-text-secondary/40",
+                            isHoliday ? "bg-background text-text-secondary/50" : "text-text-secondary/40",
                           ),
                     isToday && record && "ring-2 ring-primary ring-offset-1 ring-offset-surface",
                   )}
