@@ -3,14 +3,13 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { clsx } from "clsx";
-import { Button } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/states";
 import { useStaffAttendanceHistory } from "@/hooks/staff/useStaffAttendanceHistory";
 import { ATTENDANCE_STATUS_TONE } from "@/components/staff/attendanceStatusTone";
 import { humanizeField } from "@/utils/fields";
 import type { AttendanceStatus } from "@/types/domain";
 
-const WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 const LEGEND_STATUSES: AttendanceStatus[] = ["present", "early_leave", "on_leave", "absent"];
 
 // Same tones as the attendance Badges elsewhere (ATTENDANCE_STATUS_TONE) —
@@ -68,39 +67,39 @@ export function AttendanceCalendar({
   const todayISO = toISODate(today.getFullYear(), today.getMonth(), today.getDate());
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border p-3">
-      <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          className="px-2 py-1"
+    <div className="rounded-lg border border-border bg-background/40 p-2.5">
+      <div className="mx-auto flex max-w-[224px] items-center justify-between">
+        <button
+          type="button"
           aria-label="Previous month"
           onClick={() => setCursor(new Date(year, month - 1, 1))}
+          className="flex h-6 w-6 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-primary-light/60 hover:text-text-primary"
         >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <p className="text-sm font-medium text-text-primary">
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
+        <p className="text-xs font-semibold text-text-primary">
           {cursor.toLocaleDateString(undefined, { year: "numeric", month: "long" })}
         </p>
-        <Button
-          variant="ghost"
-          className="px-2 py-1"
+        <button
+          type="button"
           aria-label="Next month"
           disabled={isCurrentMonth}
           onClick={() => setCursor(new Date(year, month + 1, 1))}
+          className="flex h-6 w-6 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-primary-light/60 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
         >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
       </div>
 
       {isLoading ? (
         <LoadingState label="Loading attendance…" />
       ) : (
         <>
-          <div className="grid grid-cols-7 gap-1">
-            {WEEKDAY_LABELS.map((label) => (
+          <div className="mx-auto mt-2 grid max-w-[224px] grid-cols-7 gap-1">
+            {WEEKDAY_LABELS.map((label, i) => (
               <div
-                key={label}
-                className="pb-0.5 text-center text-[11px] font-semibold text-text-secondary"
+                key={`${label}-${i}`}
+                className="text-center text-[10px] font-semibold text-text-secondary/70"
               >
                 {label}
               </div>
@@ -128,11 +127,11 @@ export function AttendanceCalendar({
                   key={iso}
                   title={title}
                   className={clsx(
-                    "flex aspect-square items-center justify-center rounded-md text-xs font-medium",
+                    "flex aspect-square items-center justify-center rounded text-[11px] font-medium",
                     record
                       ? TONE_CELL_CLASS[ATTENDANCE_STATUS_TONE[record.status]]
-                      : "text-text-secondary/50",
-                    isToday && "ring-1 ring-primary",
+                      : "text-text-secondary/40",
+                    isToday && "ring-1 ring-primary ring-offset-1 ring-offset-background",
                   )}
                 >
                   {day}
@@ -141,10 +140,10 @@ export function AttendanceCalendar({
             })}
           </div>
 
-          <div className="flex flex-wrap gap-x-3 gap-y-1 border-t border-border pt-2">
+          <div className="mx-auto mt-2.5 flex max-w-[224px] flex-wrap justify-center gap-x-2.5 gap-y-1 border-t border-border pt-2">
             {LEGEND_STATUSES.map((status) => (
-              <span key={status} className="flex items-center gap-1.5 text-[11px] text-text-secondary">
-                <span className={clsx("h-2 w-2 rounded-full", TONE_DOT_CLASS[ATTENDANCE_STATUS_TONE[status]])} />
+              <span key={status} className="flex items-center gap-1 text-[10px] text-text-secondary">
+                <span className={clsx("h-1.5 w-1.5 rounded-full", TONE_DOT_CLASS[ATTENDANCE_STATUS_TONE[status]])} />
                 {humanizeField(status)}
               </span>
             ))}

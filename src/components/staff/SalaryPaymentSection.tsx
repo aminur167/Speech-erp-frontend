@@ -73,55 +73,67 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
   };
 
   return (
-    <section className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold text-text-primary">
+    <section className="flex flex-col gap-1.5">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
         Salary Payment — {monthLabel(currentMonth)}
       </h3>
 
       {isLoading && <LoadingState label="Loading salary payment status…" />}
 
       {!isLoading && (
-        <div className="rounded-lg border border-border p-3">
+        <div className="rounded-lg border border-border p-2.5">
           {!current && (
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm text-text-primary">Not requested yet this month.</p>
-                <p className="text-xs text-text-secondary">
+                <p className="text-[11px] text-text-secondary">
                   Sends this month&apos;s net payable to Admin for approval.
                 </p>
               </div>
-              <Button onClick={handleRequest} isLoading={requestPayment.isPending}>
-                <Banknote className="h-3.5 w-3.5" />
+              <Button
+                className="px-2.5 py-1 text-xs"
+                onClick={handleRequest}
+                isLoading={requestPayment.isPending}
+              >
+                <Banknote className="h-3 w-3" />
                 Give Salary
               </Button>
             </div>
           )}
 
           {current && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-lg font-semibold text-text-primary">
+                  <p className="text-base font-semibold text-text-primary">
                     {formatCurrency(current.amount)}
                   </p>
                   <Badge tone={STATUS_TONE[current.status]} label={STATUS_LABEL[current.status]} />
                 </div>
 
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 gap-1.5">
                   {(current.status === "approved" || current.status === "paid") && (
-                    <Button variant="secondary" onClick={() => setViewingInvoice(current)}>
-                      <FileText className="h-3.5 w-3.5" />
+                    <Button
+                      variant="secondary"
+                      className="px-2.5 py-1 text-xs"
+                      onClick={() => setViewingInvoice(current)}
+                    >
+                      <FileText className="h-3 w-3" />
                       Invoice
                     </Button>
                   )}
                   {current.status === "approved" && !isChoosingMethod && (
-                    <Button onClick={() => setIsChoosingMethod(true)}>
-                      <Banknote className="h-3.5 w-3.5" />
+                    <Button className="px-2.5 py-1 text-xs" onClick={() => setIsChoosingMethod(true)}>
+                      <Banknote className="h-3 w-3" />
                       Give Salary
                     </Button>
                   )}
                   {current.status === "rejected" && (
-                    <Button onClick={handleRequest} isLoading={requestPayment.isPending}>
+                    <Button
+                      className="px-2.5 py-1 text-xs"
+                      onClick={handleRequest}
+                      isLoading={requestPayment.isPending}
+                    >
                       Request Again
                     </Button>
                   )}
@@ -129,16 +141,16 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
               </div>
 
               {current.status === "pending_approval" && (
-                <p className="flex items-center gap-1.5 text-xs text-text-secondary">
+                <p className="flex items-center gap-1.5 text-[11px] text-text-secondary">
                   <Clock className="h-3 w-3" />
                   Requested by {current.requestedBy || "you"} — waiting on Admin.
                 </p>
               )}
               {current.status === "rejected" && current.reviewNote && (
-                <p className="text-xs text-danger">&quot;{current.reviewNote}&quot;</p>
+                <p className="text-[11px] text-danger">&quot;{current.reviewNote}&quot;</p>
               )}
               {current.status === "paid" && (
-                <p className="text-xs text-text-secondary">
+                <p className="text-[11px] text-text-secondary">
                   Paid via {current.paymentMethod.replace("_", " ")}
                   {current.paidAt && ` on ${new Date(current.paidAt).toLocaleDateString()}`} — logged as{" "}
                   <span className="font-mono">{current.expenseCode}</span> in Expenses.
@@ -146,7 +158,7 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
               )}
 
               {isChoosingMethod && (
-                <div className="flex items-center gap-2 border-t border-border pt-2">
+                <div className="flex items-center gap-1.5 border-t border-border pt-2">
                   <Select
                     value={paymentMethod}
                     onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
@@ -158,10 +170,14 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
                       </option>
                     ))}
                   </Select>
-                  <Button onClick={handleDisburse} isLoading={disbursePayment.isPending}>
+                  <Button className="px-2.5 py-1 text-xs" onClick={handleDisburse} isLoading={disbursePayment.isPending}>
                     Confirm
                   </Button>
-                  <Button variant="secondary" onClick={() => setIsChoosingMethod(false)}>
+                  <Button
+                    variant="secondary"
+                    className="px-2.5 py-1 text-xs"
+                    onClick={() => setIsChoosingMethod(false)}
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -169,7 +185,7 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
             </div>
           )}
 
-          {error && <p className="mt-2 text-xs text-danger">{error}</p>}
+          {error && <p className="mt-2 text-[11px] text-danger">{error}</p>}
         </div>
       )}
 
@@ -178,7 +194,7 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
           {history.map((record) => (
             <li
               key={record.id}
-              className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
+              className="flex items-center justify-between rounded-lg border border-border px-2.5 py-2 text-sm"
             >
               <span className="text-text-primary">{monthLabel(record.month)}</span>
               <span className="text-xs text-text-secondary">{formatCurrency(record.amount)}</span>
