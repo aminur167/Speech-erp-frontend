@@ -13,17 +13,10 @@ import { SalaryPaymentSection } from "@/components/staff/SalaryPaymentSection";
 import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useAddBonus } from "@/hooks/staff/useAddBonus";
 import { useStaffBonuses } from "@/hooks/staff/useStaffBonuses";
-import { useStaffAttendanceHistory } from "@/hooks/staff/useStaffAttendanceHistory";
+import { AttendanceCalendar } from "@/components/staff/AttendanceCalendar";
 import { formatCurrency } from "@/utils/currency";
 import { humanizeField } from "@/utils/fields";
-import type { StaffAttendance, StaffMember } from "@/types/domain";
-
-const attendanceTone: Record<StaffAttendance["status"], "success" | "warning" | "info" | "danger"> = {
-  present: "success",
-  early_leave: "warning",
-  on_leave: "info",
-  absent: "danger",
-};
+import type { StaffMember } from "@/types/domain";
 
 function formatDate(value: string): string {
   return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
@@ -31,11 +24,6 @@ function formatDate(value: string): string {
     month: "short",
     day: "numeric",
   });
-}
-
-function formatTime(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
 export function StaffDetailDrawer({
@@ -51,7 +39,6 @@ export function StaffDetailDrawer({
   const updateStaff = useUpdateStaff(branchId);
   const addBonus = useAddBonus(branchId);
   const { data: bonuses, isLoading: bonusesLoading } = useStaffBonuses(branchId, staff?.id);
-  const { data: history, isLoading: historyLoading } = useStaffAttendanceHistory(branchId, staff?.id);
 
   const [isEditingSalary, setIsEditingSalary] = useState(false);
   const [salaryDraft, setSalaryDraft] = useState("");
@@ -178,8 +165,12 @@ export function StaffDetailDrawer({
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-text-primary">Bonuses</h3>
             {!isAddingBonus && (
-              <Button variant="secondary" onClick={() => setIsAddingBonus(true)}>
-                <Gift className="h-3.5 w-3.5" />
+              <Button
+                variant="secondary"
+                className="px-2.5 py-1 text-xs"
+                onClick={() => setIsAddingBonus(true)}
+              >
+                <Gift className="h-3 w-3" />
                 Add Bonus
               </Button>
             )}
@@ -242,27 +233,7 @@ export function StaffDetailDrawer({
 
         <section className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold text-text-primary">Attendance History</h3>
-          {historyLoading && <LoadingState label="Loading attendance…" />}
-          {!historyLoading && (!history || history.length === 0) && (
-            <EmptyState label="No attendance recorded yet." />
-          )}
-          {!historyLoading && history && history.length > 0 && (
-            <ul className="flex flex-col gap-1.5">
-              {history.map((record) => (
-                <li
-                  key={record.id}
-                  className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
-                >
-                  <span className="text-text-primary">{formatDate(record.date)}</span>
-                  <span className="text-xs text-text-secondary">
-                    {formatTime(record.checkInAt)}
-                    {record.checkOutAt && ` – ${formatTime(record.checkOutAt)}`}
-                  </span>
-                  <Badge tone={attendanceTone[record.status]} label={humanizeField(record.status)} />
-                </li>
-              ))}
-            </ul>
-          )}
+          <AttendanceCalendar branchId={branchId} staffId={staff.id} />
         </section>
       </div>
     </Drawer>

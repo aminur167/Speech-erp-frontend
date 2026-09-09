@@ -4,15 +4,9 @@ import { CalendarOff, Clock, LogIn, LogOut, UserX } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useCheckIn, useCheckOut, useMarkAttendanceStatus } from "@/hooks/staff/useAttendanceActions";
+import { ATTENDANCE_STATUS_TONE } from "@/components/staff/attendanceStatusTone";
 import { humanizeField } from "@/utils/fields";
 import type { StaffAttendance } from "@/types/domain";
-
-const statusTone: Record<StaffAttendance["status"], "success" | "warning" | "info" | "danger"> = {
-  present: "success",
-  early_leave: "warning",
-  on_leave: "info",
-  absent: "danger",
-};
 
 function formatTime(iso: string | null): string {
   if (!iso) return "—";
@@ -67,7 +61,7 @@ export function AttendanceCell({
   if (record.status === "on_leave" || record.status === "absent") {
     return (
       <div className="flex items-center gap-2">
-        <Badge tone={statusTone[record.status]} label={humanizeField(record.status)} />
+        <Badge tone={ATTENDANCE_STATUS_TONE[record.status]} label={humanizeField(record.status)} />
         <Button variant="secondary" onClick={() => checkIn.mutate(staffId)} isLoading={checkIn.isPending}>
           Check In
         </Button>
@@ -78,7 +72,7 @@ export function AttendanceCell({
   return (
     <div className="flex flex-col items-start gap-1.5">
       <div className="flex items-center gap-2">
-        <Badge tone={statusTone[record.status]} label={humanizeField(record.status)} />
+        <Badge tone={ATTENDANCE_STATUS_TONE[record.status]} label={humanizeField(record.status)} />
         <span className="flex items-center gap-1 text-xs text-text-secondary">
           <Clock className="h-3 w-3" />
           {formatTime(record.checkInAt)}
