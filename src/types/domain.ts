@@ -363,9 +363,9 @@ export interface StaffMember {
  * Day-of attendance is always one of "present", "absent" (auto-marked once
  * office hours end with no check-in), or "early_leave" (checked out before
  * closing) — "on_leave" is the one status a manager still sets by hand.
- * "late" can still appear on older records made before this model existed.
+ * There is no "late" status — arrival time doesn't affect the outcome.
  */
-export type AttendanceStatus = "present" | "late" | "early_leave" | "on_leave" | "absent";
+export type AttendanceStatus = "present" | "early_leave" | "on_leave" | "absent";
 
 export interface StaffAttendance {
   id: string;

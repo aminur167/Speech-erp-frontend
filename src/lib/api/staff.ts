@@ -150,8 +150,8 @@ export async function checkInStaff(
   branchId: string | undefined,
   staffId: string,
 ): Promise<StaffAttendance> {
-  // Present-or-late is decided server-side from the check-in time: it feeds
-  // payroll, so the browser's clock doesn't get a vote.
+  // Status is decided server-side from the actual clock: it feeds payroll,
+  // so the browser's clock doesn't get a vote.
   const { data } = await apiClient.post<RawAttendance>(`/staff/${staffId}/check-in/`);
   return normalizeAttendance(data);
 }
@@ -224,7 +224,6 @@ export interface StaffMonthlyReportRow {
   bonusTotal: number;
   netPayable: number;
   presentCount: number;
-  lateCount: number;
   earlyLeaveCount: number;
   absentCount: number;
   leaveCount: number;
