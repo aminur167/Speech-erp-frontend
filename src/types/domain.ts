@@ -209,12 +209,17 @@ export interface Expense {
 // "advance" is a month settled before it arrived. It always means fully
 // prepaid — the advance flow settles whole months only — so it is never
 // money owed, and it becomes "paid" once its month comes round.
+// "cancelled" is a due a manager forgave when they made the service inactive,
+// month by month with a written reason. It means the same as "written_off" for
+// what is owed — nothing — and is kept apart from it so Admin can tell a
+// branch-desk decision from an admin-approved refund write-off.
 export type BillStatus =
   | "paid"
   | "due"
   | "overdue"
   | "upcoming"
   | "written_off"
+  | "cancelled"
   | "advance";
 
 export interface MonthlyBill {

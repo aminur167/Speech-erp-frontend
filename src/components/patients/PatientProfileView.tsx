@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   Ban,
+  RotateCcw,
   Phone,
   Mail,
   Cake,
@@ -26,11 +27,14 @@ import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { OverdueBadge } from "@/components/patients/OverdueBadge";
 import { PatientEditForm } from "@/components/patients/PatientEditForm";
 import { ScheduleList } from "@/components/services/ScheduleList";
-import { StopServiceModal } from "@/components/enrollments/StopServiceModal";
+import { InactivateServiceModal } from "@/components/enrollments/InactivateServiceModal";
+import { OutstandingDueNotice } from "@/components/enrollments/OutstandingDueNotice";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePatient } from "@/hooks/patients/usePatient";
 import { usePatientActiveServices } from "@/hooks/patients/usePatientActiveServices";
+import { usePatientOutstandingDues } from "@/hooks/patients/usePatientOutstandingDues";
+import { useReactivateService } from "@/hooks/enrollments/useInactivateService";
 import { useTransactions } from "@/hooks/transactions/useTransactions";
 import { useBranches } from "@/hooks/branches/useBranches";
 import { useAuthStore } from "@/store/authStore";
@@ -90,13 +94,17 @@ export function PatientProfileView({
     usePatientActiveServices(patientId);
   const { data: branches } = useBranches();
   const user = useAuthStore((state) => state.user);
-  // Stopping a service is a branch-desk action, like collecting a payment —
-  // Admin can read the profile without being offered it.
+  const { data: outstanding } = usePatientOutstandingDues(patientId);
+  const reactivate = useReactivateService();
+  // Making a service inactive is a branch-desk action, like collecting a
+  // payment — Admin can read the profile without being offered it.
   const canStopServices = user?.role === "manager";
-  const [stopping, setStopping] = useState<{
-    enrollmentId: string;
+  const [inactivating, setInactivating] = useState<{
+    kind: "monthly" | "installment";
+    serviceRefId: string;
     serviceName: string;
   } | null>(null);
+  const [reactivateError, setReactivateError] = useState<string | null>(null);
   const [servicePage, setServicePage] = useState(1);
   const [paymentPage, setPaymentPage] = useState(1);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -114,9 +122,14 @@ export function PatientProfileView({
   const age = calculateAge(patient.dateOfBirth);
   const branchName = branches?.find((b) => b.id === patient.branchId)?.name ?? patient.branchId;
 
-  const services = activeServices ?? [];
+  const allServices = activeServices ?? [];
+  // Split rather than filtered: an inactive service still has to be shown, or
+  // there is nowhere to press Reactivate and no way to see what was kept.
+  const services = allServices.filter((item) => item.isActive);
+  const inactiveServices = allServices.filter((item) => !item.isActive);
   const hasMonthly = services.some((s) => s.type === "monthly");
   const hasInstallment = services.some((s) => s.type === "installment");
+  const outstandingTotal = outstanding?.total ?? 0;
   const careStatus: PatientCareStatus = hasMonthly
     ? "active-care"
     : hasInstallment
@@ -250,22 +263,25 @@ export function PatientProfileView({
                         : `(Installment — Total: ${formatCurrency(item.plan.totalAmount)})`}
                     </span>
                   </p>
-                  {/* Stopping lives on the service itself, not on the patient:
-                      someone can keep coming for one service and stop another,
-                      and the unpaid months being decided belong to this one. */}
-                  {canStopServices && item.type === "monthly" && (
+                  {/* Inactivation lives on the service itself, not on the
+                      patient: someone can keep coming for one service and stop
+                      another, and the unpaid months being decided belong to
+                      this one. */}
+                  {canStopServices && (
                     <Button
                       variant="secondary"
                       className="px-3 py-1.5 text-xs"
                       onClick={() =>
-                        setStopping({
-                          enrollmentId: item.enrollment.id,
+                        setInactivating({
+                          kind: item.type,
+                          serviceRefId:
+                            item.type === "monthly" ? item.enrollment.id : item.plan.id,
                           serviceName: item.serviceName,
                         })
                       }
                     >
                       <Ban className="h-3.5 w-3.5" />
-                      Stop Service
+                      Inactive
                     </Button>
                   )}
                 </div>
@@ -303,6 +319,90 @@ export function PatientProfileView({
         </div>
       </Card>
 
+      {inactiveServices.length > 0 && (
+        <Card>
+          <h2 className="text-sm font-medium text-text-secondary">Inactive Services</h2>
+          {outstandingTotal > 0 && (
+            <div className="mt-3">
+              <OutstandingDueNotice
+                items={outstanding?.items ?? []}
+                total={outstandingTotal}
+              />
+            </div>
+          )}
+          <div className="mt-3 flex flex-col gap-5">
+            {inactiveServices.map((item) => (
+              <div key={item.id} className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-text-primary">
+                    {item.serviceName}{" "}
+                    <span className="font-normal text-text-secondary">
+                      {item.type === "monthly"
+                        ? "(Monthly)"
+                        : `(Installment — Total: ${formatCurrency(item.plan.totalAmount)})`}
+                    </span>
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Badge tone="warning" label="Inactive" />
+                    {canStopServices && (
+                      <Button
+                        variant="secondary"
+                        className="px-3 py-1.5 text-xs"
+                        // Disabled rather than hidden, with the reason above
+                        // it: "you cannot do this yet, and here is what to
+                        // collect" is more use than a missing button. The
+                        // server refuses it either way.
+                        disabled={outstandingTotal > 0 || reactivate.isPending}
+                        onClick={() => {
+                          setReactivateError(null);
+                          reactivate.mutate(
+                            {
+                              kind: item.type,
+                              serviceRefId:
+                                item.type === "monthly"
+                                  ? item.enrollment.id
+                                  : item.plan.id,
+                            },
+                            { onError: (failure) => setReactivateError(failure.message) },
+                          );
+                        }}
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Reactivate
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <ScheduleList
+                  items={
+                    item.type === "monthly"
+                      ? item.enrollment.bills.map((bill) => ({
+                          key: bill.month,
+                          label: bill.label,
+                          amount: bill.amount,
+                          amountPaid: bill.amountPaid,
+                          outstanding: bill.outstanding,
+                          status: bill.status,
+                        }))
+                      : item.plan.installments.map((installment) => ({
+                          key: String(installment.index),
+                          label: installment.label,
+                          amount: installment.amount,
+                          amountPaid: installment.amountPaid,
+                          outstanding: installment.outstanding,
+                          status: installment.status,
+                        }))
+                  }
+                />
+              </div>
+            ))}
+            {reactivateError && (
+              <p className="text-sm text-danger">{reactivateError}</p>
+            )}
+          </div>
+        </Card>
+      )}
+
       <Card>
         <h2 className="text-sm font-medium text-text-secondary">Payment History</h2>
         <div className="mt-3">
@@ -339,11 +439,12 @@ export function PatientProfileView({
         />
       </Modal>
 
-      <StopServiceModal
-        enrollmentId={stopping?.enrollmentId ?? null}
+      <InactivateServiceModal
+        kind={inactivating?.kind ?? "monthly"}
+        serviceRefId={inactivating?.serviceRefId ?? null}
         patientName={patient.name}
-        serviceName={stopping?.serviceName ?? ""}
-        onClose={() => setStopping(null)}
+        serviceName={inactivating?.serviceName ?? ""}
+        onClose={() => setInactivating(null)}
       />
     </div>
   );

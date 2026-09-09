@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/api/client";
 import { normalizePayment, type RawPayment } from "@/lib/api/payments";
 import type { PaginatedResponse } from "@/types/api";
+import type { StopDecision, StopPreview } from "@/lib/api/monthlyEnrollments";
 import type { InstallmentPlan, Installment, Payment } from "@/types/domain";
 
 // `amount`/`amountPaid`/`outstanding`/`totalAmount` are real DRF DecimalFields,
@@ -98,3 +99,54 @@ export async function payInstallment(
   };
 }
 
+
+// ---------------------------------------------------------------------------
+// Making one installment service inactive, part by part
+// ---------------------------------------------------------------------------
+
+export async function previewStopInstallmentPlan(planId: string): Promise<StopPreview> {
+  const { data } = await apiClient.get<Record<string, unknown>>(
+    `/enrollments/installments/${planId}/stop-preview/`,
+  );
+  return {
+    owed: ((data.owed ?? []) as Record<string, unknown>[]).map((raw) => ({
+      billId: String(raw.billId),
+      month: String(raw.month ?? ""),
+      label: String(raw.label),
+      amount: Number(raw.amount),
+      status: String(raw.status),
+    })),
+    owedTotal: Number(data.owedTotal ?? 0),
+    prepaid: [],
+    prepaidTotal: 0,
+    droppedMonths: [],
+  };
+}
+
+export async function stopInstallmentPlan(input: {
+  planId: string;
+  decisions: StopDecision[];
+  reason?: string;
+}): Promise<InstallmentPlan> {
+  const { data } = await apiClient.post<RawPlan>(
+    `/enrollments/installments/${input.planId}/stop/`,
+    {
+      decisions: input.decisions.map((decision) => ({
+        billId: Number(decision.billId),
+        action: decision.action,
+        reason: decision.reason,
+      })),
+      reason: input.reason,
+    },
+  );
+  return normalizePlan(data);
+}
+
+/** Reactivate — refused by the backend while the patient owes anything. */
+export async function resumeInstallmentPlan(planId: string): Promise<InstallmentPlan> {
+  const { data } = await apiClient.post<RawPlan>(
+    `/enrollments/installments/${planId}/resume/`,
+    {},
+  );
+  return normalizePlan(data);
+}

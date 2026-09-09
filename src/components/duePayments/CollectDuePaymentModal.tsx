@@ -8,10 +8,12 @@ import { PaymentMethodSelector } from "@/components/payments/PaymentMethodSelect
 import { Receipt } from "@/components/payments/Receipt";
 import { useCollectDuePayment } from "@/hooks/duePayments/useCollectDuePayment";
 import {
+  useAdvanceOptions,
   useAdvancePreview,
   useCollectMonthlyAdvance,
 } from "@/hooks/enrollments/useMonthlyAdvance";
-import { MonthCyclePicker } from "@/components/duePayments/MonthCyclePicker";
+import { AdvanceMonthPicker } from "@/components/enrollments/AdvanceMonthPicker";
+import { OutstandingDueNotice } from "@/components/enrollments/OutstandingDueNotice";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
@@ -34,17 +36,34 @@ export function CollectDuePaymentModal({
   // its own receipt, and collapsing them into a single synthetic receipt
   // would throw away the thing that makes an advance auditable.
   const [payments, setPayments] = useState<Payment[]>([]);
-  // Blank until the manager reaches for it, so the default behaviour is
+  // Closed until the manager reaches for it, so the default behaviour is
   // exactly what it was: collect this month and nothing else.
-  const [through, setThrough] = useState("");
+  const [takingAdvance, setTakingAdvance] = useState(false);
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+  const [advanceError, setAdvanceError] = useState<string | null>(null);
   const collectPayment = useCollectDuePayment();
   const collectAdvance = useCollectMonthlyAdvance();
 
-  const isAdvance = item?.type === "monthly" && Boolean(through) && through > (item.month ?? "");
-  const { data: advancePreview } = useAdvancePreview(
-    isAdvance ? item?.refId : undefined,
-    isAdvance ? through : undefined,
+  const isMonthly = item?.type === "monthly";
+  const { data: advanceOptions, isLoading: optionsLoading } = useAdvanceOptions(
+    isMonthly && takingAdvance ? item?.refId : undefined,
   );
+  const { data: advancePreview } = useAdvancePreview(
+    isMonthly && takingAdvance ? item?.refId : undefined,
+    selectedMonths,
+  );
+
+  // Nothing may be paid ahead while anything is owed — including the very row
+  // this modal was opened on, which is the usual case here.
+  const blockedByArrears = (advanceOptions?.outstandingTotal ?? 0) > 0;
+  const isAdvance = takingAdvance && selectedMonths.length > 0 && !blockedByArrears;
+
+  const toggleMonth = (month: string) =>
+    setSelectedMonths((current) =>
+      current.includes(month)
+        ? current.filter((one) => one !== month)
+        : [...current, month],
+    );
 
   const amountError = (() => {
     if (amount.trim() === "") return "";
@@ -57,7 +76,9 @@ export function CollectDuePaymentModal({
     setPayments([]);
     setMethod("cash");
     setAmount("");
-    setThrough("");
+    setTakingAdvance(false);
+    setSelectedMonths([]);
+    setAdvanceError(null);
     onClose();
   };
 
@@ -65,14 +86,18 @@ export function CollectDuePaymentModal({
     if (!user || !item || amountError) return;
 
     if (isAdvance) {
+      setAdvanceError(null);
       collectAdvance.mutate(
         {
           enrollmentId: item.refId,
-          throughMonth: through,
+          months: selectedMonths,
           method,
           idempotencyKey: generateIdempotencyKey(),
         },
-        { onSuccess: (result) => setPayments(result.payments) },
+        {
+          onSuccess: (result) => setPayments(result.payments),
+          onError: (failure) => setAdvanceError(failure.message),
+        },
       );
       return;
     }
@@ -163,45 +188,52 @@ export function CollectDuePaymentModal({
           {/* Monthly only: an installment plan has its own schedule and no
               monthly cycle to pay ahead of. */}
           {item.type === "monthly" && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <label className="text-xs font-medium text-text-secondary">
-                  Pay ahead through
+                  Advance Payment
                 </label>
-                {through ? (
-                  <div className="flex items-center gap-2">
-                    <MonthCyclePicker value={through} onChange={setThrough} />
-                    <Button
-                      variant="secondary"
-                      className="px-3 py-1.5 text-xs"
-                      onClick={() => setThrough("")}
-                    >
-                      This month only
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    className="px-3 py-1.5 text-xs"
-                    onClick={() => setThrough(item.month ?? "")}
-                  >
-                    Take advance payment
-                  </Button>
-                )}
+                <Button
+                  variant="secondary"
+                  className="px-3 py-1.5 text-xs"
+                  onClick={() => {
+                    setTakingAdvance((current) => !current);
+                    setSelectedMonths([]);
+                    setAdvanceError(null);
+                  }}
+                >
+                  {takingAdvance ? "This month only" : "Take advance payment"}
+                </Button>
               </div>
+
+              {takingAdvance && blockedByArrears && advanceOptions && (
+                <OutstandingDueNotice
+                  items={advanceOptions.outstandingItems}
+                  total={advanceOptions.outstandingTotal}
+                />
+              )}
+
+              {takingAdvance && (
+                <>
+                  <p className="text-xs text-text-secondary">
+                    Pick the month or months being paid for. Months you leave
+                    unticked stay unbilled until they arrive.
+                  </p>
+                  <AdvanceMonthPicker
+                    months={advanceOptions?.months ?? []}
+                    selected={selectedMonths}
+                    onToggle={toggleMonth}
+                    isLoading={optionsLoading}
+                    disabled={blockedByArrears}
+                  />
+                </>
+              )}
 
               {isAdvance && advancePreview && (
                 <div className="flex flex-col gap-1 rounded-lg border border-border bg-background p-3 text-sm">
                   {advancePreview.months.map((month) => (
                     <div key={month.month} className="flex justify-between">
-                      <span
-                        className={
-                          month.isArrears ? "text-danger" : "text-text-secondary"
-                        }
-                      >
-                        {month.label}
-                        {month.isArrears && " (arrears)"}
-                      </span>
+                      <span className="text-text-secondary">{month.label}</span>
                       <span className="tabular-nums text-text-primary">
                         {formatCurrency(month.amount)}
                       </span>
@@ -213,14 +245,10 @@ export function CollectDuePaymentModal({
                       {formatCurrency(advancePreview.total)}
                     </span>
                   </div>
-                  {advancePreview.arrearsTotal > 0 && (
-                    <p className="text-xs text-danger">
-                      Includes {formatCurrency(advancePreview.arrearsTotal)} already
-                      owed — older months are always settled first.
-                    </p>
-                  )}
                 </div>
               )}
+
+              {advanceError && <p className="text-xs text-danger">{advanceError}</p>}
             </div>
           )}
 
@@ -232,7 +260,10 @@ export function CollectDuePaymentModal({
             <Button
               onClick={handleConfirm}
               isLoading={collectPayment.isPending || collectAdvance.isPending}
-              disabled={Boolean(amountError)}
+              disabled={
+                Boolean(amountError) ||
+                (takingAdvance && (blockedByArrears || selectedMonths.length === 0))
+              }
             >
               {isAdvance && advancePreview
                 ? `Collect ${formatCurrency(advancePreview.total)}`

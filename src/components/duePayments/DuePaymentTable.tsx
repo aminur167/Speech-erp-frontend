@@ -50,7 +50,14 @@ export function DuePaymentTable({
                   <Badge tone={item.type === "monthly" ? "info" : "purple"} label={item.type} />
                 </td>
               )}
-              <td className="py-2 pr-4">{item.serviceName}</td>
+              <td className="py-2 pr-4">
+                {item.serviceName}
+                {item.serviceActive === false && (
+                  <span className="ml-2 align-middle">
+                    <Badge tone="warning" label="Inactive" />
+                  </span>
+                )}
+              </td>
               <td className="py-2 pr-4">{item.label}</td>
               <td className="py-2 pr-4 font-medium">{formatCurrency(item.amount)}</td>
               <td className="py-2 pr-4">

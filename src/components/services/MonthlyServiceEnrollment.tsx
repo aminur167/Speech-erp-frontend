@@ -18,21 +18,45 @@ import { useServices } from "@/hooks/services/useServices";
 import { usePatients } from "@/hooks/patients/usePatients";
 import { useCreateMonthlyEnrollment } from "@/hooks/enrollments/useCreateMonthlyEnrollment";
 import { usePayMonthlyBill } from "@/hooks/enrollments/usePayMonthlyBill";
+import {
+  useAdvanceOptions,
+  useAdvancePreview,
+  useCollectMonthlyAdvance,
+} from "@/hooks/enrollments/useMonthlyAdvance";
+import { usePatientOutstandingDues } from "@/hooks/patients/usePatientOutstandingDues";
+import { AdvanceMonthPicker } from "@/components/enrollments/AdvanceMonthPicker";
+import { OutstandingDueNotice } from "@/components/enrollments/OutstandingDueNotice";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { generateIdempotencyKey } from "@/lib/offline/idempotency";
 import type { Patient, Service, PaymentMethod, Payment, MonthlyEnrollment } from "@/types/domain";
 
-type Step = "service" | "patient" | "enroll" | "bills" | "payment" | "receipt";
+type Step =
+  | "service"
+  | "patient"
+  | "enroll"
+  | "bills"
+  | "payment"
+  | "advance"
+  | "receipt";
 
-const STEP_ORDER: Step[] = ["service", "patient", "enroll", "bills", "payment", "receipt"];
+const STEP_ORDER: Step[] = [
+  "service",
+  "patient",
+  "enroll",
+  "bills",
+  "payment",
+  "advance",
+  "receipt",
+];
 const STEP_LABELS: Record<Step, string> = {
   service: "Select Service",
   patient: "Search Patient",
   enroll: "Create Enrollment",
   bills: "View Current Bill",
-  payment: "Payment",
+  payment: "Current Month Payment",
+  advance: "Advance Payment",
   receipt: "Receipt",
 };
 
@@ -48,6 +72,9 @@ export function MonthlyServiceEnrollment() {
   const [payingMonth, setPayingMonth] = useState<string | null>(null);
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [payment, setPayment] = useState<Payment | null>(null);
+  const [advanceMonths, setAdvanceMonths] = useState<string[]>([]);
+  const [advancePayments, setAdvancePayments] = useState<Payment[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const { data: services, isLoading: servicesLoading } = useServices("monthly");
   const { data: patientResults, isLoading: patientsLoading } = usePatients({
@@ -56,6 +83,20 @@ export function MonthlyServiceEnrollment() {
   });
   const createEnrollment = useCreateMonthlyEnrollment();
   const payBill = usePayMonthlyBill();
+  const collectAdvance = useCollectMonthlyAdvance();
+
+  // Read as soon as a patient is chosen, so the block is explained on the
+  // confirm step rather than discovered when Create Enrollment is refused.
+  const { data: outstanding } = usePatientOutstandingDues(selectedPatient?.id);
+  const outstandingTotal = outstanding?.total ?? 0;
+
+  const { data: advanceOptions, isLoading: advanceLoading } = useAdvanceOptions(
+    step === "advance" ? enrollment?.id : undefined,
+  );
+  const { data: advancePreview } = useAdvancePreview(
+    step === "advance" ? enrollment?.id : undefined,
+    advanceMonths,
+  );
 
   const stepIndex = STEP_ORDER.indexOf(step);
   const dueBill = enrollment?.bills.find(
@@ -64,6 +105,7 @@ export function MonthlyServiceEnrollment() {
 
   const handleCreateEnrollment = () => {
     if (!selectedService || !selectedPatient || !user) return;
+    setError(null);
     createEnrollment.mutate(
       {
         patientId: selectedPatient.id,
@@ -74,6 +116,36 @@ export function MonthlyServiceEnrollment() {
           setEnrollment(created);
           setStep("bills");
         },
+        // Chiefly the outstanding-due refusal. The server is the authority on
+        // it; the notice above the button is only the explanation.
+        onError: (failure) => setError(failure.message),
+      },
+    );
+  };
+
+  const toggleAdvanceMonth = (month: string) =>
+    setAdvanceMonths((current) =>
+      current.includes(month)
+        ? current.filter((one) => one !== month)
+        : [...current, month],
+    );
+
+  const handleCollectAdvance = () => {
+    if (!enrollment || advanceMonths.length === 0) return;
+    setError(null);
+    collectAdvance.mutate(
+      {
+        enrollmentId: enrollment.id,
+        months: advanceMonths,
+        method,
+        idempotencyKey: generateIdempotencyKey(),
+      },
+      {
+        onSuccess: (result) => {
+          setAdvancePayments(result.payments);
+          setStep("receipt");
+        },
+        onError: (failure) => setError(failure.message),
       },
     );
   };
@@ -91,7 +163,9 @@ export function MonthlyServiceEnrollment() {
         onSuccess: ({ payment: createdPayment, enrollment: updated }) => {
           setEnrollment(updated);
           setPayment(createdPayment);
-          setStep("receipt");
+          // Straight on to the advance step: the current month is settled, so
+          // months ahead are now allowed. Skipping it is one click.
+          setStep("advance");
         },
       },
     );
@@ -106,6 +180,9 @@ export function MonthlyServiceEnrollment() {
     setPayingMonth(null);
     setMethod("cash");
     setPayment(null);
+    setAdvanceMonths([]);
+    setAdvancePayments([]);
+    setError(null);
   };
 
   return (
@@ -165,11 +242,22 @@ export function MonthlyServiceEnrollment() {
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-medium text-text-secondary">Confirm enrollment</h2>
             <PaymentSummary patient={selectedPatient} service={selectedService} />
+            {outstandingTotal > 0 && (
+              <OutstandingDueNotice
+                items={outstanding?.items ?? []}
+                total={outstandingTotal}
+              />
+            )}
+            {error && <p className="text-sm text-danger">{error}</p>}
             <div className="flex gap-2">
               <Button variant="secondary" onClick={() => setStep("patient")}>
                 ← Back
               </Button>
-              <Button onClick={handleCreateEnrollment} isLoading={createEnrollment.isPending}>
+              <Button
+                onClick={handleCreateEnrollment}
+                isLoading={createEnrollment.isPending}
+                disabled={outstandingTotal > 0}
+              >
                 Create Enrollment
               </Button>
             </div>
@@ -224,14 +312,73 @@ export function MonthlyServiceEnrollment() {
           </div>
         )}
 
+        {step === "advance" && enrollment && selectedService && (
+          <div className="flex flex-col gap-4">
+            <h2 className="text-sm font-medium text-text-secondary">
+              Advance Payment — optional
+            </h2>
+            <p className="text-sm text-text-primary">
+              The current month is settled. Pick any months the patient is paying
+              for now. Months left unticked are simply not billed until they
+              arrive.
+            </p>
+
+            <AdvanceMonthPicker
+              months={advanceOptions?.months ?? []}
+              selected={advanceMonths}
+              onToggle={toggleAdvanceMonth}
+              isLoading={advanceLoading}
+            />
+
+            {advancePreview && advanceMonths.length > 0 && (
+              <div className="flex justify-between rounded-lg border border-border bg-background p-4 text-sm">
+                <span className="text-text-secondary">
+                  {advanceMonths.length}{" "}
+                  {advanceMonths.length === 1 ? "month" : "months"} in advance
+                </span>
+                <span className="text-lg font-semibold tabular-nums text-primary-dark">
+                  {formatCurrency(advancePreview.total)}
+                </span>
+              </div>
+            )}
+
+            {advanceMonths.length > 0 && (
+              <PaymentMethodSelector value={method} onChange={setMethod} />
+            )}
+
+            {error && <p className="text-sm text-danger">{error}</p>}
+
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setStep("receipt")}>
+                Skip
+              </Button>
+              <Button
+                onClick={handleCollectAdvance}
+                isLoading={collectAdvance.isPending}
+                disabled={advanceMonths.length === 0}
+              >
+                Collect Advance
+              </Button>
+            </div>
+          </div>
+        )}
+
         {step === "receipt" && payment && selectedPatient && selectedService && (
           <div className="flex flex-col gap-4">
-            <Receipt
-              payment={payment}
-              patientName={selectedPatient.name}
-              serviceName={selectedService.name}
-              branchName={branchName}
-            />
+            {/* Stacked rather than merged: one receipt per month is what
+                makes an advance auditable month by month, and a combined
+                receipt would name a month nobody was actually billed for. */}
+            <div className="flex max-h-[26rem] flex-col gap-4 overflow-y-auto">
+              {[payment, ...advancePayments].map((one) => (
+                <Receipt
+                  key={one.id}
+                  payment={one}
+                  patientName={selectedPatient.name}
+                  serviceName={selectedService.name}
+                  branchName={branchName}
+                />
+              ))}
+            </div>
             <div className="flex gap-2">
               <Button variant="secondary" onClick={() => router.push("/manager/dashboard")}>
                 <LayoutDashboard className="h-4 w-4" />

@@ -92,86 +92,127 @@ export async function payMonthlyBill(
 
 
 
-export interface ResumeMonthlyServiceInput {
-  id: string;
-  /**
-   * True collects the previous due before restarting; false waives it. The
-   * method is only meaningful for the first, and the backend refuses that one
-   * without it rather than taking money by an unnamed method.
-   */
-  carryDue: boolean;
-  method?: string;
-}
-
-export interface ResumeMonthlyServiceResult {
-  enrollment: MonthlyEnrollment;
-  /** One receipt per arrear month settled — empty when the due was waived. */
-  payments: Payment[];
-}
-
+/**
+ * Reactivate an inactive service.
+ *
+ * No options: the backend refuses while the patient owes anything, so the
+ * arrears are cleared on Due Payments first. The old "resume and waive the
+ * due" branch is gone — it let a due that had survived an explicit keep
+ * decision be forgiven later with no fresh justification.
+ */
 export async function resumeMonthlyService(
-  input: ResumeMonthlyServiceInput,
-): Promise<ResumeMonthlyServiceResult> {
-  const { data } = await apiClient.post<{
-    enrollment: RawEnrollment;
-    payments: RawPayment[];
-  }>(`/enrollments/monthly/${input.id}/resume/`, {
-    carryDue: input.carryDue,
-    method: input.carryDue ? input.method : undefined,
-  });
-  return {
-    enrollment: normalizeEnrollment(data.enrollment),
-    payments: data.payments.map(normalizePayment),
-  };
+  enrollmentId: string,
+): Promise<MonthlyEnrollment> {
+  const { data } = await apiClient.post<RawEnrollment>(
+    `/enrollments/monthly/${enrollmentId}/resume/`,
+    {},
+  );
+  return normalizeEnrollment(data);
 }
 
 // ---------------------------------------------------------------------------
-// Advance payment — collecting months before they arrive
+// Advance payment — paying named future months before they arrive
 // ---------------------------------------------------------------------------
 
-export interface AdvanceMonth {
+export interface AdvanceMonthOption {
   month: string;
   label: string;
   amount: number;
-  /** Already owed, as opposed to a month being paid ahead. */
-  isArrears: boolean;
+  /** Already settled: shown, but not tickable. */
+  covered: boolean;
+  status: string;
+}
+
+export interface OutstandingDueItem {
+  type: "monthly" | "installment";
+  refId: string;
+  itemId: string;
+  serviceName: string;
+  month: string;
+  label: string;
+  amount: number;
+  /** False for a due kept when the service was made inactive — still owed. */
+  serviceActive: boolean;
+}
+
+export interface AdvanceOptions {
+  months: AdvanceMonthOption[];
+  fee: number;
+  /** Why Confirm may be disabled: nothing is paid ahead while anything is owed. */
+  outstandingTotal: number;
+  outstandingItems: OutstandingDueItem[];
+}
+
+export function normalizeOutstandingItem(
+  raw: Record<string, unknown>,
+): OutstandingDueItem {
+  return {
+    type: raw.type === "installment" ? "installment" : "monthly",
+    refId: String(raw.refId),
+    itemId: String(raw.itemId),
+    serviceName: String(raw.serviceName ?? ""),
+    month: String(raw.month ?? ""),
+    label: String(raw.label ?? ""),
+    amount: Number(raw.amount ?? 0),
+    serviceActive: Boolean(raw.serviceActive),
+  };
+}
+
+export async function getAdvanceOptions(enrollmentId: string): Promise<AdvanceOptions> {
+  const { data } = await apiClient.get<Record<string, unknown>>(
+    `/enrollments/monthly/${enrollmentId}/advance-options/`,
+  );
+
+  return {
+    months: ((data.months ?? []) as Record<string, unknown>[]).map((row) => ({
+      month: String(row.month),
+      label: String(row.label),
+      amount: Number(row.amount),
+      covered: Boolean(row.covered),
+      status: String(row.status ?? ""),
+    })),
+    fee: Number(data.fee ?? 0),
+    outstandingTotal: Number(data.outstandingTotal ?? 0),
+    outstandingItems: ((data.outstandingItems ?? []) as Record<string, unknown>[]).map(
+      normalizeOutstandingItem,
+    ),
+  };
+}
+
+export interface AdvancePreviewMonth {
+  month: string;
+  label: string;
+  amount: number;
 }
 
 export interface AdvancePreview {
-  months: AdvanceMonth[];
+  months: AdvancePreviewMonth[];
   total: number;
-  /** Called out separately so "pay through December" never hides an unpaid September. */
-  arrearsTotal: number;
-  monthsAhead: number;
 }
 
 export async function previewMonthlyAdvance(
   enrollmentId: string,
-  throughMonth: string,
+  months: string[],
 ): Promise<AdvancePreview> {
   const { data } = await apiClient.get<Record<string, unknown>>(
     `/enrollments/monthly/${enrollmentId}/advance-preview/`,
-    { params: { through: throughMonth } },
+    { params: { months: months.join(",") } },
   );
 
-  const months = ((data.months ?? []) as Record<string, unknown>[]).map((row) => ({
-    month: String(row.month),
-    label: String(row.label),
-    amount: Number(row.amount),
-    isArrears: Boolean(row.isArrears),
-  }));
-
   return {
-    months,
+    months: ((data.months ?? []) as Record<string, unknown>[]).map((row) => ({
+      month: String(row.month),
+      label: String(row.label),
+      amount: Number(row.amount),
+    })),
     total: Number(data.total ?? 0),
-    arrearsTotal: Number(data.arrearsTotal ?? 0),
-    monthsAhead: Number(data.monthsAhead ?? 0),
   };
 }
 
 export interface CollectAdvanceInput {
   enrollmentId: string;
-  throughMonth: string;
+  /** The months the manager ticked — not a range; November may be skipped. */
+  months: string[];
   method: string;
   idempotencyKey?: string;
 }
@@ -183,8 +224,8 @@ export async function collectMonthlyAdvance(
   const { data } = await apiClient.post<{
     payments: RawPayment[];
     enrollment: RawEnrollment;
-  }>(`/enrollments/monthly/${input.enrollmentId}/pay-through/`, {
-    throughMonth: input.throughMonth,
+  }>(`/enrollments/monthly/${input.enrollmentId}/pay-advance/`, {
+    months: input.months,
     method: input.method,
     idempotencyKey: input.idempotencyKey,
   });
@@ -196,7 +237,7 @@ export async function collectMonthlyAdvance(
 }
 
 // ---------------------------------------------------------------------------
-// Stopping one service, month by month
+// Making one service inactive, month by month
 // ---------------------------------------------------------------------------
 
 export interface StoppableMonth {
@@ -214,7 +255,9 @@ export interface StopPreview {
   /** Money already taken for service that will now not be delivered. */
   prepaid: StoppableMonth[];
   prepaidTotal: number;
-  /** Never payable, never paid — dropped rather than decided. */
+  /** Never payable, never paid — dropped rather than decided. Empty now that
+   * future months are not created until they arrive, but kept so an older
+   * backend still renders correctly. */
   droppedMonths: string[];
 }
 
@@ -244,7 +287,7 @@ export async function previewStopService(enrollmentId: string): Promise<StopPrev
 export interface StopDecision {
   billId: string;
   action: "keep" | "waive";
-  /** Required for a waive — the record exists so Admin can see why the debt dropped. */
+  /** Required to cancel — the record exists so Admin can see why the debt dropped. */
   reason?: string;
 }
 

@@ -35,6 +35,12 @@ export interface DuePaymentItem {
   outstandingTotal: number;
   dueDate: string;
   status: string;
+  /**
+   * False when the service was made inactive and this month was one the
+   * manager chose to keep. Still owed, and still collectable here — clearing
+   * it is the only route to reactivating the service.
+   */
+  serviceActive?: boolean;
   /** Installment-only: this due installment's position and how many remain in the plan. */
   installmentIndex?: number;
   installmentsTotal?: number;

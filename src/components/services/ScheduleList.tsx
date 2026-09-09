@@ -9,6 +9,7 @@ const statusTone: Record<BillStatus, "success" | "warning" | "danger" | "neutral
   overdue: "danger",
   upcoming: "neutral",
   written_off: "neutral",
+  cancelled: "neutral",
   advance: "info",
 };
 
@@ -18,7 +19,8 @@ const statusLabel: Record<BillStatus, string> = {
   overdue: "Overdue",
   upcoming: "Upcoming",
   written_off: "Written Off",
-  advance: "Paid in advance",
+  cancelled: "Cancelled",
+  advance: "Advance Paid",
 };
 
 export interface ScheduleItem {
