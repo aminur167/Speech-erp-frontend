@@ -20,7 +20,6 @@ import type { StaffAttendance, StaffMember } from "@/types/domain";
 
 const attendanceTone: Record<StaffAttendance["status"], "success" | "warning" | "info" | "danger"> = {
   present: "success",
-  late: "warning", // legacy — no longer produced, kept so old records still render a tone
   early_leave: "warning",
   on_leave: "info",
   absent: "danger",
