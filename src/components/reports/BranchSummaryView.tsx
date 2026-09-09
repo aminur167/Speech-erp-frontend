@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
-import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
+import { EmptyState, ErrorState } from "@/components/ui/states";
+import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
@@ -79,14 +80,14 @@ function presetRange(preset: Exclude<Preset, "custom">): [string, string] {
  * different question than the tab asks.
  */
 const TABS = [
-  { key: "daily", label: "Daily Ledger", ranged: true },
-  { key: "invoices", label: "Invoices", ranged: true },
-  { key: "expenses", label: "Expenses", ranged: true },
-  { key: "refunds", label: "Refunds", ranged: true },
-  { key: "closings", label: "Daily Closing", ranged: true },
-  { key: "dues", label: "Outstanding Dues", ranged: false },
-  { key: "methods", label: "By Payment Method", ranged: true },
-  { key: "services", label: "By Service Type", ranged: true },
+  { key: "daily", label: "Daily Ledger", ranged: true, columns: 8 },
+  { key: "invoices", label: "Invoices", ranged: true, columns: 6 },
+  { key: "expenses", label: "Expenses", ranged: true, columns: 8 },
+  { key: "refunds", label: "Refunds", ranged: true, columns: 7 },
+  { key: "closings", label: "Daily Closing", ranged: true, columns: 6 },
+  { key: "dues", label: "Outstanding Dues", ranged: false, columns: 6 },
+  { key: "methods", label: "By Payment Method", ranged: true, columns: 3 },
+  { key: "services", label: "By Service Type", ranged: true, columns: 3 },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -364,6 +365,7 @@ export function BranchSummaryView({
         subtitle={subtitle}
       />
 
+      <div className="sticky top-0 z-20 -mx-4 bg-background/80 px-4 py-1 backdrop-blur md:-mx-8 md:px-8">
       <FilterBar
         dateSlot={
           <div className="flex flex-wrap items-center gap-2">
@@ -544,18 +546,29 @@ export function BranchSummaryView({
           </span>
         )}
       </FilterBar>
+      </div>
 
-      <div className="flex flex-wrap gap-1 rounded-xl border border-border bg-surface p-1 shadow-sm">
+      {/* Scrolls rather than wraps: eight datasets wrapping onto three rows
+          on a laptop pushes the table itself below the fold, and the row of
+          tabs is meant to be glanceable, not a paragraph. */}
+      <div
+        role="tablist"
+        aria-label="Summary datasets"
+        className="-mx-1 flex gap-1 overflow-x-auto rounded-xl border border-border bg-surface p-1 shadow-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {TABS.map((entry) => (
           <button
             key={entry.key}
             type="button"
+            role="tab"
+            id={`summary-tab-${entry.key}`}
+            aria-selected={tab === entry.key}
+            aria-controls="summary-panel"
             onClick={() => changeTab(entry.key)}
-            aria-current={tab === entry.key ? "page" : undefined}
             className={clsx(
-              "whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              "whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
               tab === entry.key
-                ? "bg-primary text-white"
+                ? "bg-primary text-white shadow-sm"
                 : "text-text-secondary hover:bg-primary-light/50 hover:text-text-primary",
             )}
           >
@@ -574,24 +587,41 @@ export function BranchSummaryView({
 
       {rangeIsValid && (
         <Card>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-medium text-text-primary">{active.label}</h2>
-                <p className="text-xs text-text-secondary">
-                  {active.ranged ? `${dateFrom} to ${dateTo}` : "As of today"} &middot;{" "}
-                  {count} {count === 1 ? "row" : "rows"}
-                </p>
+          <div
+            role="tabpanel"
+            id="summary-panel"
+            aria-labelledby={`summary-tab-${tab}`}
+            tabIndex={-1}
+            className="flex flex-col gap-4"
+          >
+            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-base font-semibold text-text-primary">{active.label}</h2>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-secondary">
+                  <span className="rounded-full bg-background px-2 py-0.5 font-medium">
+                    {active.ranged ? `${dateFrom} → ${dateTo}` : "As of today"}
+                  </span>
+                  <span>
+                    {count} {count === 1 ? "row" : "rows"}
+                  </span>
+                  {/* Says plainly when the page is a window onto something
+                      larger, so a total read off the screen is never mistaken
+                      for the total of the range. */}
+                  {count > PAGE_SIZE && (
+                    <span>
+                      &middot; showing {Math.min(PAGE_SIZE, count - (page - 1) * PAGE_SIZE)} on
+                      this page
+                    </span>
+                  )}
+                </div>
               </div>
               <Button variant="secondary" onClick={handleExport} disabled={isEmpty}>
                 <Download className="h-4 w-4" />
-                Export
+                Export CSV
               </Button>
             </div>
 
-            {query.isLoading && (
-              <LoadingState label={`Loading ${active.label.toLowerCase()}…`} />
-            )}
+            {query.isLoading && <TableSkeleton columns={active.columns} />}
             {query.isError && <ErrorState onRetry={() => query.refetch()} />}
             {!query.isLoading && !query.isError && isEmpty && (
               <EmptyState label={`Nothing to show for ${active.label.toLowerCase()}.`} />
