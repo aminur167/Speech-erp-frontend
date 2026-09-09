@@ -206,7 +206,16 @@ export interface Expense {
 // pay" must treat "due" and "overdue" the same way. "written_off" is the
 // admin-approved way to forgive an uncollectable bill (docs/04) and is
 // excluded from what's payable, same as "paid".
-export type BillStatus = "paid" | "due" | "overdue" | "upcoming" | "written_off";
+// "advance" is a month settled before it arrived. It always means fully
+// prepaid — the advance flow settles whole months only — so it is never
+// money owed, and it becomes "paid" once its month comes round.
+export type BillStatus =
+  | "paid"
+  | "due"
+  | "overdue"
+  | "upcoming"
+  | "written_off"
+  | "advance";
 
 export interface MonthlyBill {
   id: string;

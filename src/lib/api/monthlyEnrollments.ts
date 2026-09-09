@@ -216,3 +216,145 @@ export async function resumeMonthlyService(
     payments: data.payments.map(normalizePayment),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Advance payment — collecting months before they arrive
+// ---------------------------------------------------------------------------
+
+export interface AdvanceMonth {
+  month: string;
+  label: string;
+  amount: number;
+  /** Already owed, as opposed to a month being paid ahead. */
+  isArrears: boolean;
+}
+
+export interface AdvancePreview {
+  months: AdvanceMonth[];
+  total: number;
+  /** Called out separately so "pay through December" never hides an unpaid September. */
+  arrearsTotal: number;
+  monthsAhead: number;
+}
+
+export async function previewMonthlyAdvance(
+  enrollmentId: string,
+  throughMonth: string,
+): Promise<AdvancePreview> {
+  const { data } = await apiClient.get<Record<string, unknown>>(
+    `/enrollments/monthly/${enrollmentId}/advance-preview/`,
+    { params: { through: throughMonth } },
+  );
+
+  const months = ((data.months ?? []) as Record<string, unknown>[]).map((row) => ({
+    month: String(row.month),
+    label: String(row.label),
+    amount: Number(row.amount),
+    isArrears: Boolean(row.isArrears),
+  }));
+
+  return {
+    months,
+    total: Number(data.total ?? 0),
+    arrearsTotal: Number(data.arrearsTotal ?? 0),
+    monthsAhead: Number(data.monthsAhead ?? 0),
+  };
+}
+
+export interface CollectAdvanceInput {
+  enrollmentId: string;
+  throughMonth: string;
+  method: string;
+  idempotencyKey?: string;
+}
+
+/** One receipt per month — the point of collecting them separately. */
+export async function collectMonthlyAdvance(
+  input: CollectAdvanceInput,
+): Promise<{ payments: Payment[]; enrollment: MonthlyEnrollment }> {
+  const { data } = await apiClient.post<{
+    payments: RawPayment[];
+    enrollment: RawEnrollment;
+  }>(`/enrollments/monthly/${input.enrollmentId}/pay-through/`, {
+    throughMonth: input.throughMonth,
+    method: input.method,
+    idempotencyKey: input.idempotencyKey,
+  });
+
+  return {
+    payments: data.payments.map(normalizePayment),
+    enrollment: normalizeEnrollment(data.enrollment),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Stopping one service, month by month
+// ---------------------------------------------------------------------------
+
+export interface StoppableMonth {
+  billId: string;
+  month: string;
+  label: string;
+  amount: number;
+  status: string;
+}
+
+export interface StopPreview {
+  /** Arrived and unpaid — each needs a keep-or-waive decision. */
+  owed: StoppableMonth[];
+  owedTotal: number;
+  /** Money already taken for service that will now not be delivered. */
+  prepaid: StoppableMonth[];
+  prepaidTotal: number;
+  /** Never payable, never paid — dropped rather than decided. */
+  droppedMonths: string[];
+}
+
+function normalizeStoppable(raw: Record<string, unknown>): StoppableMonth {
+  return {
+    billId: String(raw.billId),
+    month: String(raw.month),
+    label: String(raw.label),
+    amount: Number(raw.amount),
+    status: String(raw.status),
+  };
+}
+
+export async function previewStopService(enrollmentId: string): Promise<StopPreview> {
+  const { data } = await apiClient.get<Record<string, unknown>>(
+    `/enrollments/monthly/${enrollmentId}/stop-preview/`,
+  );
+  return {
+    owed: ((data.owed ?? []) as Record<string, unknown>[]).map(normalizeStoppable),
+    owedTotal: Number(data.owedTotal ?? 0),
+    prepaid: ((data.prepaid ?? []) as Record<string, unknown>[]).map(normalizeStoppable),
+    prepaidTotal: Number(data.prepaidTotal ?? 0),
+    droppedMonths: (data.droppedMonths ?? []) as string[],
+  };
+}
+
+export interface StopDecision {
+  billId: string;
+  action: "keep" | "waive";
+  /** Required for a waive — the record exists so Admin can see why the debt dropped. */
+  reason?: string;
+}
+
+export async function stopMonthlyService(input: {
+  enrollmentId: string;
+  decisions: StopDecision[];
+  reason?: string;
+}): Promise<MonthlyEnrollment> {
+  const { data } = await apiClient.post<RawEnrollment>(
+    `/enrollments/monthly/${input.enrollmentId}/stop/`,
+    {
+      decisions: input.decisions.map((decision) => ({
+        billId: Number(decision.billId),
+        action: decision.action,
+        reason: decision.reason,
+      })),
+      reason: input.reason,
+    },
+  );
+  return normalizeEnrollment(data);
+}

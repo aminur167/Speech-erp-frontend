@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  Ban,
   Phone,
   Mail,
   Cake,
@@ -25,12 +26,14 @@ import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { OverdueBadge } from "@/components/patients/OverdueBadge";
 import { PatientEditForm } from "@/components/patients/PatientEditForm";
 import { ScheduleList } from "@/components/services/ScheduleList";
+import { StopServiceModal } from "@/components/enrollments/StopServiceModal";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePatient } from "@/hooks/patients/usePatient";
 import { usePatientActiveServices } from "@/hooks/patients/usePatientActiveServices";
 import { useTransactions } from "@/hooks/transactions/useTransactions";
 import { useBranches } from "@/hooks/branches/useBranches";
+import { useAuthStore } from "@/store/authStore";
 import { calculateAge } from "@/lib/api/patientDirectory";
 import { formatCurrency } from "@/utils/currency";
 import type { PatientCareStatus } from "@/lib/api/patientDirectory";
@@ -86,6 +89,14 @@ export function PatientProfileView({
   const { data: activeServices, isLoading: servicesLoading } =
     usePatientActiveServices(patientId);
   const { data: branches } = useBranches();
+  const user = useAuthStore((state) => state.user);
+  // Stopping a service is a branch-desk action, like collecting a payment —
+  // Admin can read the profile without being offered it.
+  const canStopServices = user?.role === "manager";
+  const [stopping, setStopping] = useState<{
+    enrollmentId: string;
+    serviceName: string;
+  } | null>(null);
   const [servicePage, setServicePage] = useState(1);
   const [paymentPage, setPaymentPage] = useState(1);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -230,14 +241,34 @@ export function PatientProfileView({
           {!servicesLoading &&
             pagedServices.map((item) => (
               <div key={item.id} className="flex flex-col gap-2">
-                <p className="text-sm font-medium text-text-primary">
-                  {item.serviceName}{" "}
-                  <span className="font-normal text-text-secondary">
-                    {item.type === "monthly"
-                      ? "(Monthly)"
-                      : `(Installment — Total: ${formatCurrency(item.plan.totalAmount)})`}
-                  </span>
-                </p>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-text-primary">
+                    {item.serviceName}{" "}
+                    <span className="font-normal text-text-secondary">
+                      {item.type === "monthly"
+                        ? "(Monthly)"
+                        : `(Installment — Total: ${formatCurrency(item.plan.totalAmount)})`}
+                    </span>
+                  </p>
+                  {/* Stopping lives on the service itself, not on the patient:
+                      someone can keep coming for one service and stop another,
+                      and the unpaid months being decided belong to this one. */}
+                  {canStopServices && item.type === "monthly" && (
+                    <Button
+                      variant="secondary"
+                      className="px-3 py-1.5 text-xs"
+                      onClick={() =>
+                        setStopping({
+                          enrollmentId: item.enrollment.id,
+                          serviceName: item.serviceName,
+                        })
+                      }
+                    >
+                      <Ban className="h-3.5 w-3.5" />
+                      Stop Service
+                    </Button>
+                  )}
+                </div>
                 <ScheduleList
                   items={
                     item.type === "monthly"
@@ -307,6 +338,13 @@ export function PatientProfileView({
           onCancel={() => setIsEditOpen(false)}
         />
       </Modal>
+
+      <StopServiceModal
+        enrollmentId={stopping?.enrollmentId ?? null}
+        patientName={patient.name}
+        serviceName={stopping?.serviceName ?? ""}
+        onClose={() => setStopping(null)}
+      />
     </div>
   );
 }
