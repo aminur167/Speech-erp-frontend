@@ -17,6 +17,8 @@ import { formatCurrency } from "@/utils/currency";
 import { ApproveSalaryPaymentModal } from "@/components/salaryPayments/ApproveSalaryPaymentModal";
 import { RejectSalaryPaymentModal } from "@/components/salaryPayments/RejectSalaryPaymentModal";
 import { SalaryInvoiceModal } from "@/components/salaryPayments/SalaryInvoiceModal";
+import { StaffPerformanceModal } from "@/components/salaryPayments/StaffPerformanceModal";
+import { cameFromControl } from "@/utils/interactiveClick";
 import type { SalaryPayment, SalaryPaymentStatus } from "@/types/domain";
 
 const PAGE_SIZE = 10;
@@ -45,6 +47,7 @@ export function SalaryApprovalsView() {
   const [approving, setApproving] = useState<SalaryPayment | null>(null);
   const [rejecting, setRejecting] = useState<SalaryPayment | null>(null);
   const [viewingInvoice, setViewingInvoice] = useState<SalaryPayment | null>(null);
+  const [viewingPerformance, setViewingPerformance] = useState<SalaryPayment | null>(null);
 
   const { data, isLoading, isError, refetch } = useSalaryPayments({
     status: status || undefined,
@@ -135,7 +138,19 @@ export function SalaryApprovalsView() {
                 {data.results.map((payment) => (
                   <div
                     key={payment.id}
-                    className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between"
+                    onClick={(event) => {
+                      if (cameFromControl(event)) return;
+                      setViewingPerformance(payment);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      if (cameFromControl(event)) return;
+                      event.preventDefault();
+                      setViewingPerformance(payment);
+                    }}
+                    tabIndex={0}
+                    title="View staff performance"
+                    className="flex cursor-pointer flex-col gap-3 rounded-lg py-4 transition-colors hover:bg-primary-light/40 focus:outline-none focus-visible:bg-primary-light/40 sm:flex-row sm:items-start sm:justify-between sm:px-2"
                   >
                     <div className="flex flex-col gap-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -211,6 +226,7 @@ export function SalaryApprovalsView() {
       <ApproveSalaryPaymentModal payment={approving} onClose={() => setApproving(null)} />
       <RejectSalaryPaymentModal payment={rejecting} onClose={() => setRejecting(null)} />
       <SalaryInvoiceModal payment={viewingInvoice} onClose={() => setViewingInvoice(null)} />
+      <StaffPerformanceModal payment={viewingPerformance} onClose={() => setViewingPerformance(null)} />
     </div>
   );
 }
