@@ -8,15 +8,8 @@ import { StaffAvatar } from "@/components/staff/StaffAvatar";
 import { AttendanceCell } from "@/components/staff/AttendanceCell";
 import { humanizeField } from "@/utils/fields";
 import { formatCurrency } from "@/utils/currency";
+import { cameFromControl } from "@/utils/interactiveClick";
 import type { StaffAttendance, StaffMember } from "@/types/domain";
-
-/** Anything the user can already act on (attendance buttons, edit/delete) shouldn't also open the row's details. */
-const INTERACTIVE = "a, button, input, select, textarea, label, [role='button']";
-
-function cameFromControl(event: { target: EventTarget | null; currentTarget: EventTarget }): boolean {
-  const hit = (event.target as HTMLElement | null)?.closest(INTERACTIVE);
-  return Boolean(hit) && hit !== event.currentTarget;
-}
 
 export function StaffTable({
   branchId,

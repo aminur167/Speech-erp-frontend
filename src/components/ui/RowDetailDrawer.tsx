@@ -4,6 +4,7 @@ import { useCallback, useState, type KeyboardEvent, type MouseEvent, type ReactN
 import { clsx } from "clsx";
 import { Drawer } from "@/components/ui/Drawer";
 import { formatFieldValue, humanizeField, visibleFields } from "@/utils/fields";
+import { cameFromControl } from "@/utils/interactiveClick";
 
 /**
  * Every table row opens the same panel, so a row never has to decide how to
@@ -13,21 +14,6 @@ import { formatFieldValue, humanizeField, visibleFields } from "@/utils/fields";
  * domain types already carry good names, and a hand-written field list per
  * table is the thing that silently goes stale when a field is added.
  */
-
-/** Anything the user can already act on shouldn't also open the panel. */
-const INTERACTIVE = "a, button, input, select, textarea, label, [role='button']";
-
-/**
- * Did this event start on a control inside the row, rather than the row?
- *
- * `closest` walks up from the target, so it would happily match the row
- * itself if the row carried one of these roles — the row must be excluded
- * explicitly or clicking it would always look like clicking a control.
- */
-function cameFromControl(event: { target: EventTarget | null; currentTarget: EventTarget }): boolean {
-  const hit = (event.target as HTMLElement | null)?.closest(INTERACTIVE);
-  return Boolean(hit) && hit !== event.currentTarget;
-}
 
 export function useRowDetail<T>() {
   const [selected, setSelected] = useState<T | null>(null);

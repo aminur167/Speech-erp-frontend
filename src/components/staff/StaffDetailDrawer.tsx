@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import { LoadingState, EmptyState } from "@/components/ui/states";
 import { StaffAvatar } from "@/components/staff/StaffAvatar";
 import { SalaryPaymentSection } from "@/components/staff/SalaryPaymentSection";
 import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
@@ -166,77 +165,79 @@ export function StaffDetailDrawer({
         <SalaryPaymentSection staff={staff} />
 
         <section className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Bonuses</h3>
-            {!isAddingBonus && (
-              <Button
-                variant="secondary"
-                className="px-2 py-1 text-xs"
-                onClick={() => setIsAddingBonus(true)}
-              >
-                <Gift className="h-3 w-3" />
-                Add Bonus
-              </Button>
-            )}
-          </div>
-
-          {isAddingBonus && (
-            <div className="flex flex-col gap-1.5 rounded-lg border border-border p-2.5">
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Bonus Amount (BDT)"
-                value={bonusAmount}
-                onChange={(event) => setBonusAmount(event.target.value)}
-              />
-              <Textarea
-                placeholder="Reason, e.g. Eid bonus, outstanding performance…"
-                rows={2}
-                value={bonusReason}
-                onChange={(event) => setBonusReason(event.target.value)}
-              />
-              <div className="flex justify-end gap-1.5">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Bonuses</h3>
+          <div className="rounded-lg border border-border p-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-text-secondary">
+                {bonusesLoading
+                  ? "Loading bonuses…"
+                  : bonuses && bonuses.length > 0
+                    ? `${bonuses.length} bonus${bonuses.length === 1 ? "" : "es"} awarded`
+                    : "No bonuses awarded yet."}
+              </p>
+              {!isAddingBonus && (
                 <Button
                   variant="secondary"
-                  className="px-2.5 py-1 text-xs"
-                  onClick={() => setIsAddingBonus(false)}
+                  className="shrink-0 px-2 py-1 text-xs"
+                  onClick={() => setIsAddingBonus(true)}
                 >
-                  Cancel
+                  <Gift className="h-3 w-3" />
+                  Add Bonus
                 </Button>
-                <Button className="px-2.5 py-1 text-xs" onClick={submitBonus} isLoading={addBonus.isPending}>
-                  Award Bonus
-                </Button>
-              </div>
+              )}
             </div>
-          )}
 
-          {bonusesLoading && <LoadingState label="Loading bonuses…" />}
-          {!bonusesLoading && (!bonuses || bonuses.length === 0) && !isAddingBonus && (
-            <EmptyState label="No bonuses awarded yet." />
-          )}
-          {!bonusesLoading && bonuses && bonuses.length > 0 && (
-            <ul className="flex flex-col gap-1.5">
-              {bonuses.map((bonus) => (
-                <li
-                  key={bonus.id}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-border px-2.5 py-2 text-sm"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-text-primary">{bonus.reason}</p>
-                    <p className="text-[11px] text-text-secondary">
-                      {new Date(bonus.awardedAt).toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}{" "}
-                      · {bonus.awardedBy}
-                    </p>
-                  </div>
-                  <p className="shrink-0 font-semibold text-success">{formatCurrency(bonus.amount)}</p>
-                </li>
-              ))}
-            </ul>
-          )}
+            {isAddingBonus && (
+              <div className="mt-2 flex flex-col gap-1.5 border-t border-border pt-2">
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="Bonus Amount (BDT)"
+                  value={bonusAmount}
+                  onChange={(event) => setBonusAmount(event.target.value)}
+                />
+                <Textarea
+                  placeholder="Reason, e.g. Eid bonus, outstanding performance…"
+                  rows={2}
+                  value={bonusReason}
+                  onChange={(event) => setBonusReason(event.target.value)}
+                />
+                <div className="flex justify-end gap-1.5">
+                  <Button
+                    variant="secondary"
+                    className="px-2.5 py-1 text-xs"
+                    onClick={() => setIsAddingBonus(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button className="px-2.5 py-1 text-xs" onClick={submitBonus} isLoading={addBonus.isPending}>
+                    Award Bonus
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {!isAddingBonus && !bonusesLoading && bonuses && bonuses.length > 0 && (
+              <ul className="mt-2 flex flex-col gap-1.5 border-t border-border pt-2">
+                {bonuses.map((bonus) => (
+                  <li key={bonus.id} className="flex items-start justify-between gap-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate text-text-primary">{bonus.reason}</p>
+                      <p className="text-[11px] text-text-secondary">
+                        {new Date(bonus.awardedAt).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}{" "}
+                        · {bonus.awardedBy}
+                      </p>
+                    </div>
+                    <p className="shrink-0 font-semibold text-success">{formatCurrency(bonus.amount)}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </section>
 
         <section className="flex flex-col gap-1.5">
