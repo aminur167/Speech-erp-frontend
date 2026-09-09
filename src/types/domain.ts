@@ -448,3 +448,26 @@ export interface AuditLogEntry {
   changes: Record<string, { from: unknown; to: unknown } | unknown>;
   createdAt: string;
 }
+
+/**
+ * Attendance is taken as two separate sheets — a patient can be in ongoing
+ * monthly therapy and paying off a package, and each is its own question.
+ */
+export type AttendanceServiceKind = "monthly" | "installment";
+
+/** "Informed absence" is the one that stops the has-this-patient-stopped-coming clock. */
+export type PatientAttendanceStatus = "present" | "informed_absence" | "absent";
+
+export interface PatientAttendance {
+  id: string;
+  patientId: string;
+  branchId: string;
+  serviceKind: AttendanceServiceKind;
+  date: string; // ISO "YYYY-MM-DD"
+  status: PatientAttendanceStatus;
+  note: string;
+  /** Informed absence only — the day they said they would be back. */
+  expectedReturnOn: string | null;
+  markedBy: string;
+  markedAt: string;
+}

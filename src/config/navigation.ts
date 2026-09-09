@@ -8,6 +8,7 @@ import {
   Wallet,
   BarChart3,
   CalendarCheck,
+  ClipboardCheck,
   CalendarClock,
   Receipt,
   History,
@@ -44,6 +45,7 @@ export const managerNav: NavItem[] = [
   // going", Summary answers the same question for any range you pick.
   { label: "Summary", href: "/manager/summary", icon: BarChart3 },
   { label: "Patients", href: "/manager/patients", icon: UserPlus },
+  { label: "Attendance", href: "/manager/attendance", icon: ClipboardCheck },
   {
     label: "Enroll Service",
     icon: ClipboardList,
@@ -83,6 +85,7 @@ export function branchNav(branchId: string): NavItem[] {
     { label: "Overview", href: base, icon: LayoutDashboard },
     { label: "Summary", href: `${base}/summary`, icon: BarChart3 },
     { label: "Patients", href: `${base}/patients`, icon: UserPlus },
+    { label: "Attendance", href: `${base}/attendance`, icon: ClipboardCheck },
     { label: "Packages", href: `${base}/packages`, icon: Package },
     { label: "Appointments", href: `${base}/appointments`, icon: CalendarClock },
     { label: "Staff", href: `${base}/staff`, icon: Users },
