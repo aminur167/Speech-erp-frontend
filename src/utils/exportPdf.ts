@@ -2,6 +2,17 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
 /**
+ * jsPDF's built-in fonts only cover WinAnsi/Latin glyphs, so the on-screen
+ * "৳" Taka sign (used by `formatCurrency`) comes out as mangled, misspaced
+ * characters in a generated PDF. Use this ASCII-only formatter for any
+ * amount that goes into a PDF instead.
+ */
+export function formatCurrencyForPdf(amount: number): string {
+  const sign = amount < 0 ? "-" : "";
+  return `${sign}Tk ${Math.abs(amount).toLocaleString("en-BD")}`;
+}
+
+/**
  * A branded, tabular PDF report -- used for the Staff monthly report export.
  * Kept generic (title + subtitle + column/row table) so other reports can
  * reuse it rather than each hand-rolling jsPDF calls.

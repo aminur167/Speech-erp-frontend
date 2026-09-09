@@ -21,7 +21,7 @@ import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useDeleteStaff } from "@/hooks/staff/useDeleteStaff";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
-import { exportTableToPdf } from "@/utils/exportPdf";
+import { exportTableToPdf, formatCurrencyForPdf } from "@/utils/exportPdf";
 import type { StaffInput } from "@/lib/api/staff";
 import type { StaffMember } from "@/types/domain";
 
@@ -107,9 +107,9 @@ export function StaffListView({
         row.staffCode,
         row.name,
         row.designation,
-        formatCurrency(row.monthlySalary),
-        formatCurrency(row.bonusTotal),
-        formatCurrency(row.netPayable),
+        formatCurrencyForPdf(row.monthlySalary),
+        formatCurrencyForPdf(row.bonusTotal),
+        formatCurrencyForPdf(row.netPayable),
         row.presentCount,
         row.lateCount,
         row.absentCount,
