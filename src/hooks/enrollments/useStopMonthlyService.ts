@@ -31,13 +31,12 @@ export function useStopMonthlyService() {
     { enrollmentId: string; decisions: StopDecision[]; reason?: string }
   >({
     mutationFn: stopMonthlyService,
-    // Stopping moves the service off the patient's profile, out of Due
-    // Payments, and onto Terminated Services at once.
+    // Stopping moves the service off the patient's profile and out of Due
+    // Payments at once.
     onSuccess: () => {
       for (const key of [
         queryKeys.patients.all,
         queryKeys.duePayments.all,
-        queryKeys.terminatedServices.all,
         queryKeys.patientAttendance.all,
       ]) {
         queryClient.invalidateQueries({ queryKey: key });

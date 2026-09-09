@@ -98,9 +98,3 @@ export async function payInstallment(
   };
 }
 
-export async function terminateInstallmentPlan(planId: string): Promise<InstallmentPlan> {
-  const { data } = await apiClient.post<RawPlan>(
-    `/enrollments/installments/${planId}/terminate/`,
-  );
-  return normalizePlan(data);
-}

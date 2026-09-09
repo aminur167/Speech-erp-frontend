@@ -12,7 +12,6 @@ export default async function AdminBranchDuePaymentsPage({
       homeHref={`/admin/branches/${id}`}
       roleLabel="Admin"
       readOnly
-      terminatedHref={`/admin/branches/${id}/terminated-services`}
     />
   );
 }

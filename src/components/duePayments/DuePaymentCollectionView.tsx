@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { AlertCircle, Wallet, Receipt as ReceiptIcon, Ban } from "lucide-react";
+import { AlertCircle, Wallet, Receipt as ReceiptIcon } from "lucide-react";
 import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { TableSkeleton } from "@/components/ui/TableSkeleton";
@@ -16,14 +14,11 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { DuePaymentTable } from "@/components/duePayments/DuePaymentTable";
 import { MonthCyclePicker } from "@/components/duePayments/MonthCyclePicker";
 import { CollectDuePaymentModal } from "@/components/duePayments/CollectDuePaymentModal";
-import { TerminateServiceModal } from "@/components/duePayments/TerminateServiceModal";
 import { useDuePayments } from "@/hooks/duePayments/useDuePayments";
 import { useDuePaymentsSummary } from "@/hooks/duePayments/useDuePaymentsSummary";
-import { useTerminateService } from "@/hooks/duePayments/useTerminateService";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { monthKeyLabel, toMonthKey } from "@/utils/months";
-import type { ApiError } from "@/types/api";
 import type { DuePaymentItem, DuePaymentType } from "@/lib/api/duePayments";
 
 const PAGE_SIZE = 10;
@@ -47,16 +42,13 @@ export function DuePaymentCollectionView({
   homeHref = "/manager/dashboard",
   roleLabel = "Branch Manager",
   readOnly = false,
-  terminatedHref = "/manager/terminated-services",
 }: {
   /** Scopes the view to one branch regardless of the logged-in user — used when Admin is browsing a specific branch. */
   branchId?: string;
   homeHref?: string;
   roleLabel?: string;
-  /** Hides the collect and terminate actions — Admin can view dues but shouldn't act on a branch's behalf. */
+  /** Hides the collect action — Admin can view dues but shouldn't collect on a branch's behalf. */
   readOnly?: boolean;
-  /** Where the "Terminated Services" button goes — the Admin drill-down has its own copy. */
-  terminatedHref?: string;
 } = {}) {
   const user = useAuthStore((state) => state.user);
   const branchId = branchIdOverride ?? user?.branchId ?? undefined;
@@ -69,8 +61,6 @@ export function DuePaymentCollectionView({
   const [page, setPage] = useState(1);
 
   const [selectedItem, setSelectedItem] = useState<DuePaymentItem | null>(null);
-  const [terminatingItem, setTerminatingItem] = useState<DuePaymentItem | null>(null);
-  const [terminateError, setTerminateError] = useState<string | null>(null);
 
   const active = VIEWS.find((view) => view.key === type)!;
   const isMonthly = type === "monthly";
@@ -86,43 +76,15 @@ export function DuePaymentCollectionView({
     pageSize: PAGE_SIZE,
   });
   const { data: summary } = useDuePaymentsSummary(branchId);
-  const terminateService = useTerminateService();
 
   const changeType = (next: DuePaymentType) => {
     setType(next);
     setPage(1);
   };
 
-  const closeTerminateDialog = () => {
-    setTerminatingItem(null);
-    setTerminateError(null);
-  };
 
-  const handleConfirmTerminate = () => {
-    if (!terminatingItem) return;
 
-    terminateService.mutate(
-      { type: terminatingItem.type, refId: terminatingItem.refId },
-      {
-        // Closing on success is what makes the modal feel finished; the list
-        // behind it refetches from the mutation's own invalidation.
-        onSuccess: closeTerminateDialog,
-        // An outstanding balance no longer refuses, so anything landing here
-        // is a genuine failure worth showing rather than a workflow branch.
-        onError: (error: ApiError) => setTerminateError(error.message),
-      },
-    );
-  };
-
-  const actions = readOnly
-    ? {}
-    : {
-        onCollectPayment: setSelectedItem,
-        onTerminate: (item: DuePaymentItem) => {
-          setTerminateError(null);
-          setTerminatingItem(item);
-        },
-      };
+  const actions = readOnly ? {} : { onCollectPayment: setSelectedItem };
 
   const rows = data?.results ?? [];
   const count = data?.count ?? 0;
@@ -134,18 +96,6 @@ export function DuePaymentCollectionView({
         breadcrumb={[roleLabel, "Due Payment Collection"]}
         title="Due Payment Collection"
         subtitle="Collect what patients owe, one list at a time."
-        action={
-          // The two screens are the same story either side of a deadline:
-          // what is still collectable, and what stopped because it wasn't
-          // collected in time. Reaching one from the other is how a manager
-          // actually moves between them.
-          <Link href={terminatedHref}>
-            <Button variant="secondary">
-              <Ban className="h-4 w-4" />
-              Terminated Services
-            </Button>
-          </Link>
-        }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -271,13 +221,6 @@ export function DuePaymentCollectionView({
 
       <CollectDuePaymentModal item={selectedItem} onClose={() => setSelectedItem(null)} />
 
-      <TerminateServiceModal
-        item={terminatingItem}
-        onConfirm={handleConfirmTerminate}
-        onClose={closeTerminateDialog}
-        isTerminating={terminateService.isPending}
-        error={terminateError}
-      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/api/client";
-import { payMonthlyBill, terminateMonthlyEnrollment } from "@/lib/api/monthlyEnrollments";
-import { payInstallment, terminateInstallmentPlan } from "@/lib/api/installmentPlans";
+import { payMonthlyBill } from "@/lib/api/monthlyEnrollments";
+import { payInstallment } from "@/lib/api/installmentPlans";
 import type { PaginatedResponse } from "@/types/api";
 import type { Payment, PaymentMethod } from "@/types/domain";
 
@@ -31,7 +31,7 @@ export interface DuePaymentItem {
   month?: string;
   /** Payable right now — the current bill or installment only. */
   amount: number;
-  /** Everything still unpaid on the enrollment/plan — what terminating writes off. */
+  /** Everything still unpaid on the enrollment/plan. */
   outstandingTotal: number;
   dueDate: string;
   status: string;
@@ -158,13 +158,3 @@ export async function collectDuePayment(input: CollectDuePaymentInput): Promise<
   return payment;
 }
 
-/** Ends a patient's monthly enrollment or installment plan — it stops generating due bills/installments. */
-export async function terminateDuePaymentService(
-  item: Pick<DuePaymentItem, "type" | "refId">,
-): Promise<void> {
-  if (item.type === "monthly") {
-    await terminateMonthlyEnrollment(item.refId);
-  } else {
-    await terminateInstallmentPlan(item.refId);
-  }
-}

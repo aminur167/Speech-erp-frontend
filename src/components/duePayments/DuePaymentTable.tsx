@@ -10,13 +10,10 @@ import type { DuePaymentItem } from "@/lib/api/duePayments";
 export function DuePaymentTable({
   items,
   onCollectPayment,
-  onTerminate,
   showType = true,
 }: {
   items: DuePaymentItem[];
   onCollectPayment?: (item: DuePaymentItem) => void;
-  /** Lets the manager end a patient's monthly enrollment or installment plan. */
-  onTerminate?: (item: DuePaymentItem) => void;
   /**
    * Off when the table is already one type — the Due Payments screen puts
    * installments and monthly bills in separate tables, where a column
@@ -24,7 +21,7 @@ export function DuePaymentTable({
    */
   showType?: boolean;
 }) {
-  const showActions = Boolean(onCollectPayment || onTerminate);
+  const showActions = Boolean(onCollectPayment);
   const detail = useRowDetail<DuePaymentItem>();
 
   return (
@@ -74,15 +71,6 @@ export function DuePaymentTable({
                         onClick={() => onCollectPayment(item)}
                       >
                         Collect
-                      </Button>
-                    )}
-                    {onTerminate && (
-                      <Button
-                        variant="danger"
-                        className="px-3 py-1.5 text-xs"
-                        onClick={() => onTerminate(item)}
-                      >
-                        Terminate
                       </Button>
                     )}
                   </div>
