@@ -8,7 +8,7 @@ function useInvalidateAttendance(branchId?: string) {
   return (staffId: string) => {
     queryClient.invalidateQueries({ queryKey: queryKeys.staff.todayAttendance(branchId) });
     queryClient.invalidateQueries({ queryKey: queryKeys.staff.summary(branchId) });
-    queryClient.invalidateQueries({ queryKey: queryKeys.staff.attendanceHistory(staffId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.staff.attendanceHistoryAll(staffId) });
   };
 }
 

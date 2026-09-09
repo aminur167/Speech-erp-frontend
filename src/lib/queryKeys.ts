@@ -103,7 +103,10 @@ export const queryKeys = {
     list: (branchId?: string) => ["staff", "list", branchId] as const,
     summary: (branchId?: string) => ["staff", "summary", branchId] as const,
     todayAttendance: (branchId?: string) => ["staff", "today-attendance", branchId] as const,
-    attendanceHistory: (staffId: string) => ["staff", "attendance-history", staffId] as const,
+    attendanceHistory: (staffId: string, month: string) =>
+      ["staff", "attendance-history", staffId, month] as const,
+    /** Prefix key for invalidating every month's history at once. */
+    attendanceHistoryAll: (staffId: string) => ["staff", "attendance-history", staffId] as const,
     bonuses: (staffId: string) => ["staff", "bonuses", staffId] as const,
     monthlyReport: (branchId?: string, month?: string) =>
       ["staff", "monthly-report", branchId, month] as const,

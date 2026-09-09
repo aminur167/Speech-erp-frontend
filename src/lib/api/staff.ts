@@ -176,17 +176,17 @@ export async function markAttendanceStatus(
   return normalizeAttendance(data);
 }
 
+/** `month` is an ISO "YYYY-MM"; the backend defaults to the current month when omitted. Powers the drawer's attendance calendar. */
 export async function listAttendanceHistory(
   branchId: string | undefined,
   staffId: string,
-  days = 14,
+  month?: string,
 ): Promise<StaffAttendance[]> {
-  // The endpoint returns the last month, newest first; the drawer shows a
-  // fortnight of it.
   const { data } = await apiClient.get<RawAttendance[]>(
     `/staff/${staffId}/attendance-history/`,
+    { params: { month } },
   );
-  return data.slice(0, days).map(normalizeAttendance);
+  return data.map(normalizeAttendance);
 }
 
 export interface BonusInput {
