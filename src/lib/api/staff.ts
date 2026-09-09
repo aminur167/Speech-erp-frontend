@@ -225,6 +225,7 @@ export interface StaffMonthlyReportRow {
   netPayable: number;
   presentCount: number;
   lateCount: number;
+  earlyLeaveCount: number;
   absentCount: number;
   leaveCount: number;
 }

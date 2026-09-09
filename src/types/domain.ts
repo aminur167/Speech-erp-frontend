@@ -359,8 +359,13 @@ export interface StaffMember {
   createdAt: string;
 }
 
-/** "late" is check-in after the branch's grace cutoff (10:00 AM) — everything else is set explicitly by the manager. */
-export type AttendanceStatus = "present" | "late" | "on_leave" | "absent";
+/**
+ * Day-of attendance is always one of "present", "absent" (auto-marked once
+ * office hours end with no check-in), or "early_leave" (checked out before
+ * closing) — "on_leave" is the one status a manager still sets by hand.
+ * "late" can still appear on older records made before this model existed.
+ */
+export type AttendanceStatus = "present" | "late" | "early_leave" | "on_leave" | "absent";
 
 export interface StaffAttendance {
   id: string;
