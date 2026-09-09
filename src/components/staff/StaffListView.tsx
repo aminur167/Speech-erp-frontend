@@ -21,7 +21,7 @@ import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useDeleteStaff } from "@/hooks/staff/useDeleteStaff";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
-import { exportToCsv } from "@/utils/exportCsv";
+import { exportTableToPdf } from "@/utils/exportPdf";
 import type { StaffInput } from "@/lib/api/staff";
 import type { StaffMember } from "@/types/domain";
 
@@ -82,21 +82,40 @@ export function StaffListView({
   };
 
   const handleExport = () => {
-    exportToCsv(
-      `staff-monthly-report-${currentMonth}.csv`,
-      (monthlyReport ?? []).map((row) => ({
-        "Staff Code": row.staffCode,
-        Name: row.name,
-        Designation: row.designation,
-        "Monthly Salary": row.monthlySalary,
-        Bonus: row.bonusTotal,
-        "Net Payable": row.netPayable,
-        Present: row.presentCount,
-        Late: row.lateCount,
-        Absent: row.absentCount,
-        "On Leave": row.leaveCount,
-      })),
-    );
+    const monthLabel = new Date(`${currentMonth}-01T00:00:00`).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "long",
+    });
+
+    exportTableToPdf({
+      filename: `staff-monthly-report-${currentMonth}.pdf`,
+      title: "Staff Monthly Report",
+      subtitle: `${roleLabel} — ${monthLabel}`,
+      columns: [
+        "Staff Code",
+        "Name",
+        "Designation",
+        "Monthly Salary",
+        "Bonus",
+        "Net Payable",
+        "Present",
+        "Late",
+        "Absent",
+        "On Leave",
+      ],
+      rows: (monthlyReport ?? []).map((row) => [
+        row.staffCode,
+        row.name,
+        row.designation,
+        formatCurrency(row.monthlySalary),
+        formatCurrency(row.bonusTotal),
+        formatCurrency(row.netPayable),
+        row.presentCount,
+        row.lateCount,
+        row.absentCount,
+        row.leaveCount,
+      ]),
+    });
   };
 
   return (
