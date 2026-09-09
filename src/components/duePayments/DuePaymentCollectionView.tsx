@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { AlertCircle, Wallet, Receipt as ReceiptIcon, Ban } from "lucide-react";
+import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
-import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
+import { EmptyState, ErrorState } from "@/components/ui/states";
+import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -22,86 +24,23 @@ import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { monthKeyLabel, toMonthKey } from "@/utils/months";
 import type { ApiError } from "@/types/api";
-import type { DuePaymentItem, DuePaymentPage } from "@/lib/api/duePayments";
-import type { UseQueryResult } from "@tanstack/react-query";
+import type { DuePaymentItem, DuePaymentType } from "@/lib/api/duePayments";
 
-// Smaller than a full-width list: the two tables sit side by side, so ten
-// rows each would push the page taller than the screen before either one
-// could be scanned.
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 10;
 
 /**
- * One of the two tables, with its own heading, totals, states and paging.
+ * The two kinds of due, one at a time.
  *
- * Shared rather than written twice — the halves differ only in what they
- * list and in the monthly one's cycle picker, and two copies of the
- * loading/empty/error/pagination logic is how the two sides start behaving
- * differently for no reason anyone intended.
+ * Side by side they each got half the width, which on a laptop squeezed the
+ * patient code into a vertical stack of characters and wrapped every status
+ * badge onto two lines. One list at full width reads properly, and the
+ * choice between them belongs in the filter row with the rest of the
+ * filters — it is one, not a layout.
  */
-function DueTableCard({
-  title,
-  caption,
-  query,
-  filter,
-  onCollectPayment,
-  onTerminate,
-  page,
-  onPageChange,
-  emptyLabel,
-}: {
-  title: string;
-  caption: string;
-  query: UseQueryResult<DuePaymentPage, ApiError>;
-  /** Rendered next to the heading — the monthly side's cycle picker. */
-  filter?: ReactNode;
-  onCollectPayment?: (item: DuePaymentItem) => void;
-  onTerminate?: (item: DuePaymentItem) => void;
-  page: number;
-  onPageChange: (page: number) => void;
-  emptyLabel: string;
-}) {
-  const { data, isLoading, isError, refetch } = query;
-  const rows = data?.results ?? [];
-
-  return (
-    <Card>
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-text-primary">{title}</h2>
-            <p className="text-xs text-text-secondary">
-              {caption} &middot; {data?.count ?? 0}{" "}
-              {(data?.count ?? 0) === 1 ? "patient" : "patients"} &middot;{" "}
-              {formatCurrency(data?.totalAmount ?? 0)} due
-            </p>
-          </div>
-          {filter}
-        </div>
-
-        {isLoading && <LoadingState label="Loading due payments…" />}
-        {isError && <ErrorState onRetry={() => refetch()} />}
-        {!isLoading && !isError && rows.length === 0 && <EmptyState label={emptyLabel} />}
-
-        {!isLoading && !isError && rows.length > 0 && (
-          <>
-            <DuePaymentTable
-              items={rows}
-              showType={false}
-              onCollectPayment={onCollectPayment}
-              onTerminate={onTerminate}
-            />
-            <Pagination
-              page={page}
-              pageSize={PAGE_SIZE}
-              count={data?.count ?? 0}
-              onPageChange={onPageChange}
-            />
-          </>
-        )}
-      </div>
-    </Card>
-  );
-}
+const VIEWS = [
+  { key: "installment", label: "Installment Dues" },
+  { key: "monthly", label: "Monthly Dues" },
+] as const;
 
 export function DuePaymentCollectionView({
   branchId: branchIdOverride,
@@ -114,52 +53,44 @@ export function DuePaymentCollectionView({
   branchId?: string;
   homeHref?: string;
   roleLabel?: string;
-  /** Where the "Terminated Services" button goes — the Admin drill-down has its own copy. */
-  terminatedHref?: string;
   /** Hides the collect and terminate actions — Admin can view dues but shouldn't act on a branch's behalf. */
   readOnly?: boolean;
+  /** Where the "Terminated Services" button goes — the Admin drill-down has its own copy. */
+  terminatedHref?: string;
 } = {}) {
   const user = useAuthStore((state) => state.user);
   const branchId = branchIdOverride ?? user?.branchId ?? undefined;
 
+  // Opens on monthly: it is the cycle a manager collects for on any ordinary
+  // day, and the one with a deadline attached to it.
+  const [type, setType] = useState<DuePaymentType>("monthly");
   const [search, setSearch] = useState("");
-  // Opens on the running cycle, which is the one a manager is collecting for
-  // on any ordinary day.
   const [month, setMonth] = useState(toMonthKey);
-  const [installmentPage, setInstallmentPage] = useState(1);
-  const [monthlyPage, setMonthlyPage] = useState(1);
+  const [page, setPage] = useState(1);
 
   const [selectedItem, setSelectedItem] = useState<DuePaymentItem | null>(null);
   const [terminatingItem, setTerminatingItem] = useState<DuePaymentItem | null>(null);
   const [terminateError, setTerminateError] = useState<string | null>(null);
 
-  const installments = useDuePayments({
-    type: "installment",
+  const active = VIEWS.find((view) => view.key === type)!;
+  const isMonthly = type === "monthly";
+
+  const { data, isLoading, isError, refetch } = useDuePayments({
+    type,
+    // The month narrows the monthly cycle only; an installment plan has its
+    // own schedule and no monthly deadline to be measured against.
+    month: isMonthly ? month : undefined,
     search: search || undefined,
     branchId,
-    page: installmentPage,
-    pageSize: PAGE_SIZE,
-  });
-  const monthly = useDuePayments({
-    type: "monthly",
-    month,
-    search: search || undefined,
-    branchId,
-    page: monthlyPage,
+    page,
     pageSize: PAGE_SIZE,
   });
   const { data: summary } = useDuePaymentsSummary(branchId);
   const terminateService = useTerminateService();
 
-  const changeSearch = (value: string) => {
-    setSearch(value);
-    setInstallmentPage(1);
-    setMonthlyPage(1);
-  };
-
-  const changeMonth = (value: string) => {
-    setMonth(value);
-    setMonthlyPage(1);
+  const changeType = (next: DuePaymentType) => {
+    setType(next);
+    setPage(1);
   };
 
   const closeTerminateDialog = () => {
@@ -173,8 +104,8 @@ export function DuePaymentCollectionView({
     terminateService.mutate(
       { type: terminatingItem.type, refId: terminatingItem.refId },
       {
-        // Closing on success is what makes the modal feel finished; the lists
-        // behind it refetch from the mutation's own invalidation.
+        // Closing on success is what makes the modal feel finished; the list
+        // behind it refetches from the mutation's own invalidation.
         onSuccess: closeTerminateDialog,
         // An outstanding balance no longer refuses, so anything landing here
         // is a genuine failure worth showing rather than a workflow branch.
@@ -183,8 +114,6 @@ export function DuePaymentCollectionView({
     );
   };
 
-  // One pair of handlers for both tables: which side a row came from doesn't
-  // change what collecting or terminating it means.
   const actions = readOnly
     ? {}
     : {
@@ -195,13 +124,16 @@ export function DuePaymentCollectionView({
         },
       };
 
+  const rows = data?.results ?? [];
+  const count = data?.count ?? 0;
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         homeHref={homeHref}
         breadcrumb={[roleLabel, "Due Payment Collection"]}
         title="Due Payment Collection"
-        subtitle="Installment plans on the left, this month's monthly cycle on the right."
+        subtitle="Collect what patients owe, one list at a time."
         action={
           // The two screens are the same story either side of a deadline:
           // what is still collectable, and what stopped because it wasn't
@@ -237,43 +169,105 @@ export function DuePaymentCollectionView({
         />
       </div>
 
-      <FilterBar>
+      <FilterBar
+        dateSlot={
+          // Only the monthly list has a cycle to move through. Showing the
+          // picker against installments would offer a filter that does
+          // nothing, which is worse than not offering one.
+          isMonthly ? (
+            <MonthCyclePicker
+              value={month}
+              onChange={(next) => {
+                setMonth(next);
+                setPage(1);
+              }}
+            />
+          ) : undefined
+        }
+      >
+        <div className="flex shrink-0 gap-1 rounded-lg border border-border bg-background p-1">
+          {VIEWS.map((view) => (
+            <button
+              key={view.key}
+              type="button"
+              aria-pressed={type === view.key}
+              onClick={() => changeType(view.key)}
+              className={clsx(
+                "whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                type === view.key
+                  ? "bg-surface text-text-primary shadow-sm"
+                  : "text-text-secondary hover:text-text-primary",
+              )}
+            >
+              {view.label}
+            </button>
+          ))}
+        </div>
+
         <Input
           value={search}
-          onChange={(event) => changeSearch(event.target.value)}
-          placeholder="Search both tables by patient name or code…"
-          containerClassName="w-full sm:w-80 shrink-0"
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setPage(1);
+          }}
+          placeholder="Search by patient name or code…"
+          containerClassName="w-full sm:w-72 shrink-0"
         />
       </FilterBar>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <DueTableCard
-          title="Installment Dues"
-          caption="Payable now"
-          query={installments}
-          page={installmentPage}
-          onPageChange={setInstallmentPage}
-          emptyLabel="No installment dues — every plan is up to date."
-          {...actions}
-        />
+      <Card>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-base font-semibold text-text-primary">{active.label}</h2>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-secondary">
+                <span className="rounded-full bg-background px-2 py-0.5 font-medium">
+                  {isMonthly ? monthKeyLabel(month) : "Payable now"}
+                </span>
+                <span>
+                  {count} {count === 1 ? "patient" : "patients"}
+                </span>
+                {/* Totals every row the filters matched, not the ten on
+                    screen — a per-page subtotal labelled as the total is
+                    worse than no total at all. */}
+                <span>&middot; {formatCurrency(data?.totalAmount ?? 0)} due</span>
+              </div>
+            </div>
+          </div>
 
-        <DueTableCard
-          title="Monthly Dues"
-          caption={monthKeyLabel(month)}
-          query={monthly}
-          page={monthlyPage}
-          onPageChange={setMonthlyPage}
-          emptyLabel={`Nobody owes for ${monthKeyLabel(month)} — the cycle is settled.`}
-          filter={<MonthCyclePicker value={month} onChange={changeMonth} />}
-          {...actions}
-        />
-      </div>
+          {isLoading && <TableSkeleton columns={readOnly ? 5 : 6} />}
+          {isError && <ErrorState onRetry={() => refetch()} />}
+          {!isLoading && !isError && rows.length === 0 && (
+            <EmptyState
+              label={
+                isMonthly
+                  ? `Nobody owes for ${monthKeyLabel(month)} — the cycle is settled.`
+                  : "No installment dues — every plan is up to date."
+              }
+            />
+          )}
 
-      <p className="text-xs text-text-secondary">
-        A patient who has paid {monthKeyLabel(month)} moves to the next cycle and drops
-        out of this table; one who has not stays here until they pay, whichever month
-        you are looking at.
-      </p>
+          {!isLoading && !isError && rows.length > 0 && (
+            <>
+              <DuePaymentTable items={rows} showType={false} {...actions} />
+              <Pagination
+                page={page}
+                pageSize={PAGE_SIZE}
+                count={count}
+                onPageChange={setPage}
+              />
+            </>
+          )}
+
+          {isMonthly && (
+            <p className="text-xs text-text-secondary">
+              A patient who has paid {monthKeyLabel(month)} moves to the next cycle and
+              drops out of this list; one who has not stays here until they pay,
+              whichever month you are looking at.
+            </p>
+          )}
+        </div>
+      </Card>
 
       <CollectDuePaymentModal item={selectedItem} onClose={() => setSelectedItem(null)} />
 
