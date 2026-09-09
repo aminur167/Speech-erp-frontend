@@ -92,11 +92,11 @@ export function StaffDetailDrawer({
 
   return (
     <Drawer open={Boolean(staff)} onClose={onClose} title="Staff Details">
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2.5">
           <StaffAvatar name={staff.name} />
           <div className="min-w-0">
-            <p className="truncate text-base font-semibold text-text-primary">{staff.name}</p>
+            <p className="truncate text-sm font-semibold text-text-primary">{staff.name}</p>
             <p className="font-mono text-xs text-text-secondary">{staff.staffCode}</p>
           </div>
           <Badge
@@ -106,29 +106,29 @@ export function StaffDetailDrawer({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 rounded-lg border border-border p-3 text-sm">
+        <div className="grid grid-cols-2 gap-2.5 rounded-lg border border-border p-2.5 text-sm">
           <div>
-            <p className="text-xs text-text-secondary">Designation</p>
+            <p className="text-[11px] text-text-secondary">Designation</p>
             <p className="font-medium text-text-primary">{humanizeField(staff.designation)}</p>
           </div>
           <div>
-            <p className="text-xs text-text-secondary">Joined</p>
+            <p className="text-[11px] text-text-secondary">Joined</p>
             <p className="font-medium text-text-primary">{formatDate(staff.joinedAt)}</p>
           </div>
           <div>
-            <p className="text-xs text-text-secondary">Phone</p>
+            <p className="text-[11px] text-text-secondary">Phone</p>
             <p className="font-medium text-text-primary">{staff.phone}</p>
           </div>
           <div>
-            <p className="text-xs text-text-secondary">Email</p>
+            <p className="text-[11px] text-text-secondary">Email</p>
             <p className="truncate font-medium text-text-primary">{staff.email || "—"}</p>
           </div>
         </div>
 
-        <section className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold text-text-primary">Salary</h3>
+        <section className="flex flex-col gap-1.5">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Salary</h3>
           {isEditingSalary ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Input
                 type="number"
                 step="0.01"
@@ -136,23 +136,27 @@ export function StaffDetailDrawer({
                 onChange={(event) => setSalaryDraft(event.target.value)}
                 containerClassName="w-auto flex-1"
               />
-              <Button onClick={saveSalary} isLoading={updateStaff.isPending}>
+              <Button className="px-2.5 py-1 text-xs" onClick={saveSalary} isLoading={updateStaff.isPending}>
                 Save
               </Button>
-              <Button variant="secondary" onClick={() => setIsEditingSalary(false)}>
+              <Button
+                variant="secondary"
+                className="px-2.5 py-1 text-xs"
+                onClick={() => setIsEditingSalary(false)}
+              >
                 Cancel
               </Button>
             </div>
           ) : (
-            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div className="flex items-center justify-between rounded-lg border border-border p-2.5">
               <div>
-                <p className="text-xs text-text-secondary">Monthly Salary</p>
-                <p className="text-lg font-semibold text-text-primary">
+                <p className="text-[11px] text-text-secondary">Monthly Salary</p>
+                <p className="text-base font-semibold text-text-primary">
                   {formatCurrency(staff.monthlySalary)}
                 </p>
               </div>
-              <Button variant="secondary" onClick={startEditingSalary}>
-                <Pencil className="h-3.5 w-3.5" />
+              <Button variant="secondary" className="px-2.5 py-1 text-xs" onClick={startEditingSalary}>
+                <Pencil className="h-3 w-3" />
                 Edit
               </Button>
             </div>
@@ -161,13 +165,13 @@ export function StaffDetailDrawer({
 
         <SalaryPaymentSection staff={staff} />
 
-        <section className="flex flex-col gap-2">
+        <section className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-text-primary">Bonuses</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Bonuses</h3>
             {!isAddingBonus && (
               <Button
                 variant="secondary"
-                className="px-2.5 py-1 text-xs"
+                className="px-2 py-1 text-xs"
                 onClick={() => setIsAddingBonus(true)}
               >
                 <Gift className="h-3 w-3" />
@@ -177,7 +181,7 @@ export function StaffDetailDrawer({
           </div>
 
           {isAddingBonus && (
-            <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+            <div className="flex flex-col gap-1.5 rounded-lg border border-border p-2.5">
               <Input
                 type="number"
                 step="0.01"
@@ -191,11 +195,15 @@ export function StaffDetailDrawer({
                 value={bonusReason}
                 onChange={(event) => setBonusReason(event.target.value)}
               />
-              <div className="flex justify-end gap-2">
-                <Button variant="secondary" onClick={() => setIsAddingBonus(false)}>
+              <div className="flex justify-end gap-1.5">
+                <Button
+                  variant="secondary"
+                  className="px-2.5 py-1 text-xs"
+                  onClick={() => setIsAddingBonus(false)}
+                >
                   Cancel
                 </Button>
-                <Button onClick={submitBonus} isLoading={addBonus.isPending}>
+                <Button className="px-2.5 py-1 text-xs" onClick={submitBonus} isLoading={addBonus.isPending}>
                   Award Bonus
                 </Button>
               </div>
@@ -207,15 +215,15 @@ export function StaffDetailDrawer({
             <EmptyState label="No bonuses awarded yet." />
           )}
           {!bonusesLoading && bonuses && bonuses.length > 0 && (
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-1.5">
               {bonuses.map((bonus) => (
                 <li
                   key={bonus.id}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-border p-3 text-sm"
+                  className="flex items-start justify-between gap-3 rounded-lg border border-border px-2.5 py-2 text-sm"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-text-primary">{bonus.reason}</p>
-                    <p className="text-xs text-text-secondary">
+                    <p className="text-[11px] text-text-secondary">
                       {new Date(bonus.awardedAt).toLocaleDateString(undefined, {
                         year: "numeric",
                         month: "short",
@@ -231,8 +239,10 @@ export function StaffDetailDrawer({
           )}
         </section>
 
-        <section className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold text-text-primary">Attendance History</h3>
+        <section className="flex flex-col gap-1.5">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+            Attendance History
+          </h3>
           <AttendanceCalendar branchId={branchId} staffId={staff.id} />
         </section>
       </div>
