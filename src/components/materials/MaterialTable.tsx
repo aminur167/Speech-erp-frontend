@@ -1,7 +1,8 @@
 "use client";
 
+import { PackagePlus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { MaterialThumb } from "@/components/materials/MaterialThumb";
 import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { formatCurrency } from "@/utils/currency";
@@ -36,7 +37,7 @@ export function MaterialTable({
             <th className="py-2 pr-4 font-medium">Unit Cost</th>
             <th className="py-2 pr-4 font-medium">Total Value</th>
             <th className="py-2 pr-4 font-medium">Status</th>
-            {hasActions && <th className="py-2 pr-4 font-medium">Actions</th>}
+            {hasActions && <th className="w-12 py-2 pr-2 font-medium"><span className="sr-only">Actions</span></th>}
           </tr>
         </thead>
         <tbody>
@@ -61,24 +62,34 @@ export function MaterialTable({
                   <Badge tone={isLow ? "danger" : "success"} label={isLow ? "Low Stock" : "In Stock"} />
                 </td>
                 {hasActions && (
-                  <td className="py-2 pr-4">
-                    <div className="flex flex-wrap gap-2">
-                      {onAdjustStock && (
-                        <Button variant="secondary" onClick={() => onAdjustStock(material)}>
-                          Adjust
-                        </Button>
-                      )}
-                      {onEdit && (
-                        <Button variant="secondary" onClick={() => onEdit(material)}>
-                          Edit
-                        </Button>
-                      )}
-                      {onDelete && (
-                        <Button variant="danger" onClick={() => onDelete(material)}>
-                          Delete
-                        </Button>
-                      )}
-                    </div>
+                  <td className="py-2 pr-2 text-right">
+                    <ActionMenu
+                      label={`Actions for ${material.name}`}
+                      items={[
+                        {
+                          key: "adjust",
+                          label: "Adjust stock",
+                          icon: PackagePlus,
+                          hidden: !onAdjustStock,
+                          onSelect: () => onAdjustStock?.(material),
+                        },
+                        {
+                          key: "edit",
+                          label: "Edit",
+                          icon: Pencil,
+                          hidden: !onEdit,
+                          onSelect: () => onEdit?.(material),
+                        },
+                        {
+                          key: "delete",
+                          label: "Delete",
+                          icon: Trash2,
+                          tone: "danger",
+                          hidden: !onDelete,
+                          onSelect: () => onDelete?.(material),
+                        },
+                      ]}
+                    />
                   </td>
                 )}
               </tr>

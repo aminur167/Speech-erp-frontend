@@ -2,20 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  Building2,
-  CheckCircle2,
-  Users,
-  Wallet,
-  UserRound,
-  RefreshCw,
-  Download,
-  MapPin,
-  Phone,
-  Calendar,
-  ChevronRight,
-  Plus,
-} from "lucide-react";
+import { Building2, Calendar, CheckCircle2, ChevronRight, Download, Eye, MapPin, Pencil, Phone, Plus, Power, PowerOff, RefreshCw, Trash2, UserRound, Users, Wallet } from "lucide-react";
 import { clsx } from "clsx";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -31,8 +18,14 @@ import { useBranchesOverview } from "@/hooks/branches/useBranchesOverview";
 import { useCreateBranch } from "@/hooks/branches/useCreateBranch";
 import { formatCurrency } from "@/utils/currency";
 import { exportToCsv } from "@/utils/exportCsv";
-import type { BranchStatus } from "@/types/domain";
+import type { Branch, BranchStatus } from "@/types/domain";
 import type { BranchInput } from "@/lib/api/branches";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useUpdateBranch } from "@/hooks/branches/useUpdateBranch";
+import { useToggleBranchActive } from "@/hooks/branches/useToggleBranchActive";
+import { useDeleteBranch } from "@/hooks/branches/useDeleteBranch";
+import { useRouter } from "next/navigation";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -41,6 +34,12 @@ function formatDate(iso: string) {
 export function BranchesView() {
   const { data: overview, isLoading, isFetching, refetch } = useBranchesOverview();
   const createBranch = useCreateBranch();
+  const updateBranch = useUpdateBranch();
+  const toggleBranchActive = useToggleBranchActive();
+  const deleteBranch = useDeleteBranch();
+  const router = useRouter();
+  const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
+  const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<BranchStatus | "">("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -192,13 +191,15 @@ export function BranchesView() {
             const staffTotal = item.branch.therapistCount + item.branch.supportCount;
             const isActive = item.branch.status === "active";
             return (
+              // The menu sits beside the link, not inside it: a button nested
+              // in an <a> is invalid, and its clicks would navigate.
+              <div key={item.branch.id} className="relative">
               <Link
-                key={item.branch.id}
                 href={`/admin/branches/${item.branch.id}`}
-                className="group block"
+                className="group block h-full"
               >
                 <Card className="flex h-full flex-col gap-4 transition-all group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-md">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 pr-9">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
                         <Building2 className="h-5 w-5" />
@@ -279,6 +280,37 @@ export function BranchesView() {
                   </div>
                 </Card>
               </Link>
+              <div className="absolute right-3 top-3">
+                <ActionMenu
+                  label={`Actions for ${item.branch.name}`}
+                  items={[
+                    {
+                      key: "open",
+                      label: "View live details",
+                      icon: Eye,
+                      onSelect: () => router.push(`/admin/branches/${item.branch.id}`),
+                    },
+                    { key: "edit", label: "Edit", icon: Pencil, onSelect: () => setEditingBranch(item.branch) },
+                    {
+                      key: "toggle",
+                      label: item.branch.status === "active" ? "Deactivate" : "Activate",
+                      icon: item.branch.status === "active" ? PowerOff : Power,
+                      hint: item.branch.status === "active" ? "Records and history are kept" : undefined,
+                      disabled: toggleBranchActive.isPending,
+                      onSelect: () =>
+                        toggleBranchActive.mutate({ id: item.branch.id, makeActive: item.branch.status !== "active" }),
+                    },
+                    {
+                      key: "delete",
+                      label: "Delete",
+                      icon: Trash2,
+                      tone: "danger",
+                      onSelect: () => setDeletingBranch(item.branch),
+                    },
+                  ]}
+                />
+              </div>
+              </div>
             );
           })}
         </div>
@@ -297,6 +329,41 @@ export function BranchesView() {
           existingCodes={(overview ?? []).map((item) => item.branch.code)}
         />
       </Modal>
+
+      <Modal
+        open={Boolean(editingBranch)}
+        onClose={() => setEditingBranch(null)}
+        title="Edit Branch"
+        description="Leave the password blank to keep the current one."
+      >
+        {editingBranch && (
+          <BranchForm
+            initialValues={editingBranch}
+            onSubmit={(input: BranchInput) =>
+              updateBranch.mutate(
+                { id: editingBranch.id, input },
+                { onSuccess: () => setEditingBranch(null) },
+              )
+            }
+            onCancel={() => setEditingBranch(null)}
+            isSubmitting={updateBranch.isPending}
+          />
+        )}
+      </Modal>
+
+      <ConfirmDialog
+        open={Boolean(deletingBranch)}
+        onClose={() => setDeletingBranch(null)}
+        onConfirm={() => {
+          if (!deletingBranch) return;
+          deleteBranch.mutate(deletingBranch.id, { onSettled: () => setDeletingBranch(null) });
+        }}
+        title="Delete branch?"
+        description={`"${deletingBranch?.name}" will be hidden; its history is kept. A branch with active patient services or staff can't be deleted — deactivate it instead.`}
+        confirmLabel="Delete"
+        danger
+        isLoading={deleteBranch.isPending}
+      />
     </div>
   );
 }

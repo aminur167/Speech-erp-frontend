@@ -1,15 +1,15 @@
 "use client";
 
 import type { KeyboardEvent, MouseEvent } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Power, PowerOff, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { StaffAvatar } from "@/components/staff/StaffAvatar";
 import { AttendanceCell } from "@/components/staff/AttendanceCell";
 import { humanizeField } from "@/utils/fields";
 import { formatCurrency } from "@/utils/currency";
 import { cameFromControl } from "@/utils/interactiveClick";
 import type { StaffAttendance, StaffMember } from "@/types/domain";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 
 export function StaffTable({
   branchId,
@@ -18,6 +18,8 @@ export function StaffTable({
   onViewDetails,
   onEdit,
   onDelete,
+  onToggleActive,
+  canManage,
 }: {
   /** Admin only — a Manager is scoped to their own branch server-side. */
   branchId?: string;
@@ -26,6 +28,9 @@ export function StaffTable({
   onViewDetails: (member: StaffMember) => void;
   onEdit: (member: StaffMember) => void;
   onDelete: (member: StaffMember) => void;
+  onToggleActive?: (member: StaffMember) => void;
+  /** Staff writes are a branch-desk action — Admin reads the roster without being offered them. */
+  canManage: boolean;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -38,7 +43,7 @@ export function StaffTable({
             <th className="py-2 pr-4 font-medium">Monthly Salary</th>
             <th className="py-2 pr-4 font-medium">Today&apos;s Attendance</th>
             <th className="py-2 pr-4 font-medium">Status</th>
-            <th className="py-2 pr-4 font-medium">Actions</th>
+            {canManage && <th className="w-12 py-2 pr-2 font-medium"><span className="sr-only">Actions</span></th>}
           </tr>
         </thead>
         <tbody>
@@ -91,15 +96,40 @@ export function StaffTable({
                   label={member.status}
                 />
               </td>
-              <td className="py-3 pr-4">
-                <ActionsMenu
-                  label={`Actions for ${member.name}`}
-                  items={[
-                    { label: "Edit", icon: Pencil, onClick: () => onEdit(member) },
-                    { label: "Remove", icon: Trash2, onClick: () => onDelete(member), danger: true },
-                  ]}
-                />
-              </td>
+              {canManage && (
+                <td className="py-3 pr-2 text-right">
+                  <ActionMenu
+                    label={`Actions for ${member.name}`}
+                    items={[
+                      {
+                        key: "details",
+                        label: "View details",
+                        icon: Eye,
+                        onSelect: () => onViewDetails(member),
+                      },
+                      { key: "edit", label: "Edit", icon: Pencil, onSelect: () => onEdit(member) },
+                      {
+                        key: "toggle",
+                        label: member.status === "active" ? "Mark inactive" : "Mark active",
+                        icon: member.status === "active" ? PowerOff : Power,
+                        hint:
+                          member.status === "active"
+                            ? "Leaves payroll; history is kept"
+                            : undefined,
+                        hidden: !onToggleActive,
+                        onSelect: () => onToggleActive?.(member),
+                      },
+                      {
+                        key: "delete",
+                        label: "Delete",
+                        icon: Trash2,
+                        tone: "danger",
+                        onSelect: () => onDelete(member),
+                      },
+                    ]}
+                  />
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

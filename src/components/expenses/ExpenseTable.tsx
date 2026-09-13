@@ -1,8 +1,9 @@
 "use client";
 
+import { Check, X as XIcon } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { ExpenseStatusBadge } from "@/components/expenses/ExpenseStatusBadge";
-import { Button } from "@/components/ui/Button";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import type { Expense } from "@/types/domain";
 
@@ -34,7 +35,7 @@ export function ExpenseTable({
             <th className="py-2 pr-4 font-medium">Amount</th>
             <th className="py-2 pr-4 font-medium">Notes</th>
             <th className="py-2 pr-4 font-medium">Status</th>
-            {canApprove && <th className="py-2 pr-4 font-medium">Actions</th>}
+            {canApprove && <th className="w-12 py-2 pr-2 font-medium"><span className="sr-only">Actions</span></th>}
           </tr>
         </thead>
         <tbody>
@@ -77,24 +78,28 @@ export function ExpenseTable({
                 <ExpenseStatusBadge status={expense.status} />
               </td>
               {canApprove && (
-                <td className="py-2 pr-4">
+                <td className="py-2 pr-2 text-right">
                   {expense.status === "pending" ? (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="secondary"
-                        disabled={isMutating}
-                        onClick={() => onApprove?.(expense.id)}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="danger"
-                        disabled={isMutating}
-                        onClick={() => onReject?.(expense.id)}
-                      >
-                        Reject
-                      </Button>
-                    </div>
+                    <ActionMenu
+                      label={`Actions for ${expense.expenseCode}`}
+                      items={[
+                        {
+                          key: "approve",
+                          label: "Approve",
+                          icon: Check,
+                          disabled: isMutating,
+                          onSelect: () => onApprove?.(expense.id),
+                        },
+                        {
+                          key: "reject",
+                          label: "Reject",
+                          icon: XIcon,
+                          tone: "danger",
+                          disabled: isMutating,
+                          onSelect: () => onReject?.(expense.id),
+                        },
+                      ]}
+                    />
                   ) : (
                     <span className="text-xs text-text-secondary">—</span>
                   )}

@@ -2,6 +2,7 @@
 
 import { Ban, Undo2 } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { formatCurrency } from "@/utils/currency";
 import type { TransactionItem } from "@/lib/api/transactions";
@@ -38,7 +39,7 @@ export function TransactionTable({
             <th className="py-2 pr-4 font-medium">Method</th>
             <th className="py-2 pr-4 font-medium">Status</th>
             <th className="py-2 pr-4 font-medium">Amount</th>
-            {showActions && <th className="py-2 pr-4 font-medium">Actions</th>}
+            {showActions && <th className="w-12 py-2 pr-2 font-medium"><span className="sr-only">Actions</span></th>}
           </tr>
         </thead>
         <tbody>
@@ -64,30 +65,29 @@ export function TransactionTable({
                 </td>
                 <td className="py-2 pr-4 font-medium">{formatCurrency(transaction.amount)}</td>
                 {showActions && (
-                  <td className="py-2 pr-4">
+                  <td className="py-2 pr-2 text-right">
                     {actionable && (
-                      <div className="flex gap-1">
-                        {canVoid && (
-                          <button
-                            type="button"
-                            title="Void payment"
-                            onClick={() => onVoid?.(transaction)}
-                            className="rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-danger/10 hover:text-danger"
-                          >
-                            <Ban className="h-4 w-4" />
-                          </button>
-                        )}
-                        {canRequestRefund && (
-                          <button
-                            type="button"
-                            title="Request refund"
-                            onClick={() => onRequestRefund?.(transaction)}
-                            className="rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-warning/10 hover:text-warning"
-                          >
-                            <Undo2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
+                      <ActionMenu
+                        label={`Actions for receipt ${transaction.receiptNumber}`}
+                        items={[
+                          {
+                            key: "refund",
+                            label: "Request refund",
+                            icon: Undo2,
+                            hint: "Admin approves before any money moves",
+                            hidden: !canRequestRefund,
+                            onSelect: () => onRequestRefund?.(transaction),
+                          },
+                          {
+                            key: "void",
+                            label: "Void payment",
+                            icon: Ban,
+                            tone: "danger",
+                            hidden: !canVoid,
+                            onSelect: () => onVoid?.(transaction),
+                          },
+                        ]}
+                      />
                     )}
                   </td>
                 )}

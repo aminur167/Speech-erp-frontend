@@ -1,26 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Ban,
-  RotateCcw,
-  Phone,
-  Mail,
-  Cake,
-  MapPin,
-  UserRound,
-  CalendarPlus,
-  Droplet,
-  PhoneCall,
-  Users,
-  IdCard,
-  FileText,
-  Pencil,
-  type LucideIcon,
-} from "lucide-react";
+import { Ban, Cake, CalendarPlus, Droplet, FileText, IdCard, Mail, MapPin, Pencil, Phone, PhoneCall, RotateCcw, Trash2, UserRound, Users, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/states";
 import { OverdueBadge } from "@/components/patients/OverdueBadge";
@@ -40,6 +23,10 @@ import { useAuthStore } from "@/store/authStore";
 import { calculateAge } from "@/lib/api/patientDirectory";
 import { formatCurrency } from "@/utils/currency";
 import type { PatientCareStatus } from "@/lib/api/patientDirectory";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useDeletePatient } from "@/hooks/patients/useDeletePatient";
+import { useRouter } from "next/navigation";
 
 const PAYMENT_PAGE_SIZE = 5;
 const SERVICES_PAGE_SIZE = 3;
@@ -102,6 +89,9 @@ export function PatientProfileView({
   const [servicePage, setServicePage] = useState(1);
   const [paymentPage, setPaymentPage] = useState(1);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const router = useRouter();
+  const deletePatient = useDeletePatient();
   const { data: transactions, isLoading: transactionsLoading } = useTransactions({
     patientId,
     page: paymentPage,
@@ -164,10 +154,24 @@ export function PatientProfileView({
             </div>
           </div>
           <div className="flex gap-6 sm:flex-col sm:items-end sm:gap-3">
-            <Button variant="secondary" onClick={() => setIsEditOpen(true)}>
-              <Pencil className="h-4 w-4" />
-              Edit
-            </Button>
+            <ActionMenu
+              label={`Actions for ${patient.name}`}
+              items={[
+                {
+                  key: "edit",
+                  label: "Edit patient",
+                  icon: Pencil,
+                  onSelect: () => setIsEditOpen(true),
+                },
+                {
+                  key: "delete",
+                  label: "Delete patient",
+                  icon: Trash2,
+                  tone: "danger",
+                  onSelect: () => setIsDeleteOpen(true),
+                },
+              ]}
+            />
             <div className="text-left sm:text-right">
               <p className="text-xs text-text-secondary">Branch</p>
               <p className="text-sm font-medium text-text-primary">{branchName}</p>
@@ -257,23 +261,26 @@ export function PatientProfileView({
                       patient: someone can keep coming for one service and stop
                       another, and the unpaid months being decided belong to
                       this one. */}
-                  {canStopServices && (
-                    <Button
-                      variant="secondary"
-                      className="px-3 py-1.5 text-xs"
-                      onClick={() =>
-                        setInactivating({
-                          kind: item.type,
-                          serviceRefId:
-                            item.type === "monthly" ? item.enrollment.id : item.plan.id,
-                          serviceName: item.serviceName,
-                        })
-                      }
-                    >
-                      <Ban className="h-3.5 w-3.5" />
-                      Inactive
-                    </Button>
-                  )}
+                  <ActionMenu
+                    label={`Actions for ${item.serviceName}`}
+                    items={[
+                      {
+                        key: "inactive",
+                        label: "Make inactive",
+                        icon: Ban,
+                        tone: "danger",
+                        hint: "Decide each unpaid month before it stops",
+                        hidden: !canStopServices,
+                        onSelect: () =>
+                          setInactivating({
+                            kind: item.type,
+                            serviceRefId:
+                              item.type === "monthly" ? item.enrollment.id : item.plan.id,
+                            serviceName: item.serviceName,
+                          }),
+                      },
+                    ]}
+                  />
                 </div>
                 <ScheduleList
                   items={
@@ -334,31 +341,31 @@ export function PatientProfileView({
                   </p>
                   <div className="flex items-center gap-2">
                     <Badge tone="warning" label="Inactive" />
-                    {canStopServices && (
-                      <Button
-                        variant="secondary"
-                        className="px-3 py-1.5 text-xs"
-                        // Disabled rather than hidden, with the reason above
-                        // it: "you cannot do this yet, and here is what to
-                        // collect" is more use than a missing button. The
-                        // server refuses it either way.
-                        disabled={outstandingTotal > 0 || reactivate.isPending}
-                        onClick={() => {
-                          reactivate.mutate(
-                            {
+                    <ActionMenu
+                      label={`Actions for ${item.serviceName}`}
+                      items={[
+                        {
+                          key: "reactivate",
+                          label: "Reactivate",
+                          icon: RotateCcw,
+                          hidden: !canStopServices,
+                          // Disabled with the reason rather than hidden: "not
+                          // yet, and here is why" beats a missing option. The
+                          // server refuses it either way.
+                          disabled: outstandingTotal > 0 || reactivate.isPending,
+                          hint:
+                            outstandingTotal > 0
+                              ? "Clear the outstanding dues first"
+                              : undefined,
+                          onSelect: () =>
+                            reactivate.mutate({
                               kind: item.type,
                               serviceRefId:
-                                item.type === "monthly"
-                                  ? item.enrollment.id
-                                  : item.plan.id,
-                            },
-                          );
-                        }}
-                      >
-                        <RotateCcw className="h-3.5 w-3.5" />
-                        Reactivate
-                      </Button>
-                    )}
+                                item.type === "monthly" ? item.enrollment.id : item.plan.id,
+                            }),
+                        },
+                      ]}
+                    />
                   </div>
                 </div>
                 <ScheduleList
@@ -423,6 +430,23 @@ export function PatientProfileView({
           onCancel={() => setIsEditOpen(false)}
         />
       </Modal>
+
+      <ConfirmDialog
+        open={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={() =>
+          deletePatient.mutate(patient.id, {
+            onSuccess: () =>
+              router.push(user?.role === "admin" ? "/admin/patients" : "/manager/patients"),
+            onSettled: () => setIsDeleteOpen(false),
+          })
+        }
+        title="Delete patient?"
+        description={`"${patient.name}" will be removed from the directory; their payment history is kept. A patient with an active service or money owed can't be deleted until that is settled.`}
+        confirmLabel="Delete"
+        danger
+        isLoading={deletePatient.isPending}
+      />
 
       <InactivateServiceModal
         kind={inactivating?.kind ?? "monthly"}

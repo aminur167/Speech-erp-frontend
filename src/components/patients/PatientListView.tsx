@@ -25,8 +25,16 @@ import { useAuthStore } from "@/store/authStore";
 import { exportToCsv } from "@/utils/exportCsv";
 import { PAYMENT_METHOD_OPTIONS } from "@/utils/paymentMethod";
 import { toLocalDateString } from "@/utils/time";
-import type { PatientCareStatus, PatientTimeRange } from "@/lib/api/patientDirectory";
+import type {
+  PatientCareStatus,
+  PatientDirectoryItem,
+  PatientTimeRange,
+} from "@/lib/api/patientDirectory";
 import type { Gender, PaymentMethod, ServiceCategory } from "@/types/domain";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { PatientEditForm } from "@/components/patients/PatientEditForm";
+import { usePatient } from "@/hooks/patients/usePatient";
+import { useDeletePatient } from "@/hooks/patients/useDeletePatient";
 
 const SERVICE_CATEGORY_LABELS: Record<ServiceCategory, string> = {
   daily: "Daily Services",
@@ -62,6 +70,11 @@ export function PatientListView({
   const canRegister = user?.role === "manager";
   const isAdmin = user?.role === "admin";
   const canPickBranch = isAdmin && !branchIdOverride;
+  // Editing needs the full record; the directory row carries only a summary.
+  const [editingPatientId, setEditingPatientId] = useState<string | null>(null);
+  const [deletingPatient, setDeletingPatient] = useState<PatientDirectoryItem | null>(null);
+  const { data: editingPatient, isLoading: editingLoading } = usePatient(editingPatientId ?? "");
+  const deletePatient = useDeletePatient();
   const [selectedBranch, setSelectedBranch] = useState("");
   const branchId =
     branchIdOverride ?? (isAdmin ? selectedBranch || undefined : (user?.branchId ?? undefined));
@@ -349,7 +362,13 @@ export function PatientListView({
           )}
           {!isLoading && !isError && data && data.results.length > 0 && (
             <>
-              <PatientTable patients={data.results} basePath={basePath} columns={columns} />
+              <PatientTable
+                patients={data.results}
+                basePath={basePath}
+                columns={columns}
+                onEdit={(patient) => setEditingPatientId(patient.id)}
+                onDelete={setDeletingPatient}
+              />
               <Pagination
                 page={page}
                 pageSize={PAGE_SIZE}
@@ -360,6 +379,40 @@ export function PatientListView({
           )}
         </div>
       </Card>
+
+      <Modal
+        open={Boolean(editingPatientId)}
+        onClose={() => setEditingPatientId(null)}
+        title="Edit Patient"
+        description="Update the patient's details below."
+        className="max-w-2xl"
+        dismissible={false}
+      >
+        {editingLoading && <LoadingState label="Loading patient…" />}
+        {editingPatient && (
+          <PatientEditForm
+            patient={editingPatient}
+            onSuccess={() => setEditingPatientId(null)}
+            onCancel={() => setEditingPatientId(null)}
+          />
+        )}
+      </Modal>
+
+      <ConfirmDialog
+        open={Boolean(deletingPatient)}
+        onClose={() => setDeletingPatient(null)}
+        onConfirm={() => {
+          if (!deletingPatient) return;
+          deletePatient.mutate(deletingPatient.id, {
+            onSettled: () => setDeletingPatient(null),
+          });
+        }}
+        title="Delete patient?"
+        description={`"${deletingPatient?.name}" will be removed from the directory; their payment history is kept. A patient with an active service or money owed can't be deleted until that is settled.`}
+        confirmLabel="Delete"
+        danger
+        isLoading={deletePatient.isPending}
+      />
 
       {canRegister && (
         <Modal

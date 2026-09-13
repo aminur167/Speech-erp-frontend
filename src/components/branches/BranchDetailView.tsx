@@ -2,28 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  Building2,
-  MapPin,
-  Phone,
-  Calendar,
-  KeyRound,
-  Pencil,
-  Wallet,
-  Users,
-  ClipboardCheck,
-  Receipt,
-  TrendingUp,
-  UserPlus,
-  AlertCircle,
-  Boxes,
-  AlertTriangle,
-  UserRound,
-} from "lucide-react";
+import { AlertCircle, AlertTriangle, Boxes, Building2, Calendar, ClipboardCheck, KeyRound, MapPin, Pencil, Phone, Power, PowerOff, Receipt, Trash2, TrendingUp, UserPlus, UserRound, Users, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { LoadingState, EmptyState } from "@/components/ui/states";
@@ -47,6 +29,11 @@ import { useRevenueByCategory } from "@/hooks/transactions/useRevenueByCategory"
 import { useTransactions } from "@/hooks/transactions/useTransactions";
 import { formatCurrency } from "@/utils/currency";
 import type { BranchInput } from "@/lib/api/branches";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToggleBranchActive } from "@/hooks/branches/useToggleBranchActive";
+import { useDeleteBranch } from "@/hooks/branches/useDeleteBranch";
+import { useRouter } from "next/navigation";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -56,6 +43,10 @@ export function BranchDetailView({ branchId }: { branchId: string }) {
   const { data: overview, isLoading, isError } = useBranchOverview(branchId);
   const updateBranch = useUpdateBranch();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const toggleBranchActive = useToggleBranchActive();
+  const deleteBranch = useDeleteBranch();
+  const router = useRouter();
 
   const { data: todayCollection } = useTodaySystemCollection(branchId);
   const { data: metrics } = useBranchDashboardMetrics(branchId);
@@ -117,10 +108,27 @@ export function BranchDetailView({ branchId }: { branchId: string }) {
         action={
           <div className="flex items-center gap-2">
             <Badge tone={isActive ? "success" : "warning"} label={isActive ? "Active" : "Inactive"} />
-            <Button variant="secondary" onClick={() => setIsEditOpen(true)}>
-              <Pencil className="h-4 w-4" />
-              Edit
-            </Button>
+            <ActionMenu
+              label={`Actions for ${branch.name}`}
+              items={[
+                { key: "edit", label: "Edit", icon: Pencil, onSelect: () => setIsEditOpen(true) },
+                {
+                  key: "toggle",
+                  label: isActive ? "Deactivate" : "Activate",
+                  icon: isActive ? PowerOff : Power,
+                  hint: isActive ? "Records and history are kept" : undefined,
+                  disabled: toggleBranchActive.isPending,
+                  onSelect: () => toggleBranchActive.mutate({ id: branch.id, makeActive: !isActive }),
+                },
+                {
+                  key: "delete",
+                  label: "Delete",
+                  icon: Trash2,
+                  tone: "danger",
+                  onSelect: () => setIsDeleteOpen(true),
+                },
+              ]}
+            />
           </div>
         }
       />
@@ -330,6 +338,22 @@ export function BranchDetailView({ branchId }: { branchId: string }) {
           isSubmitting={updateBranch.isPending}
         />
       </Modal>
+
+      <ConfirmDialog
+        open={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={() =>
+          deleteBranch.mutate(branch.id, {
+            onSuccess: () => router.push("/admin/branches"),
+            onSettled: () => setIsDeleteOpen(false),
+          })
+        }
+        title="Delete branch?"
+        description={`"${branch.name}" will be hidden; its history is kept. A branch with active patient services or staff can't be deleted — deactivate it instead.`}
+        confirmLabel="Delete"
+        danger
+        isLoading={deleteBranch.isPending}
+      />
     </div>
   );
 }

@@ -66,3 +66,11 @@ export async function updatePatient(id: string, input: UpdatePatientInput): Prom
   const { data } = await apiClient.patch<RawPatient>(`/patients/${id}/`, toSnakeCase(input));
   return normalizePatient(data);
 }
+
+/**
+ * Soft delete. The server refuses while the patient has an active service or
+ * owes anything, and says which — the global toast shows that reason.
+ */
+export async function deletePatient(id: string): Promise<void> {
+  await apiClient.delete(`/patients/${id}/`);
+}

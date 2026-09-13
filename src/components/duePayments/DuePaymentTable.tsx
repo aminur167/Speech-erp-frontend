@@ -1,7 +1,8 @@
 "use client";
 
+import { Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { OverdueBadge } from "@/components/patients/OverdueBadge";
 import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { formatCurrency } from "@/utils/currency";
@@ -35,7 +36,7 @@ export function DuePaymentTable({
             <th className="py-2 pr-4 font-medium">Due</th>
             <th className="py-2 pr-4 font-medium">Amount</th>
             <th className="py-2 pr-4 font-medium">Status</th>
-            {showActions && <th className="py-2 pr-4 font-medium">Action</th>}
+            {showActions && <th className="w-12 py-2 pr-2 font-medium"><span className="sr-only">Actions</span></th>}
           </tr>
         </thead>
         <tbody>
@@ -68,19 +69,19 @@ export function DuePaymentTable({
                 )}
               </td>
               {showActions && (
-                <td className="py-2 pr-4">
-                  {/* Compact so two of these tables fit side by side on the
-                      Due Payments screen without either one scrolling. */}
-                  <div className="flex gap-2 whitespace-nowrap">
-                    {onCollectPayment && (
-                      <Button
-                        className="px-3 py-1.5 text-xs"
-                        onClick={() => onCollectPayment(item)}
-                      >
-                        Collect
-                      </Button>
-                    )}
-                  </div>
+                <td className="py-2 pr-2 text-right">
+                  <ActionMenu
+                    label={`Actions for ${item.patientName}`}
+                    items={[
+                      {
+                        key: "collect",
+                        label: "Collect payment",
+                        icon: Wallet,
+                        hidden: !onCollectPayment,
+                        onSelect: () => onCollectPayment?.(item),
+                      },
+                    ]}
+                  />
                 </td>
               )}
             </tr>

@@ -24,6 +24,7 @@ import { formatCurrency } from "@/utils/currency";
 import { exportTableToPdf, formatCurrencyForPdf } from "@/utils/exportPdf";
 import type { StaffInput } from "@/lib/api/staff";
 import type { StaffMember } from "@/types/domain";
+import { useToggleStaffActive } from "@/hooks/staff/useToggleStaffActive";
 
 const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
@@ -54,6 +55,9 @@ export function StaffListView({
   const createStaff = useCreateStaff(branchId);
   const updateStaff = useUpdateStaff(branchId);
   const deleteStaffMutation = useDeleteStaff(branchId);
+  const toggleStaffActive = useToggleStaffActive();
+  // Staff writes are Manager-only server-side; Admin reads the roster.
+  const canManage = user?.role === "manager";
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
@@ -172,6 +176,10 @@ export function StaffListView({
             onViewDetails={(member) => setViewingStaffId(member.id)}
             onEdit={setEditingStaff}
             onDelete={setDeletingStaff}
+            onToggleActive={(member) =>
+              toggleStaffActive.mutate({ id: member.id, makeActive: member.status !== "active" })
+            }
+            canManage={canManage}
           />
         )}
       </Card>

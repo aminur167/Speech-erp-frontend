@@ -91,3 +91,22 @@ export async function getBranchOverview(id: string): Promise<BranchOverview> {
   const { data } = await apiClient.get<RawBranchOverview>(`/branches/${id}/overview/`);
   return normalizeOverview(data);
 }
+
+/**
+ * Soft delete. Refused while the branch still has active patient services or
+ * active staff — deactivating is the answer for those.
+ */
+export async function deleteBranch(id: string): Promise<void> {
+  await apiClient.delete(`/branches/${id}/`);
+}
+
+/** Marks the branch inactive; its records and history are untouched. */
+export async function deactivateBranch(id: string): Promise<Branch> {
+  const { data } = await apiClient.post<RawBranch>(`/branches/${id}/deactivate/`);
+  return normalizeBranch(data);
+}
+
+export async function activateBranch(id: string): Promise<Branch> {
+  const { data } = await apiClient.post<RawBranch>(`/branches/${id}/activate/`);
+  return normalizeBranch(data);
+}

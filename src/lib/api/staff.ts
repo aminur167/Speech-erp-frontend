@@ -258,3 +258,14 @@ export async function getMonthlyReport(
     netPayable: Number(row.netPayable),
   }));
 }
+
+/** Marks a staff member inactive — they drop out of payroll but keep their history. */
+export async function deactivateStaff(id: string): Promise<StaffMember> {
+  const { data } = await apiClient.post<RawStaffMember>(`/staff/${id}/deactivate/`);
+  return normalizeMember(data);
+}
+
+export async function activateStaff(id: string): Promise<StaffMember> {
+  const { data } = await apiClient.post<RawStaffMember>(`/staff/${id}/activate/`);
+  return normalizeMember(data);
+}

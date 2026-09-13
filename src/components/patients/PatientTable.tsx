@@ -6,6 +6,9 @@ import { OverdueBadge } from "@/components/patients/OverdueBadge";
 import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import type { PatientDirectoryItem } from "@/lib/api/patientDirectory";
 import type { ServiceCategory } from "@/types/domain";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { useRouter } from "next/navigation";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 
 const SERVICE_CATEGORY_LABELS: Record<ServiceCategory, string> = {
   daily: "Daily",
@@ -52,11 +55,17 @@ export function PatientTable({
   patients,
   basePath,
   columns,
+  onEdit,
+  onDelete,
 }: {
   patients: PatientDirectoryItem[];
   basePath: string;
   columns: PatientTableColumns;
+  onEdit?: (patient: PatientDirectoryItem) => void;
+  onDelete?: (patient: PatientDirectoryItem) => void;
 }) {
+  const router = useRouter();
+  const hasActions = Boolean(onEdit || onDelete);
   // The name is a link to the full patient page; clicking anywhere else on
   // the row opens the summary without leaving the directory.
   const detail = useRowDetail<PatientDirectoryItem>();
@@ -76,6 +85,7 @@ export function PatientTable({
             {columns.serviceType && <th className="py-2 pr-4 font-medium">Service Type</th>}
             {columns.paymentType && <th className="py-2 pr-4 font-medium">Payment Type</th>}
             {columns.status && <th className="py-2 pr-4 font-medium">Status</th>}
+            {hasActions && <th className="w-12 py-2 pr-2 font-medium"><span className="sr-only">Actions</span></th>}
           </tr>
         </thead>
         <tbody>
@@ -140,6 +150,36 @@ export function PatientTable({
                     <Badge tone={statusTone[patient.status]} label={statusLabel[patient.status]} />
                     {patient.serviceStatus === "overdue" && <OverdueBadge />}
                   </div>
+                </td>
+              )}
+              {hasActions && (
+                <td className="py-2 pr-2 text-right">
+                  <ActionMenu
+                    label={`Actions for ${patient.name}`}
+                    items={[
+                      {
+                        key: "open",
+                        label: "View profile",
+                        icon: Eye,
+                        onSelect: () => router.push(`${basePath}/${patient.id}`),
+                      },
+                      {
+                        key: "edit",
+                        label: "Edit",
+                        icon: Pencil,
+                        hidden: !onEdit,
+                        onSelect: () => onEdit?.(patient),
+                      },
+                      {
+                        key: "delete",
+                        label: "Delete",
+                        icon: Trash2,
+                        tone: "danger",
+                        hidden: !onDelete,
+                        onSelect: () => onDelete?.(patient),
+                      },
+                    ]}
+                  />
                 </td>
               )}
             </tr>
