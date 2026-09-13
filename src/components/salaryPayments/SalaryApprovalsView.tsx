@@ -130,7 +130,6 @@ export function SalaryApprovalsView() {
       <FilterBar
         dateSlot={
           <Input
-            label="Month"
             type="month"
             value={month}
             onChange={(event) => {
