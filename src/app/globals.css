@@ -169,3 +169,43 @@ body {
     animation-duration: 1ms;
   }
 }
+
+/*
+ * Every clickable control shows a hand on hover.
+ *
+ * Tailwind v4 dropped the pointer cursor from buttons, so almost every button
+ * in the app showed a plain arrow — nothing said "this is clickable" until it
+ * was clicked. One rule here, rather than a class on each of 200+ buttons,
+ * means a new button is right by default. Disabled controls show
+ * "not-allowed" instead, so a greyed-out action explains itself.
+ *
+ * In the base layer on purpose: a component that sets its own cursor class
+ * (a utility) still wins.
+ */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not(:disabled):not([aria-disabled="true"]),
+  [role="tab"]:not(:disabled),
+  [role="option"],
+  summary,
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="file"]:not(:disabled),
+  input[type="color"]:not(:disabled),
+  input[type="range"]:not(:disabled),
+  input::-webkit-calendar-picker-indicator,
+  label:has(> input[type="checkbox"]:not(:disabled)),
+  label:has(> input[type="radio"]:not(:disabled)) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  input:disabled,
+  textarea:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
