@@ -77,6 +77,12 @@ export async function listStaff(branchId?: string): Promise<StaffMember[]> {
   return collected.map(normalizeMember);
 }
 
+/** One member, from any branch Admin can see — for screens outside the roster that only hold a staff id. */
+export async function getStaffMember(id: string): Promise<StaffMember> {
+  const { data } = await apiClient.get<RawStaffMember>(`/staff/${id}/`);
+  return normalizeMember(data);
+}
+
 export interface StaffSummary {
   totalStaff: number;
   presentToday: number;

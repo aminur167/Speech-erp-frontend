@@ -3,7 +3,7 @@
 import type { KeyboardEvent, MouseEvent } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { ActionsMenu } from "@/components/ui/ActionsMenu";
 import { StaffAvatar } from "@/components/staff/StaffAvatar";
 import { AttendanceCell } from "@/components/staff/AttendanceCell";
 import { humanizeField } from "@/utils/fields";
@@ -92,19 +92,13 @@ export function StaffTable({
                 />
               </td>
               <td className="py-3 pr-4">
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="secondary" className="px-2" aria-label="Edit staff" onClick={() => onEdit(member)}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="danger"
-                    className="px-2"
-                    aria-label="Remove staff"
-                    onClick={() => onDelete(member)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
+                <ActionsMenu
+                  label={`Actions for ${member.name}`}
+                  items={[
+                    { label: "Edit", icon: Pencil, onClick: () => onEdit(member) },
+                    { label: "Remove", icon: Trash2, onClick: () => onDelete(member), danger: true },
+                  ]}
+                />
               </td>
             </tr>
           ))}

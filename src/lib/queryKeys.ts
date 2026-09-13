@@ -101,6 +101,7 @@ export const queryKeys = {
   staff: {
     all: ["staff"] as const,
     list: (branchId?: string) => ["staff", "list", branchId] as const,
+    detail: (staffId: string) => ["staff", "detail", staffId] as const,
     summary: (branchId?: string) => ["staff", "summary", branchId] as const,
     todayAttendance: (branchId?: string) => ["staff", "today-attendance", branchId] as const,
     attendanceHistory: (staffId: string, month: string) =>

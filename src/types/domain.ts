@@ -402,6 +402,8 @@ export interface SalaryPayment {
   staffId: string;
   staffName: string;
   staffCode: string;
+  /** The staff member's data-URL photo, blank when they have none. */
+  staffPhotoUrl?: string;
   branchId: string;
   branchName: string;
   month: string; // ISO "YYYY-MM"
