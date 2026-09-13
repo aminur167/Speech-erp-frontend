@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
+import { SearchField } from "@/components/ui/SearchField";
 import { ExpenseTable } from "@/components/expenses/ExpenseTable";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { RejectExpenseModal } from "@/components/expenses/RejectExpenseModal";
@@ -104,7 +105,68 @@ export function ExpenseListView({
         }
       />
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Total Expenses"
+          value={formatCurrency(summary?.total ?? 0)}
+          icon={Receipt}
+          tone="danger"
+          hint={
+            summary?.pendingAmount
+              ? `${formatCurrency(summary.pendingAmount)} awaiting approval`
+              : `${summary?.voucherCount ?? 0} vouchers recorded`
+          }
+        />
+        <StatCard
+          label="Today's Expenses"
+          value={formatCurrency(summary?.todayTotal ?? 0)}
+          icon={Clock}
+          tone="warning"
+          hint="Daily branch operational cost"
+        />
+        <StatCard
+          label="Monthly Expenses"
+          value={formatCurrency(summary?.monthTotal ?? 0)}
+          icon={Wallet}
+          tone="info"
+          hint="Current month total"
+        />
+        <StatCard
+          label="Pending Approvals"
+          value={String(summary?.pendingCount ?? 0)}
+          icon={CalendarClock}
+          tone="purple"
+          hint="Awaiting Admin review"
+        />
+      </div>
+
       <FilterBar
+        search={
+          <SearchField
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+            placeholder="Search voucher, description or payee…"
+          />
+        }
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
+              Refresh
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleExport}
+              disabled={!data || data.results.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </>
+        }
         dateSlot={
           <Input
             type="date"
@@ -165,70 +227,8 @@ export function ExpenseListView({
         )}
       </FilterBar>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Total Expenses"
-          value={formatCurrency(summary?.total ?? 0)}
-          icon={Receipt}
-          tone="danger"
-          hint={
-            summary?.pendingAmount
-              ? `${formatCurrency(summary.pendingAmount)} awaiting approval`
-              : `${summary?.voucherCount ?? 0} vouchers recorded`
-          }
-        />
-        <StatCard
-          label="Today's Expenses"
-          value={formatCurrency(summary?.todayTotal ?? 0)}
-          icon={Clock}
-          tone="warning"
-          hint="Daily branch operational cost"
-        />
-        <StatCard
-          label="Monthly Expenses"
-          value={formatCurrency(summary?.monthTotal ?? 0)}
-          icon={Wallet}
-          tone="info"
-          hint="Current month total"
-        />
-        <StatCard
-          label="Pending Approvals"
-          value={String(summary?.pendingCount ?? 0)}
-          icon={CalendarClock}
-          tone="purple"
-          hint="Awaiting Admin review"
-        />
-      </div>
-
       <Card>
         <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="min-w-[220px] flex-1">
-              <Input
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
-                placeholder="Search voucher, description or payee…"
-              />
-            </div>
-            <div className="ml-auto flex gap-2">
-              <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
-                <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
-                Refresh
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={handleExport}
-                disabled={!data || data.results.length === 0}
-              >
-                <Download className="h-4 w-4" />
-                Export
-              </Button>
-            </div>
-          </div>
-
           {isLoading && <LoadingState label="Loading expenses…" />}
           {isError && <ErrorState onRetry={() => refetch()} />}
           {!isLoading && !isError && data?.results.length === 0 && (

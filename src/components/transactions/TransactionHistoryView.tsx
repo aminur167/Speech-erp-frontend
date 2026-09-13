@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
+import { SearchField } from "@/components/ui/SearchField";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { VoidPaymentModal } from "@/components/payments/VoidPaymentModal";
 import { RequestRefundModal } from "@/components/payments/RequestRefundModal";
@@ -86,7 +87,60 @@ export function TransactionHistoryView({
         title="Transaction History"
       />
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Total Collected"
+          value={formatCurrency(summary?.totalCollected ?? 0)}
+          icon={Wallet}
+          tone="success"
+        />
+        <StatCard
+          label="Today's Collection"
+          value={formatCurrency(summary?.todayCollected ?? 0)}
+          icon={CalendarClock}
+          tone="info"
+        />
+        <StatCard
+          label="This Month's Collection"
+          value={formatCurrency(summary?.monthCollected ?? 0)}
+          icon={CalendarClock}
+          tone="purple"
+        />
+        <StatCard
+          label="Transactions"
+          value={String(summary?.transactionCount ?? 0)}
+          icon={Receipt}
+          tone="primary"
+        />
+      </div>
+
       <FilterBar
+        search={
+          <SearchField
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+            placeholder="Search patient, receipt or transaction ID…"
+          />
+        }
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
+              Refresh
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleExport}
+              disabled={!data || data.results.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </>
+        }
         dateSlot={
           <Input
             type="date"
@@ -156,62 +210,8 @@ export function TransactionHistoryView({
         </Select>
       </FilterBar>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Total Collected"
-          value={formatCurrency(summary?.totalCollected ?? 0)}
-          icon={Wallet}
-          tone="success"
-        />
-        <StatCard
-          label="Today's Collection"
-          value={formatCurrency(summary?.todayCollected ?? 0)}
-          icon={CalendarClock}
-          tone="info"
-        />
-        <StatCard
-          label="This Month's Collection"
-          value={formatCurrency(summary?.monthCollected ?? 0)}
-          icon={CalendarClock}
-          tone="purple"
-        />
-        <StatCard
-          label="Transactions"
-          value={String(summary?.transactionCount ?? 0)}
-          icon={Receipt}
-          tone="primary"
-        />
-      </div>
-
       <Card>
         <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="min-w-[220px] flex-1">
-              <Input
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
-                placeholder="Search patient, receipt or transaction ID…"
-              />
-            </div>
-            <div className="ml-auto flex gap-2">
-              <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
-                <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
-                Refresh
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={handleExport}
-                disabled={!data || data.results.length === 0}
-              >
-                <Download className="h-4 w-4" />
-                Export
-              </Button>
-            </div>
-          </div>
-
           {isLoading && <LoadingState label="Loading transactions…" />}
           {isError && <ErrorState onRetry={() => refetch()} />}
           {!isLoading && !isError && data?.results.length === 0 && (

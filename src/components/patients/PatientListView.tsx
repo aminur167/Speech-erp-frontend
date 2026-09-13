@@ -16,6 +16,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
+import { SearchField } from "@/components/ui/SearchField";
 import { PatientTable, type PatientTableColumns } from "@/components/patients/PatientTable";
 import { PatientRegistrationForm } from "@/components/patients/PatientRegistrationForm";
 import { usePatientDirectory } from "@/hooks/patients/usePatientDirectory";
@@ -163,7 +164,87 @@ export function PatientListView({
         }
       />
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="All Patients"
+          value={String(summary?.total ?? 0)}
+          icon={Users}
+          tone="primary"
+          hint={branchId ? "For this branch" : "Across all branches"}
+          selected={statusFilter === ""}
+          onClick={() => {
+            setStatusFilter("");
+            setPage(1);
+          }}
+        />
+        <StatCard
+          label="Active Care"
+          value={String(summary?.activeCare ?? 0)}
+          icon={HeartPulse}
+          tone="success"
+          hint="Currently in monthly treatment"
+          selected={statusFilter === "active-care"}
+          onClick={() => toggleStatCard("active-care")}
+        />
+        <StatCard
+          label="In Progress"
+          value={String(summary?.inProgress ?? 0)}
+          icon={Activity}
+          tone="purple"
+          hint="On an installment plan"
+          selected={statusFilter === "in-progress"}
+          onClick={() => toggleStatCard("in-progress")}
+        />
+        <StatCard
+          label="Action Needed"
+          value={String(summary?.actionNeeded ?? 0)}
+          icon={ClipboardList}
+          tone="warning"
+          hint="Not yet enrolled in a service"
+          selected={statusFilter === "action-needed"}
+          onClick={() => toggleStatCard("action-needed")}
+        />
+      </div>
+
       <FilterBar
+        search={
+          <SearchField
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+            placeholder="Search name, phone, patient ID or guardian"
+          />
+        }
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
+              Refresh
+            </Button>
+            <ColumnsMenu
+              options={[
+                { key: "age", label: "Age" },
+                { key: "gender", label: "Gender" },
+                { key: "guardian", label: "Guardian" },
+                { key: "phone", label: "Phone" },
+                { key: "therapyType", label: "Therapy Type" },
+                { key: "serviceType", label: "Service Type" },
+                { key: "paymentType", label: "Payment Type" },
+                { key: "status", label: "Status" },
+                { key: "branch", label: "Branch" },
+              ]}
+              visible={columns}
+              onToggle={(key) =>
+                setColumns((prev) => ({
+                  ...prev,
+                  [key]: !prev[key as keyof PatientTableColumns],
+                }))
+              }
+            />
+          </>
+        }
         dateSlot={
           <Input
             type="date"
@@ -254,92 +335,8 @@ export function PatientListView({
         )}
       </FilterBar>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="All Patients"
-          value={String(summary?.total ?? 0)}
-          icon={Users}
-          tone="primary"
-          hint={branchId ? "For this branch" : "Across all branches"}
-          selected={statusFilter === ""}
-          onClick={() => {
-            setStatusFilter("");
-            setPage(1);
-          }}
-        />
-        <StatCard
-          label="Active Care"
-          value={String(summary?.activeCare ?? 0)}
-          icon={HeartPulse}
-          tone="success"
-          hint="Currently in monthly treatment"
-          selected={statusFilter === "active-care"}
-          onClick={() => toggleStatCard("active-care")}
-        />
-        <StatCard
-          label="In Progress"
-          value={String(summary?.inProgress ?? 0)}
-          icon={Activity}
-          tone="purple"
-          hint="On an installment plan"
-          selected={statusFilter === "in-progress"}
-          onClick={() => toggleStatCard("in-progress")}
-        />
-        <StatCard
-          label="Action Needed"
-          value={String(summary?.actionNeeded ?? 0)}
-          icon={ClipboardList}
-          tone="warning"
-          hint="Not yet enrolled in a service"
-          selected={statusFilter === "action-needed"}
-          onClick={() => toggleStatCard("action-needed")}
-        />
-      </div>
-
       <Card>
         <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="min-w-[220px] flex-1">
-              <Input
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
-                placeholder="Search name, phone, patient ID or guardian"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
-                <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
-                Refresh
-              </Button>
-              <ColumnsMenu
-                options={[
-                  { key: "age", label: "Age" },
-                  { key: "gender", label: "Gender" },
-                  { key: "guardian", label: "Guardian" },
-                  { key: "phone", label: "Phone" },
-                  { key: "therapyType", label: "Therapy Type" },
-                  { key: "serviceType", label: "Service Type" },
-                  { key: "paymentType", label: "Payment Type" },
-                  { key: "status", label: "Status" },
-                  { key: "branch", label: "Branch" },
-                ]}
-                visible={columns}
-                onToggle={(key) =>
-                  setColumns((prev) => ({
-                    ...prev,
-                    [key]: !prev[key as keyof PatientTableColumns],
-                  }))
-                }
-              />
-            </div>
-          </div>
-          <p className="text-xs text-text-secondary">
-            Filters apply instantly and combine with the search box.
-          </p>
-
           {isLoading && <LoadingState label="Loading patients…" />}
           {isError && <ErrorState onRetry={() => refetch()} />}
           {!isLoading && !isError && data?.results.length === 0 && (

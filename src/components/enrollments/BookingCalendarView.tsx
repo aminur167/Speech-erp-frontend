@@ -8,7 +8,6 @@ import {
   CalendarDays,
   CheckCircle2,
   XCircle,
-  Search,
   Calendar,
   Rows3,
   ListTodo,
@@ -16,13 +15,13 @@ import {
 import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { ErrorState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
+import { SearchField } from "@/components/ui/SearchField";
 import { CancelBookingModal } from "@/components/enrollments/CancelBookingModal";
 import { DayDetailModal } from "@/components/enrollments/calendar/DayDetailModal";
 import { MonthGrid, MonthGridSkeleton, buildCalendarGrid } from "@/components/enrollments/calendar/MonthGrid";
@@ -180,7 +179,15 @@ export function BookingCalendarView({
         <StatCard label="Cancelled" value={String(stats.cancelled)} icon={XCircle} tone="danger" />
       </div>
 
-      <FilterBar>
+      <FilterBar
+        search={
+          <SearchField
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search patient or booking code…"
+          />
+        }
+      >
         {canPickBranch && (
           <BranchFilterSelect
             value={selectedBranch}
@@ -196,15 +203,6 @@ export function BookingCalendarView({
           <option value="confirmed">Confirmed</option>
           <option value="cancelled">Cancelled</option>
         </Select>
-        <div className="relative min-w-[200px] flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-text-secondary" />
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search patient or booking code…"
-            className="pl-8"
-          />
-        </div>
       </FilterBar>
 
       <Card>

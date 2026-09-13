@@ -10,6 +10,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
+import { SearchField } from "@/components/ui/SearchField";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { PatientAttendanceTable } from "@/components/attendance/PatientAttendanceTable";
@@ -102,6 +103,13 @@ export function PatientAttendanceView({
       </div>
 
       <FilterBar
+        search={
+          <SearchField
+            value={search}
+            onChange={(event) => reset(setSearch)(event.target.value)}
+            placeholder="Search by patient name or code…"
+          />
+        }
         dateSlot={
           <Input
             type="date"
@@ -131,13 +139,6 @@ export function PatientAttendanceView({
             </button>
           ))}
         </div>
-
-        <Input
-          value={search}
-          onChange={(event) => reset(setSearch)(event.target.value)}
-          placeholder="Search by patient name or code…"
-          containerClassName="w-full sm:w-64 shrink-0"
-        />
 
         <Button
           variant={unmarked ? "primary" : "secondary"}

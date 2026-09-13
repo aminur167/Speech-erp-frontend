@@ -76,6 +76,33 @@ export function AdminReportsView() {
         title="Reports"
       />
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label={`Total Collected (${periodLabel})`}
+          value={formatCurrency(totalCollected)}
+          icon={Wallet}
+          tone="success"
+        />
+        <StatCard
+          label={`Total Expenses (${periodLabel})`}
+          value={formatCurrency(totalExpenses)}
+          icon={Receipt}
+          tone="danger"
+        />
+        <StatCard
+          label="Net Revenue"
+          value={formatCurrency(netRevenue)}
+          icon={TrendingUp}
+          tone={netRevenue >= 0 ? "success" : "danger"}
+        />
+        <StatCard
+          label="Outstanding Due"
+          value={formatCurrency(dues?.totalDue ?? 0)}
+          icon={AlertCircle}
+          tone="warning"
+        />
+      </div>
+
       <FilterBar
         dateSlot={
           <Input
@@ -104,33 +131,6 @@ export function AdminReportsView() {
           <option value="month">This month</option>
         </Select>
       </FilterBar>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label={`Total Collected (${periodLabel})`}
-          value={formatCurrency(totalCollected)}
-          icon={Wallet}
-          tone="success"
-        />
-        <StatCard
-          label={`Total Expenses (${periodLabel})`}
-          value={formatCurrency(totalExpenses)}
-          icon={Receipt}
-          tone="danger"
-        />
-        <StatCard
-          label="Net Revenue"
-          value={formatCurrency(netRevenue)}
-          icon={TrendingUp}
-          tone={netRevenue >= 0 ? "success" : "danger"}
-        />
-        <StatCard
-          label="Outstanding Due"
-          value={formatCurrency(dues?.totalDue ?? 0)}
-          icon={AlertCircle}
-          tone="warning"
-        />
-      </div>
 
       <Card>
         <h2 className="text-sm font-medium text-text-secondary">

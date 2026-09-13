@@ -4,11 +4,11 @@ import { useState } from "react";
 import { AlertCircle, Wallet, Receipt as ReceiptIcon } from "lucide-react";
 import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { FilterBar } from "@/components/ui/FilterBar";
+import { SearchField } from "@/components/ui/SearchField";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DuePaymentTable } from "@/components/duePayments/DuePaymentTable";
@@ -113,6 +113,16 @@ export function DuePaymentCollectionView({
       </div>
 
       <FilterBar
+        search={
+          <SearchField
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+            placeholder="Search by patient name or code…"
+          />
+        }
         dateSlot={
           // Only the monthly list has a cycle to move through. Showing the
           // picker against installments would offer a filter that does
@@ -146,16 +156,6 @@ export function DuePaymentCollectionView({
             </button>
           ))}
         </div>
-
-        <Input
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setPage(1);
-          }}
-          placeholder="Search by patient name or code…"
-          containerClassName="w-full sm:w-72 shrink-0"
-        />
       </FilterBar>
 
       <Card>
