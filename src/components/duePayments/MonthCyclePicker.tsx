@@ -49,21 +49,22 @@ export function MonthCyclePicker({
   const isThisMonth = value === toMonthKey();
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-end gap-1.5">
       <button
         type="button"
         onClick={step(-1)}
         disabled={disabled}
         title="Previous month"
         aria-label="Previous month"
-        className="rounded-lg border border-border p-1.5 text-text-secondary transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
+        className="mb-1 rounded-lg border border-border p-1.5 text-text-secondary transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
 
       <Select
+        label="Month"
+        placeholder="Select month"
         value={String(month)}
-        aria-label="Month"
         disabled={disabled}
         onChange={(event) => onChange(buildMonthKey(year, Number(event.target.value)))}
         containerClassName="w-32 shrink-0"
@@ -76,8 +77,9 @@ export function MonthCyclePicker({
       </Select>
 
       <Select
+        label="Year"
+        placeholder="Select year"
         value={String(year)}
-        aria-label="Year"
         disabled={disabled}
         onChange={(event) => onChange(buildMonthKey(Number(event.target.value), month))}
         containerClassName="w-24 shrink-0"
@@ -95,7 +97,7 @@ export function MonthCyclePicker({
         disabled={disabled}
         title="Next month"
         aria-label="Next month"
-        className="rounded-lg border border-border p-1.5 text-text-secondary transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
+        className="mb-1 rounded-lg border border-border p-1.5 text-text-secondary transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
       >
         <ChevronRight className="h-4 w-4" />
       </button>

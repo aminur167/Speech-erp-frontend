@@ -106,6 +106,7 @@ export function AdminReportsView() {
       <FilterBar
         dateSlot={
           <Input
+            label="Date"
             type="date"
             value={date}
             onChange={(event) => {
@@ -119,6 +120,7 @@ export function AdminReportsView() {
       >
         <BranchFilterSelect value={branchId} onChange={setBranchId} />
         <Select
+          label="Period"
           value={period}
           onChange={(event) => {
             setPeriod(event.target.value as SummaryPeriod);

@@ -102,26 +102,18 @@ export function SettingsView() {
         <h2 className="text-sm font-medium text-text-secondary">Profile Information</h2>
         <form className="mt-4 flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
           <div>
-            <label className="mb-1 block text-xs font-medium text-text-secondary">
-              Full Name
-            </label>
-            <Input error={errors.name?.message} {...register("name")} />
+            <Input label="Full Name" placeholder="Your full name" error={errors.name?.message} {...register("name")} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-text-secondary">Email</label>
-            <Input value={user.email} disabled />
+            <Input label="Email" placeholder="Email address" value={user.email} disabled />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-text-secondary">Role</label>
-              <Input value={user.role} disabled className="capitalize" />
+              <Input label="Role" placeholder="Role" value={user.role} disabled className="capitalize" />
             </div>
             {user.branchId && (
               <div>
-                <label className="mb-1 block text-xs font-medium text-text-secondary">
-                  Branch
-                </label>
-                <Input value={branchName} disabled />
+                <Input label="Branch" placeholder="Branch" value={branchName} disabled />
               </div>
             )}
           </div>
@@ -137,10 +129,9 @@ export function SettingsView() {
         <h2 className="text-sm font-medium text-text-secondary">Password</h2>
         <form className="mt-4 flex flex-col gap-4" onSubmit={handlePasswordSubmit(onSubmitPassword)}>
           <div>
-            <label className="mb-1 block text-xs font-medium text-text-secondary">
-              Current Password
-            </label>
             <Input
+              label="Current Password"
+              placeholder="Enter your current password"
               type="password"
               error={passwordErrors.currentPassword?.message}
               {...registerPassword("currentPassword")}
@@ -148,20 +139,18 @@ export function SettingsView() {
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-text-secondary">
-                New Password
-              </label>
               <Input
+                label="New Password"
+                placeholder="Enter a new password"
                 type="password"
                 error={passwordErrors.newPassword?.message}
                 {...registerPassword("newPassword")}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-text-secondary">
-                Confirm New Password
-              </label>
               <Input
+                label="Confirm New Password"
+                placeholder="Re-enter the new password"
                 type="password"
                 error={passwordErrors.confirmPassword?.message}
                 {...registerPassword("confirmPassword")}

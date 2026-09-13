@@ -48,8 +48,9 @@ export function ApproveSalaryPaymentModal({
       {payment && (
         <div className="flex flex-col gap-4">
           <Textarea
+            label="Note (optional)"
+            placeholder="Anything to record with the approval"
             rows={2}
-            placeholder="Note (optional)"
             value={reviewNote}
             onChange={(event) => setReviewNote(event.target.value)}
             error={error}

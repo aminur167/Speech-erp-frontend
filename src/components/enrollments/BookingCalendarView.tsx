@@ -195,6 +195,7 @@ export function BookingCalendarView({
           />
         )}
         <Select
+          label="Status"
           value={status}
           onChange={(event) => setStatus(event.target.value as Booking["status"] | "")}
           containerClassName={FILTER_FIELD_WIDTH}

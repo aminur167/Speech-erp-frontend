@@ -112,8 +112,8 @@ export function PatientAttendanceView({
         }
         dateSlot={
           <Input
+            label="Date"
             type="date"
-            aria-label="Attendance date"
             value={date}
             max={today}
             onChange={(event) => reset(setDate)(event.target.value)}

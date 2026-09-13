@@ -184,6 +184,8 @@ export function InactivateServiceModal({
 
                     {decision === "cancel" && (
                       <Input
+                        label="Reason for cancelling"
+                        placeholder="Why is this due being cancelled?"
                         value={reasons[row.billId] ?? ""}
                         onChange={(event) =>
                           setReasons((current) => ({
@@ -191,7 +193,6 @@ export function InactivateServiceModal({
                             [row.billId]: event.target.value,
                           }))
                         }
-                        placeholder="Why is this due being cancelled? (required)"
                       />
                     )}
                   </div>
@@ -243,9 +244,10 @@ export function InactivateServiceModal({
           )}
 
           <Input
+            label="Reason for making inactive (optional)"
+            placeholder="Why is the service being made inactive?"
             value={reason}
             onChange={(event) => setReason(event.target.value)}
-            placeholder="Why is the service being made inactive? (optional)"
           />
 
           {cancelMissingReason && (

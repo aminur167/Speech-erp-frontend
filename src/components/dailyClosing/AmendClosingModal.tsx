@@ -62,9 +62,10 @@ export function AmendClosingModal({
       {closing && (
         <div className="flex flex-col gap-4">
           <Input
+            label="Corrected Actual Total (BDT)"
+            placeholder="e.g. 45250"
             type="number"
             step="0.01"
-            placeholder="Corrected actual total"
             value={correctedActualTotal}
             onChange={(event) => {
               setCorrectedActualTotal(event.target.value);
@@ -72,8 +73,9 @@ export function AmendClosingModal({
             }}
           />
           <Textarea
-            rows={3}
+            label="Reason"
             placeholder="Why is this being corrected?"
+            rows={3}
             value={reason}
             onChange={(event) => {
               setReason(event.target.value);

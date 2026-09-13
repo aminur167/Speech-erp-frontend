@@ -108,8 +108,8 @@ export function PatientAttendanceCell({
       >
         <div className="flex flex-col gap-4">
           <Input
+            label="Expected return date"
             type="date"
-            aria-label="Expected return date"
             value={returnOn}
             min={date}
             onChange={(event) => setReturnOn(event.target.value)}

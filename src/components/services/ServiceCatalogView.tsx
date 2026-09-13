@@ -18,7 +18,7 @@ import { clsx } from "clsx";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { SearchField } from "@/components/ui/SearchField";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState } from "@/components/ui/states";
@@ -236,9 +236,11 @@ export function ServiceCatalogView({
 
       <Card>
         <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Bottom-aligned: the search carries a title and the toggles and
+              buttons beside it do not. */}
+          <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[220px] flex-1">
-              <Input
+              <SearchField
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search package name or code…"
@@ -271,7 +273,7 @@ export function ServiceCatalogView({
                   setCategoryFilter("");
                   setStatusFilter("");
                 }}
-                className="text-sm font-medium text-primary hover:underline"
+                className="pb-2 text-sm font-medium text-primary hover:underline"
               >
                 Reset
               </button>

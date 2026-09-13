@@ -16,6 +16,7 @@ export function BranchFilterSelect({
 
   return (
     <Select
+      label="Branch"
       value={value}
       onChange={(event) => onChange(event.target.value)}
       containerClassName={FILTER_FIELD_WIDTH}

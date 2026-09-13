@@ -112,6 +112,7 @@ export function AuditLogView() {
 
       <FilterBar>
         <Select
+          label="Action"
           value={action}
           onChange={(event) => {
             setAction(event.target.value as AuditLogAction | "");

@@ -82,9 +82,9 @@ export function StaffForm({
       <div className="flex justify-center">
         <StaffPhotoPicker name={watch("name") || "?"} value={photoUrl} onChange={setPhotoUrl} />
       </div>
-      <Input placeholder="Full Name" autoComplete="off" error={errors.name?.message} {...register("name")} />
+      <Input label="Full Name" requiredMark placeholder="e.g. Farhana Rahman" autoComplete="off" error={errors.name?.message} {...register("name")} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Select {...register("designation")}>
+        <Select label="Designation" placeholder="Select a designation" {...register("designation")}>
           <option value="therapist">Therapist</option>
           <option value="receptionist">Receptionist</option>
           <option value="accountant">Accountant</option>
@@ -92,33 +92,31 @@ export function StaffForm({
           <option value="cleaner">Cleaner</option>
           <option value="other">Other</option>
         </Select>
-        <Select {...register("status")}>
+        <Select label="Status" placeholder="Select a status" {...register("status")}>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </Select>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input placeholder="Phone Number" error={errors.phone?.message} {...register("phone")} />
+        <Input label="Phone Number" requiredMark placeholder="e.g. 01712345678" error={errors.phone?.message} {...register("phone")} />
         <Input
+          label="Email (optional)"
+          placeholder="e.g. name@example.com"
           type="email"
-          placeholder="Email (optional)"
           error={errors.email?.message}
           {...register("email")}
         />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-text-secondary">Join Date</label>
-          <Input type="date" error={errors.joinedAt?.message} {...register("joinedAt")} />
+          <Input label="Join Date" type="date" error={errors.joinedAt?.message} {...register("joinedAt")} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-text-secondary">
-            Monthly Salary (BDT)
-          </label>
           <Input
+            label="Monthly Salary (BDT)"
+            placeholder="e.g. 25000"
             type="number"
             step="0.01"
-            placeholder="Monthly Salary (BDT)"
             error={errors.monthlySalary?.message}
             {...register("monthlySalary")}
           />

@@ -98,8 +98,7 @@ export function ExpenseForm({
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-text-secondary">Category</label>
-          <Select error={errors.category?.message} {...register("category")}>
+          <Select label="Category" placeholder="Select a category" error={errors.category?.message} {...register("category")}>
             <option value="rent">Rent</option>
             <option value="utilities">Utilities</option>
             <option value="salaries">Salaries</option>
@@ -111,13 +110,12 @@ export function ExpenseForm({
           </Select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-text-secondary">
-            Amount (BDT)
-          </label>
           <Input
+            label="Amount (BDT)"
+            requiredMark
+            placeholder="e.g. 5000"
             type="number"
             step="0.01"
-            placeholder="e.g. 5000"
             error={errors.amount?.message}
             {...register("amount")}
           />
@@ -125,8 +123,9 @@ export function ExpenseForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-text-secondary">Description</label>
         <Input
+          label="Description"
+          requiredMark
           placeholder="What was this expense for?"
           error={errors.description?.message}
           {...register("description")}
@@ -135,8 +134,8 @@ export function ExpenseForm({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-text-secondary">Paid To</label>
           <Input
+            label="Paid To"
             placeholder="Vendor or payee name"
             autoComplete="off"
             error={errors.paidTo?.message}
@@ -144,10 +143,7 @@ export function ExpenseForm({
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-text-secondary">
-            Payment Method
-          </label>
-          <Select {...register("paymentMethod")}>
+          <Select label="Payment Method" placeholder="Select a payment method" {...register("paymentMethod")}>
             <option value="cash">Cash</option>
             <option value="bkash">bKash</option>
             <option value="nagad">Nagad</option>
@@ -160,10 +156,7 @@ export function ExpenseForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-text-secondary">
-          Remarks (optional)
-        </label>
-        <Textarea rows={2} placeholder="Optional notes" {...register("remarks")} />
+        <Textarea label="Remarks (optional)" placeholder="Any extra detail for the approver" rows={2} {...register("remarks")} />
       </div>
 
       <label className="flex items-center gap-2 text-sm text-text-secondary">

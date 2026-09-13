@@ -247,6 +247,7 @@ export function PatientListView({
         }
         dateSlot={
           <Input
+            label="Date"
             type="date"
             value={date}
             onChange={(event) => {
@@ -269,6 +270,7 @@ export function PatientListView({
           />
         )}
         <Select
+          label="Gender"
           value={gender}
           onChange={(event) => {
             setGender(event.target.value as Gender | "");
@@ -281,6 +283,7 @@ export function PatientListView({
           <option value="female">Female</option>
         </Select>
         <Select
+          label="Service Type"
           value={serviceCategory}
           onChange={(event) => {
             setServiceCategory(event.target.value as ServiceCategory | "");
@@ -296,6 +299,7 @@ export function PatientListView({
           ))}
         </Select>
         <Select
+          label="Payment Type"
           value={paymentMethod}
           onChange={(event) => {
             setPaymentMethod(event.target.value as PaymentMethod | "");
@@ -311,6 +315,7 @@ export function PatientListView({
           ))}
         </Select>
         <Select
+          label="Period"
           value={timeRange}
           onChange={(event) => {
             setTimeRange(event.target.value as PatientTimeRange);
@@ -328,7 +333,7 @@ export function PatientListView({
           <button
             type="button"
             onClick={resetFilters}
-            className="shrink-0 text-sm font-medium text-primary hover:underline"
+            className="shrink-0 pb-2 text-sm font-medium text-primary hover:underline"
           >
             Reset
           </button>

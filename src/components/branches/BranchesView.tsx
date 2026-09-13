@@ -8,7 +8,6 @@ import {
   Users,
   Wallet,
   UserRound,
-  Search,
   RefreshCw,
   Download,
   MapPin,
@@ -22,8 +21,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { SearchField } from "@/components/ui/SearchField";
 import { Modal } from "@/components/ui/Modal";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -136,17 +135,16 @@ export function BranchesView() {
       </div>
 
       <Card>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[220px] flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
-            <Input
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[220px] flex-1">
+            <SearchField
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search branch, code, or address…"
-              className="pl-9"
             />
           </div>
           <Select
+            label="Status"
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as BranchStatus | "")}
             containerClassName="w-auto shrink-0"
@@ -163,7 +161,7 @@ export function BranchesView() {
                 setSearch("");
                 setStatusFilter("");
               }}
-              className="shrink-0 text-sm font-medium text-primary hover:underline"
+              className="shrink-0 pb-2 text-sm font-medium text-primary hover:underline"
             >
               Reset
             </button>

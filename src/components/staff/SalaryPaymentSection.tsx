@@ -150,8 +150,10 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
               )}
 
               {isChoosingMethod && (
-                <div className="flex items-center gap-1.5 border-t border-border pt-2">
+                <div className="flex items-end gap-1.5 border-t border-border pt-2">
                   <Select
+                    label="Payment Method"
+                    placeholder="Select a payment method"
                     value={paymentMethod}
                     onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
                     containerClassName="w-auto flex-1"

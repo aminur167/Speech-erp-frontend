@@ -244,9 +244,10 @@ export function DailyClosingView({
               </div>
             )}
             <Input
+              label="Actual Total (BDT)"
+              placeholder="Counted cash & collection amount"
               type="number"
               step="0.01"
-              placeholder="Counted cash & collection amount"
               value={actualTotal}
               onChange={(event) => setActualTotal(event.target.value)}
             />

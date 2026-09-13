@@ -6,7 +6,6 @@ import {
   Check,
   Minus,
   Plus,
-  Search,
   ShoppingCart,
   Trash2,
   PackageSearch,
@@ -17,6 +16,7 @@ import { clsx } from "clsx";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { SearchField } from "@/components/ui/SearchField";
 import { Badge } from "@/components/ui/Badge";
 import { Drawer } from "@/components/ui/Drawer";
 import { LoadingState, EmptyState } from "@/components/ui/states";
@@ -242,15 +242,12 @@ export function SellMaterialsView() {
 
       {/* Catalog toolbar */}
       <div className="flex flex-col gap-3">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
-          <Input
-            value={catalogSearch}
-            onChange={(event) => setCatalogSearch(event.target.value)}
-            placeholder="Search products by name or code…"
-            className="pl-9"
-          />
-        </div>
+        <SearchField
+          label="Search products"
+          value={catalogSearch}
+          onChange={(event) => setCatalogSearch(event.target.value)}
+          placeholder="Search products by name or code…"
+        />
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -569,14 +566,16 @@ export function SellMaterialsView() {
                   sale and receipt still carry their name.
                 </p>
                 <Input
+                  label="Customer Name"
+                  placeholder="e.g. Rahim Uddin"
                   value={walkInName}
                   onChange={(event) => setWalkInName(event.target.value)}
-                  placeholder="Full name"
                 />
                 <Input
+                  label="Phone Number"
+                  placeholder="e.g. 01712345678"
                   value={walkInPhone}
                   onChange={(event) => setWalkInPhone(event.target.value)}
-                  placeholder="Phone number"
                   error={walkInError}
                 />
                 <div className="flex gap-2">

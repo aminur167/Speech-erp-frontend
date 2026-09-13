@@ -31,11 +31,13 @@ export function FilterBar({
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-3 shadow-sm">
-      <div className="flex flex-wrap items-center gap-2.5">
+      {/* Bottom-aligned: filters carry a title above them and buttons do not,
+          so their boxes only line up along the bottom edge. */}
+      <div className="flex flex-wrap items-end gap-2.5">
         {search ? (
           <div className="min-w-[240px] flex-1">{search}</div>
         ) : (
-          <div className="flex shrink-0 items-center gap-1.5 pr-1 text-text-secondary">
+          <div className="flex shrink-0 items-center gap-1.5 pr-1 pb-2.5 text-text-secondary">
             <SlidersHorizontal className="h-4 w-4" />
             <span className="text-xs font-semibold uppercase tracking-wide">Filters</span>
           </div>

@@ -55,8 +55,9 @@ export function CancelBookingModal({
             back.
           </p>
           <Textarea
+            label="Reason (optional)"
+            placeholder="Why is the booking being cancelled?"
             rows={3}
-            placeholder="Reason (optional)"
             value={reason}
             onChange={(event) => {
               setReason(event.target.value);

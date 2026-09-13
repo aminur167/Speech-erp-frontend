@@ -169,6 +169,7 @@ export function ExpenseListView({
         }
         dateSlot={
           <Input
+            label="Date"
             type="date"
             value={date}
             onChange={(event) => {
@@ -191,6 +192,7 @@ export function ExpenseListView({
           />
         )}
         <Select
+          label="Period"
           value={period}
           onChange={(event) => {
             setPeriod(event.target.value as SummaryPeriod);
@@ -204,6 +206,7 @@ export function ExpenseListView({
           <option value="month">This month</option>
         </Select>
         <Select
+          label="Status"
           value={status}
           onChange={(event) => {
             setStatus(event.target.value as ExpenseStatus | "");
@@ -220,7 +223,7 @@ export function ExpenseListView({
           <button
             type="button"
             onClick={clearFilters}
-            className="shrink-0 text-sm font-medium text-primary hover:underline"
+            className="shrink-0 pb-2 text-sm font-medium text-primary hover:underline"
           >
             Clear
           </button>

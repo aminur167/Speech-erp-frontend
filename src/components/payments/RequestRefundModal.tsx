@@ -62,9 +62,10 @@ export function RequestRefundModal({
       {payment && (
         <div className="flex flex-col gap-4">
           <Input
+            label="Refund Amount (BDT)"
+            placeholder="e.g. 5000"
             type="number"
             step="0.01"
-            placeholder="Refund amount"
             value={amount}
             onChange={(event) => {
               setAmount(event.target.value);
@@ -72,8 +73,9 @@ export function RequestRefundModal({
             }}
           />
           <Textarea
-            rows={3}
+            label="Reason"
             placeholder="Why is this refund needed?"
+            rows={3}
             value={reason}
             onChange={(event) => {
               setReason(event.target.value);

@@ -59,10 +59,9 @@ export function ApproveRefundModal({
         <div className="flex flex-col gap-4">
           {showBillAction && (
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-text-secondary">
-                What happens to the bill?
-              </label>
               <Select
+                label="What happens to the bill?"
+                placeholder="Choose what happens to the bill"
                 value={billAction}
                 onChange={(event) => setBillAction(event.target.value as RefundBillAction)}
               >
@@ -72,8 +71,9 @@ export function ApproveRefundModal({
             </div>
           )}
           <Textarea
+            label="Note (optional)"
+            placeholder="Anything to record with the approval"
             rows={2}
-            placeholder="Note (optional)"
             value={reviewNote}
             onChange={(event) => setReviewNote(event.target.value)}
             error={error}

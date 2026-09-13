@@ -136,13 +136,17 @@ export function BranchForm({
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(submit)}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
-          placeholder="Branch Name"
+          label="Branch Name"
+          requiredMark
+          placeholder="e.g. Dhaka Main Branch"
           autoComplete="off"
           error={errors.name?.message}
           {...register("name")}
         />
         <Input
-          placeholder="Branch Code (e.g. BR-DHK-002)"
+          label="Branch Code"
+          requiredMark
+          placeholder="e.g. BR-DHK-002"
           autoComplete="off"
           error={errors.code?.message}
           {...codeField}
@@ -154,21 +158,23 @@ export function BranchForm({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Select {...register("status")}>
+        <Select label="Status" placeholder="Select a status" {...register("status")}>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </Select>
-        <Input type="date" error={errors.openedAt?.message} {...register("openedAt")} />
+        <Input label="Opening Date" type="date" error={errors.openedAt?.message} {...register("openedAt")} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
-          placeholder="Branch Manager Name"
+          label="Branch Manager Name"
+          placeholder="e.g. Farhana Rahman"
           error={errors.managerName?.message}
           {...register("managerName")}
         />
         <Input
-          placeholder="Manager Code (e.g. MGR-DHK-002)"
+          label="Manager Code"
+          placeholder="e.g. MGR-DHK-002"
           autoComplete="off"
           error={errors.managerCode?.message}
           {...managerCodeField}
@@ -179,9 +185,10 @@ export function BranchForm({
         />
       </div>
 
-      <Input placeholder="Phone Number" error={errors.phone?.message} {...register("phone")} />
+      <Input label="Phone Number" placeholder="e.g. 01712345678" error={errors.phone?.message} {...register("phone")} />
       <Textarea
-        placeholder="Address"
+        label="Address"
+        placeholder="e.g. House 12, Road 5, Dhanmondi, Dhaka"
         rows={2}
         error={errors.address?.message}
         {...register("address")}
@@ -199,13 +206,15 @@ export function BranchForm({
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
+          label="Manager Email"
+          placeholder="e.g. manager@speechlab.com"
           type="email"
-          placeholder="Manager Email"
           error={errors.managerEmail?.message}
           {...register("managerEmail")}
         />
         <Input
-          placeholder={isEditing ? "New Password (optional)" : "Password"}
+          label={isEditing ? "New Password (optional)" : "Manager Password"}
+          placeholder={isEditing ? "Leave blank to keep the current password" : "Set a sign-in password"}
           error={errors.managerPassword?.message}
           {...register("managerPassword")}
         />
@@ -213,14 +222,16 @@ export function BranchForm({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
+          label="Therapists"
+          placeholder="e.g. 4"
           type="number"
-          placeholder="Therapists"
           error={errors.therapistCount?.message}
           {...register("therapistCount")}
         />
         <Input
+          label="Support Staff"
+          placeholder="e.g. 2"
           type="number"
-          placeholder="Support Staff"
           error={errors.supportCount?.message}
           {...register("supportCount")}
         />

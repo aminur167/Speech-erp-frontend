@@ -254,18 +254,18 @@ export function InstallmentServiceEnrollment() {
               <p className="text-xs font-medium text-text-secondary">
                 Clear the plan between
               </p>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-end gap-2">
                 <Input
+                  label="Start date"
                   type="date"
-                  aria-label="Plan start date"
                   value={startsOn}
                   onChange={(event) => setStartsOn(event.target.value)}
                   containerClassName="w-44"
                 />
-                <span className="text-xs text-text-secondary">to</span>
+                <span className="pb-2.5 text-xs text-text-secondary">to</span>
                 <Input
+                  label="End date"
                   type="date"
-                  aria-label="Plan end date"
                   value={endsOn}
                   min={startsOn || undefined}
                   onChange={(event) => setEndsOn(event.target.value)}
@@ -336,10 +336,8 @@ export function InstallmentServiceEnrollment() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-medium text-text-secondary">
-                Amount to collect now
-              </label>
               <Input
+                label="Amount to collect now"
                 type="number"
                 step="0.01"
                 min="0.01"

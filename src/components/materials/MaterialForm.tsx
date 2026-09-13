@@ -80,13 +80,15 @@ export function MaterialForm({
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(submit)}>
       <MaterialImagePicker value={imageUrl} onChange={setImageUrl} />
       <Input
-        placeholder="Material Name"
+        label="Material Name"
+        requiredMark
+        placeholder="e.g. Picture flash cards"
         autoComplete="off"
         error={errors.name?.message}
         {...register("name")}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Select {...register("unit")}>
+        <Select label="Unit" placeholder="Select a unit" {...register("unit")}>
           <option value="piece">Piece</option>
           <option value="box">Box</option>
           <option value="packet">Packet</option>
@@ -95,31 +97,35 @@ export function MaterialForm({
           <option value="other">Other</option>
         </Select>
         <Input
+          label="Quantity"
+          placeholder="e.g. 20"
           type="number"
-          placeholder="Quantity"
           error={errors.quantity?.message}
           {...register("quantity")}
         />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
+          label="Unit Cost (BDT)"
+          placeholder="e.g. 350"
           type="number"
           step="0.01"
-          placeholder="Unit Cost (BDT)"
           error={errors.unitCost?.message}
           {...register("unitCost")}
         />
         <Input
+          label="Selling Price (BDT)"
+          placeholder="e.g. 500"
           type="number"
           step="0.01"
-          placeholder="Selling Price (BDT)"
           error={errors.sellingPrice?.message}
           {...register("sellingPrice")}
         />
       </div>
       <Input
+        label="Reorder Level"
+        placeholder="Alert when stock falls to this, e.g. 5"
         type="number"
-        placeholder="Reorder Level"
         error={errors.reorderLevel?.message}
         {...register("reorderLevel")}
       />

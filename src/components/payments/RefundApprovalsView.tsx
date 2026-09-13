@@ -57,6 +57,7 @@ export function RefundApprovalsView() {
           }}
         />
         <Select
+          label="Status"
           value={status}
           onChange={(event) => {
             setStatus(event.target.value as RefundRequestStatus | "");

@@ -162,10 +162,8 @@ export function CollectDuePaymentModal({
               there's no partial figure to take there. */}
           {item.type === "installment" && (
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-medium text-text-secondary">
-                Amount to collect now
-              </label>
               <Input
+                label="Amount to collect now"
                 type="number"
                 step="0.01"
                 min="0.01"

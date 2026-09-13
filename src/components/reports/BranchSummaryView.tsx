@@ -359,10 +359,11 @@ export function BranchSummaryView({
       <div className="sticky top-0 z-20 -mx-4 bg-background/80 px-4 py-1 backdrop-blur md:-mx-8 md:px-8">
       <FilterBar
         dateSlot={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-end gap-2">
             <Select
+              label="Date Range"
+              placeholder="Select a date range"
               value={preset}
-              aria-label="Date range preset"
               onChange={(event) => applyPreset(event.target.value as Preset)}
               containerClassName={FILTER_FIELD_WIDTH}
             >
@@ -373,17 +374,17 @@ export function BranchSummaryView({
               <option value="custom">Custom</option>
             </Select>
             <Input
+              label="From"
               type="date"
-              aria-label="From date"
               value={dateFrom}
               max={today}
               onChange={(event) => setRangeEnd("from", event.target.value)}
               containerClassName={FILTER_FIELD_WIDTH}
             />
-            <span className="text-xs text-text-secondary">to</span>
+            <span className="pb-2.5 text-xs text-text-secondary">to</span>
             <Input
+              label="To"
               type="date"
-              aria-label="To date"
               value={dateTo}
               max={today}
               onChange={(event) => setRangeEnd("to", event.target.value)}
@@ -395,14 +396,15 @@ export function BranchSummaryView({
         {tab === "invoices" && (
           <>
             <Input
+              label="Search"
               value={search}
               onChange={(event) => filtering(setSearch)(event.target.value)}
               placeholder="Patient, receipt or transaction ID…"
               containerClassName="w-full sm:w-56 shrink-0"
             />
             <Select
+              label="Payment Method"
               value={method}
-              aria-label="Payment method"
               onChange={(event) =>
                 filtering(setMethod)(event.target.value as PaymentMethod | "")
               }
@@ -418,8 +420,8 @@ export function BranchSummaryView({
               <option value="card">Card</option>
             </Select>
             <Select
+              label="Invoice Status"
               value={paymentStatus}
-              aria-label="Invoice status"
               onChange={(event) =>
                 filtering(setPaymentStatus)(event.target.value as PaymentStatus | "")
               }
@@ -437,14 +439,15 @@ export function BranchSummaryView({
         {tab === "expenses" && (
           <>
             <Input
+              label="Search"
               value={expenseSearch}
               onChange={(event) => filtering(setExpenseSearch)(event.target.value)}
               placeholder="Voucher, description or payee…"
               containerClassName="w-full sm:w-56 shrink-0"
             />
             <Select
+              label="Category"
               value={expenseCategory}
-              aria-label="Expense category"
               onChange={(event) =>
                 filtering(setExpenseCategory)(event.target.value as ExpenseCategory | "")
               }
@@ -461,8 +464,8 @@ export function BranchSummaryView({
               <option value="other">Other</option>
             </Select>
             <Select
+              label="Status"
               value={expenseStatus}
-              aria-label="Expense status"
               onChange={(event) =>
                 filtering(setExpenseStatus)(event.target.value as ExpenseStatus | "")
               }
@@ -478,8 +481,8 @@ export function BranchSummaryView({
 
         {tab === "refunds" && (
           <Select
+            label="Refund Status"
             value={refundStatus}
-            aria-label="Refund status"
             onChange={(event) =>
               filtering(setRefundStatus)(event.target.value as RefundRequestStatus | "")
             }
@@ -494,8 +497,8 @@ export function BranchSummaryView({
 
         {tab === "closings" && (
           <Select
+            label="Closing Status"
             value={closingStatus}
-            aria-label="Closing status"
             onChange={(event) =>
               filtering(setClosingStatus)(event.target.value as DailyClosingStatus | "")
             }
@@ -511,14 +514,15 @@ export function BranchSummaryView({
         {tab === "dues" && (
           <>
             <Input
+              label="Search"
               value={dueSearch}
               onChange={(event) => filtering(setDueSearch)(event.target.value)}
               placeholder="Patient name or ID…"
               containerClassName="w-full sm:w-56 shrink-0"
             />
             <Select
+              label="Due Type"
               value={dueType}
-              aria-label="Due type"
               onChange={(event) =>
                 filtering(setDueType)(event.target.value as DuePaymentType | "")
               }
@@ -532,7 +536,7 @@ export function BranchSummaryView({
         )}
 
         {(tab === "daily" || tab === "methods" || tab === "services") && (
-          <span className="text-xs text-text-secondary">
+          <span className="pb-2.5 text-xs text-text-secondary">
             Filtered by date range only.
           </span>
         )}

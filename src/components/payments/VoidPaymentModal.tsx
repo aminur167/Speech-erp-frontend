@@ -54,8 +54,9 @@ export function VoidPaymentModal({
       {payment && (
         <div className="flex flex-col gap-4">
           <Textarea
-            rows={3}
+            label="Reason"
             placeholder="Why is this payment being voided?"
+            rows={3}
             value={reason}
             onChange={(event) => {
               setReason(event.target.value);

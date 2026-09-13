@@ -161,7 +161,7 @@ export function OnlineServiceEnrollment() {
         {step === "datetime" && selectedPatient && selectedService && (
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-medium text-text-secondary">Select date &amp; time</h2>
-            <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+            <Input label="Booking date" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-text-secondary">
                 Preferred time{" "}

@@ -53,8 +53,9 @@ export function RejectPackageModal({
       {service && (
         <div className="flex flex-col gap-4">
           <Textarea
-            rows={3}
+            label="Reason"
             placeholder="Why is this package being rejected?"
+            rows={3}
             value={reviewNote}
             onChange={(event) => {
               setReviewNote(event.target.value);

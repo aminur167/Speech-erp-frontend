@@ -72,13 +72,15 @@ export function AdjustStockModal({
             </button>
           </div>
           <Input
+            label="Quantity"
+            placeholder="e.g. 10"
             type="number"
-            placeholder="Quantity"
             value={quantity}
             onChange={(event) => setQuantity(event.target.value)}
           />
           <Input
-            placeholder="Note (optional)"
+            label="Note (optional)"
+            placeholder="e.g. Damaged items removed"
             value={note}
             onChange={(event) => setNote(event.target.value)}
           />

@@ -143,6 +143,7 @@ export function TransactionHistoryView({
         }
         dateSlot={
           <Input
+            label="Date"
             type="date"
             value={date}
             onChange={(event) => {
@@ -165,6 +166,7 @@ export function TransactionHistoryView({
           />
         )}
         <Select
+          label="Period"
           value={period}
           onChange={(event) => {
             setPeriod(event.target.value as SummaryPeriod);
@@ -178,6 +180,7 @@ export function TransactionHistoryView({
           <option value="month">This month</option>
         </Select>
         <Select
+          label="Method"
           value={method}
           onChange={(event) => {
             setMethod(event.target.value as PaymentMethod | "");
@@ -195,6 +198,7 @@ export function TransactionHistoryView({
           <option value="card">Card</option>
         </Select>
         <Select
+          label="Status"
           value={status}
           onChange={(event) => {
             setStatus(event.target.value as PaymentStatus | "");

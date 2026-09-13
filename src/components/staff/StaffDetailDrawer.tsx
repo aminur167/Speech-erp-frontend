@@ -152,8 +152,10 @@ export function StaffDetailDrawer({
         <section className="flex flex-col gap-1.5">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Salary</h3>
           {isEditingSalary ? (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-end gap-1.5">
               <Input
+                label="Monthly Salary (BDT)"
+                placeholder="e.g. 25000"
                 type="number"
                 step="0.01"
                 value={salaryDraft}
@@ -215,14 +217,16 @@ export function StaffDetailDrawer({
             {isAddingBonus && (
               <div className="mt-2 flex flex-col gap-1.5 border-t border-border pt-2">
                 <Input
+                  label="Bonus Amount (BDT)"
+                  placeholder="e.g. 5000"
                   type="number"
                   step="0.01"
-                  placeholder="Bonus Amount (BDT)"
                   value={bonusAmount}
                   onChange={(event) => setBonusAmount(event.target.value)}
                 />
                 <Textarea
-                  placeholder="Reason, e.g. Eid bonus, outstanding performance…"
+                  label="Reason"
+                  placeholder="e.g. Eid bonus, outstanding performance"
                   rows={2}
                   value={bonusReason}
                   onChange={(event) => setBonusReason(event.target.value)}

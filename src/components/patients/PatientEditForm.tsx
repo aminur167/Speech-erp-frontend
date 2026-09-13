@@ -112,34 +112,37 @@ export function PatientEditForm({
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
-          placeholder="Full Name *"
+          label="Full Name"
+          requiredMark
+          placeholder="e.g. Nusrat Jahan"
           autoComplete="off"
           error={errors.name?.message}
           {...register("name")}
         />
-        <Input placeholder="Phone *" error={errors.phone?.message} {...register("phone")} />
+        <Input label="Phone" requiredMark placeholder="e.g. 01712345678" error={errors.phone?.message} {...register("phone")} />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
-          placeholder="Email (optional)"
+          label="Email (optional)"
+          placeholder="e.g. name@example.com"
           error={errors.email?.message}
           {...register("email")}
         />
         <Input
+          label="Date of Birth"
           type="date"
-          aria-label="Date of Birth"
           error={errors.dateOfBirth?.message}
           {...register("dateOfBirth")}
         />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Select defaultValue="" error={errors.gender?.message} {...register("gender")}>
-          <option value="">Gender</option>
+        <Select label="Gender" defaultValue="" error={errors.gender?.message} {...register("gender")}>
+          <option value="">Select gender</option>
           <option value="male">Male</option>
           <option value="female">Female</option>
         </Select>
-        <Select defaultValue="" error={errors.bloodGroup?.message} {...register("bloodGroup")}>
-          <option value="">Blood Group (optional)</option>
+        <Select label="Blood Group (optional)" defaultValue="" error={errors.bloodGroup?.message} {...register("bloodGroup")}>
+          <option value="">Select blood group</option>
           {BLOOD_GROUPS.map((group) => (
             <option key={group} value={group}>
               {group}
@@ -149,17 +152,19 @@ export function PatientEditForm({
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
-          placeholder="Guardian Name (optional)"
+          label="Guardian Name (optional)"
+          placeholder="e.g. Karim Ahmed"
           autoComplete="off"
           error={errors.guardianName?.message}
           {...register("guardianName")}
         />
         <Select
+          label="Relation (optional)"
           defaultValue=""
           error={errors.guardianRelation?.message}
           {...register("guardianRelation")}
         >
-          <option value="">Relation (optional)</option>
+          <option value="">Select relation</option>
           <option value="father">Father</option>
           <option value="mother">Mother</option>
           <option value="guardian">Guardian</option>
@@ -168,42 +173,50 @@ export function PatientEditForm({
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
-          placeholder="Guardian Phone (required if the patient is a minor)"
+          label="Guardian Phone"
+          placeholder="Required if the patient is a minor"
           error={errors.guardianPhone?.message}
           {...register("guardianPhone")}
         />
         <Input
-          placeholder="Emergency Contact (optional)"
+          label="Emergency Contact (optional)"
+          placeholder="e.g. 01812345678"
           error={errors.emergencyContact?.message}
           {...register("emergencyContact")}
         />
       </div>
       <Input
-        placeholder="Address *"
+        label="Address"
+        requiredMark
+        placeholder="e.g. House 12, Road 5, Dhanmondi, Dhaka"
         error={errors.address?.message}
         {...register("address")}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
-          placeholder="Referred By (optional)"
+          label="Referred By (optional)"
+          placeholder="e.g. Dr. Rahman"
           error={errors.referredBy?.message}
           {...register("referredBy")}
         />
         <Input
-          placeholder="National ID (optional)"
+          label="National ID (optional)"
+          placeholder="e.g. 1990123456789"
           error={errors.nationalId?.message}
           {...register("nationalId")}
         />
       </div>
       <Textarea
+        label="Chief Complaint (optional)"
+        placeholder="Reason for the visit"
         rows={2}
-        placeholder="Chief Complaint — reason for visit (optional)"
         error={errors.chiefComplaint?.message}
         {...register("chiefComplaint")}
       />
       <Textarea
+        label="Notes (optional)"
+        placeholder="Anything the therapist should know"
         rows={2}
-        placeholder="Notes (optional)"
         error={errors.notes?.message}
         {...register("notes")}
       />

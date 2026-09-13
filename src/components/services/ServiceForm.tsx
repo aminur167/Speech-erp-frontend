@@ -111,22 +111,28 @@ export function ServiceForm({
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(submit)}>
       <Input
-        placeholder="Service Name"
+        label="Service Name"
+        requiredMark
+        placeholder="e.g. Speech Therapy Monthly"
         autoComplete="off"
         error={errors.name?.message}
         {...register("name")}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
-          placeholder="Service Code"
+          label="Service Code"
+          requiredMark
+          placeholder="e.g. MON-SPEECH-01"
           autoComplete="off"
           error={errors.code?.message}
           {...register("code")}
         />
         <Input
+          label="Fee (BDT)"
+          requiredMark
+          placeholder="e.g. 12000"
           type="number"
           step="0.01"
-          placeholder="Fee (BDT)"
           error={errors.fee?.message}
           {...register("fee")}
         />
@@ -137,7 +143,7 @@ export function ServiceForm({
           <Badge tone="info" label={CATEGORY_LABELS[lockedCategory]} />
         </div>
       ) : (
-        <Select {...register("category")}>
+        <Select label="Category" placeholder="Select a category" {...register("category")}>
           <option value="daily">Daily</option>
           <option value="monthly">Monthly</option>
           <option value="installment">Installment</option>
@@ -146,19 +152,21 @@ export function ServiceForm({
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
+          label="Original Price (optional)"
+          placeholder="Shown struck through, for discounts"
           type="number"
           step="0.01"
-          placeholder="Original Price (optional, for discounts)"
           error={errors.originalFee?.message}
           {...register("originalFee")}
         />
-        <Input placeholder="Duration (e.g. 1 Month)" {...register("durationLabel")} />
+        <Input label="Duration" placeholder="e.g. 1 Month" {...register("durationLabel")} />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input placeholder="Sessions (e.g. 12 Sessions)" {...register("sessionsLabel")} />
+        <Input label="Sessions" placeholder="e.g. 12 Sessions" {...register("sessionsLabel")} />
       </div>
       <Input
-        placeholder="Expiry / Validity (e.g. 3 months from purchase)"
+        label="Expiry / Validity"
+        placeholder="e.g. 3 months from purchase"
         {...register("expiryLabel")}
       />
       <label className="flex items-center gap-2 text-sm text-text-secondary">
@@ -169,7 +177,7 @@ export function ServiceForm({
         />
         This service is delivered online
       </label>
-      <Textarea rows={2} placeholder="Description (optional)" {...register("description")} />
+      <Textarea label="Description (optional)" placeholder="What the service includes" rows={2} {...register("description")} />
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
