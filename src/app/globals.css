@@ -183,6 +183,14 @@ body {
  * (a utility) still wins.
  */
 @layer base {
+  /*
+   * Three separate rules, not one list. A browser that does not recognise a
+   * single selector in a list throws the whole rule away — Firefox does not
+   * know `::-webkit-calendar-picker-indicator`, and older browsers do not
+   * know `:has()` — so sharing a list with `button` would leave every button
+   * in those browsers without a hand. Kept apart, an unsupported selector can
+   * only cost its own rule.
+   */
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [role="menuitem"]:not(:disabled):not([aria-disabled="true"]),
@@ -194,10 +202,16 @@ body {
   input[type="radio"]:not(:disabled),
   input[type="file"]:not(:disabled),
   input[type="color"]:not(:disabled),
-  input[type="range"]:not(:disabled),
-  input::-webkit-calendar-picker-indicator,
+  input[type="range"]:not(:disabled) {
+    cursor: pointer;
+  }
+
   label:has(> input[type="checkbox"]:not(:disabled)),
   label:has(> input[type="radio"]:not(:disabled)) {
+    cursor: pointer;
+  }
+
+  input::-webkit-calendar-picker-indicator {
     cursor: pointer;
   }
 
