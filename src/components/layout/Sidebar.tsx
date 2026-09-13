@@ -11,6 +11,7 @@ import { useUiStore } from "@/store/uiStore";
 import { useAuthStore } from "@/store/authStore";
 import { useBranches } from "@/hooks/branches/useBranches";
 import { usePendingPackageCount } from "@/hooks/services/usePendingPackageCount";
+import { usePendingPackageActionCount } from "@/hooks/services/usePendingPackageActionCount";
 import { usePendingSalaryPaymentCount } from "@/hooks/salaryPayments/usePendingSalaryPaymentCount";
 
 function collectHrefs(items: NavItem[]): string[] {
@@ -167,9 +168,11 @@ export function Sidebar({
   // whatever page is currently open.
   const { data: pendingPackageCount } = usePendingPackageCount(user?.role === "admin");
   const { data: pendingSalaryPaymentCount } = usePendingSalaryPaymentCount(user?.role === "admin");
+  const { data: pendingPackageActionCount } = usePendingPackageActionCount(user?.role === "admin");
   const badges: Record<string, number> = {
     ...(pendingPackageCount ? { "/admin/services": pendingPackageCount } : {}),
     ...(pendingSalaryPaymentCount ? { "/admin/salary-approvals": pendingSalaryPaymentCount } : {}),
+    ...(pendingPackageActionCount ? { "/admin/package-requests": pendingPackageActionCount } : {}),
   };
 
   return (

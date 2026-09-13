@@ -21,6 +21,11 @@ export const queryKeys = {
     list: (params?: object) => ["services", "list", params] as const,
     enrollmentCounts: ["services", "enrollment-counts"] as const,
   },
+  packageActionRequests: {
+    all: ["package-action-requests"] as const,
+    list: (params?: object) => ["package-action-requests", "list", params] as const,
+    pendingCount: ["package-action-requests", "pending-count"] as const,
+  },
   branches: {
     all: ["branches"] as const,
     list: ["branches", "list"] as const,

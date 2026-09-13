@@ -22,7 +22,6 @@ const CATEGORY_LABELS: Record<ServiceCategory, string> = {
 
 const serviceSchema = z.object({
   name: z.string().min(2, "Service name is required."),
-  code: z.string().min(2, "Service code is required."),
   category: z.enum(["daily", "monthly", "installment", "online"]),
   fee: z
     .string()
@@ -72,7 +71,6 @@ export function ServiceForm({
     defaultValues: initialValues
       ? {
           name: initialValues.name,
-          code: initialValues.code,
           category: initialValues.category,
           fee: String(initialValues.fee),
           isOnline: initialValues.isOnline,
@@ -96,7 +94,6 @@ export function ServiceForm({
   const submit = (values: ServiceFormValues) => {
     onSubmit({
       name: values.name,
-      code: values.code,
       category: lockedCategory ?? values.category,
       fee: Number(values.fee),
       isOnline: Boolean(values.isOnline),
@@ -119,13 +116,16 @@ export function ServiceForm({
         {...register("name")}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Issued by the system on save (e.g. MON-004) and never changed, so
+            it is shown, not typed. */}
         <Input
           label="Service Code"
-          requiredMark
-          placeholder="e.g. MON-SPEECH-01"
-          autoComplete="off"
-          error={errors.code?.message}
-          {...register("code")}
+          value={initialValues?.code ?? ""}
+          placeholder="Generated automatically on save"
+          title="Service codes are generated automatically and can't be changed"
+          readOnly
+          tabIndex={-1}
+          className="bg-background font-mono text-text-secondary"
         />
         <Input
           label="Fee (BDT)"

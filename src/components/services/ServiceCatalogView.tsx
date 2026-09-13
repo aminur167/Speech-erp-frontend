@@ -27,9 +27,15 @@ import { ServiceCard } from "@/components/services/ServiceCard";
 import { ServiceForm } from "@/components/services/ServiceForm";
 import { AddPackageModal } from "@/components/services/AddPackageModal";
 import { RejectPackageModal } from "@/components/services/RejectPackageModal";
-import { PackageActions } from "@/components/services/PackageActions";
+import { RequestPackageActionModal } from "@/components/services/RequestPackageActionModal";
+import {
+  PackageActions,
+  type ManagerPackageRequests,
+} from "@/components/services/PackageActions";
 import { PackageTable } from "@/components/services/PackageTable";
 import { useServices } from "@/hooks/services/useServices";
+import { usePackageActionRequests } from "@/hooks/services/usePackageActionRequests";
+import { useAuthStore } from "@/store/authStore";
 import { useServiceEnrollmentCounts } from "@/hooks/services/useServiceEnrollmentCounts";
 import { useCreateService } from "@/hooks/services/useCreateService";
 import { useUpdateService } from "@/hooks/services/useUpdateService";
@@ -37,7 +43,12 @@ import { useDeleteService } from "@/hooks/services/useDeleteService";
 import { useToggleServiceActive } from "@/hooks/services/useToggleServiceActive";
 import { useReviewService } from "@/hooks/services/useReviewService";
 import { exportToCsv } from "@/utils/exportCsv";
-import type { Service, ServiceCategory } from "@/types/domain";
+import type {
+  PackageAction,
+  PackageActionRequest,
+  Service,
+  ServiceCategory,
+} from "@/types/domain";
 import type { ServiceInput } from "@/lib/api/services";
 import type { ApiError } from "@/types/api";
 
@@ -78,9 +89,11 @@ export function ServiceCatalogView({
   // sees only their own (see apps/services/views.py's get_queryset) -- either
   // way, an enrollment picker elsewhere in the app never passes this, so a
   // pending package can't be selected there regardless of who's looking.
+  // includeInactive for both: a Manager needs a deactivated package in view to
+  // ask for it back.
   const { data: services, isLoading, isFetching, refetch } = useServices(
     undefined,
-    canManage,
+    true,
     true,
     branchId,
   );
@@ -90,6 +103,43 @@ export function ServiceCatalogView({
   const deleteService = useDeleteService();
   const toggleServiceActive = useToggleServiceActive();
   const reviewService = useReviewService();
+
+  // A Manager changes a live package only with Admin's approval. Their open
+  // requests — waiting, or approved and not yet used — decide what each menu
+  // item offers.
+  const currentUserId = useAuthStore((state) => state.user?.id);
+  const { data: openRequests } = usePackageActionRequests(
+    { open: true, pageSize: 200 },
+    !canManage,
+  );
+  const [requesting, setRequesting] = useState<{
+    service: Service;
+    action: PackageAction;
+  } | null>(null);
+
+  const requestLookup = useMemo(() => {
+    const lookup: Record<string, PackageActionRequest | undefined> = {};
+    openRequests?.results.forEach((request) => {
+      const key = `${request.serviceId}:${request.action}`;
+      const mine = request.status === "approved" && request.requestedById === currentUserId;
+      // The Manager's own usable approval wins over a colleague's request.
+      if (!lookup[key] || mine) lookup[key] = request;
+    });
+    return lookup;
+  }, [openRequests, currentUserId]);
+
+  const hasApproval = (service: Service, action: PackageAction) => {
+    const request = requestLookup[`${service.id}:${action}`];
+    return request?.status === "approved" && request.requestedById === currentUserId;
+  };
+
+  const managerRequests: ManagerPackageRequests | undefined = canManage
+    ? undefined
+    : {
+        lookup: requestLookup,
+        currentUserId,
+        onRequest: (service, action) => setRequesting({ service, action }),
+      };
 
   const [view, setView] = useState<"table" | "card">("table");
   const [search, setSearch] = useState("");
@@ -183,6 +233,12 @@ export function ServiceCatalogView({
 
   const handleDeactivateInstead = () => {
     if (!deleteBlocked) return;
+    // Deactivating is a separate permission for a Manager — ask for it.
+    if (!canManage && !hasApproval(deleteBlocked.service, "deactivate")) {
+      setRequesting({ service: deleteBlocked.service, action: "deactivate" });
+      setDeleteBlocked(null);
+      return;
+    }
     toggleServiceActive.mutate(
       { id: deleteBlocked.service.id, makeActive: false },
       { onSuccess: () => setDeleteBlocked(null) },
@@ -246,25 +302,23 @@ export function ServiceCatalogView({
                 placeholder="Search package name or code…"
               />
             </div>
-            {canManage && (
-              <div className="flex gap-1 rounded-lg border border-border p-1">
-                {(["", "active", "inactive"] as const).map((status) => (
-                  <button
-                    key={status || "all"}
-                    type="button"
-                    onClick={() => setStatusFilter(status)}
-                    className={clsx(
-                      "rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors",
-                      statusFilter === status
-                        ? "bg-primary text-white"
-                        : "text-text-secondary hover:bg-background",
-                    )}
-                  >
-                    {status || "All"}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="flex gap-1 rounded-lg border border-border p-1">
+              {(["", "active", "inactive"] as const).map((status) => (
+                <button
+                  key={status || "all"}
+                  type="button"
+                  onClick={() => setStatusFilter(status)}
+                  className={clsx(
+                    "rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors",
+                    statusFilter === status
+                      ? "bg-primary text-white"
+                      : "text-text-secondary hover:bg-background",
+                  )}
+                >
+                  {status || "All"}
+                </button>
+              ))}
+            </div>
             {hasFilters && (
               <button
                 type="button"
@@ -336,6 +390,7 @@ export function ServiceCatalogView({
               }
               approvingId={reviewService.isPending ? reviewService.variables?.id : undefined}
               togglingId={toggleServiceActive.isPending ? toggleServiceActive.variables?.id : undefined}
+              managerRequests={managerRequests}
             />
           )}
         </div>
@@ -356,7 +411,8 @@ export function ServiceCatalogView({
                     service={service}
                     enrolledCount={enrollmentCounts?.[service.id]}
                     actions={
-                      canManage ? (
+                      // A Manager's own proposal awaiting review has no menu.
+                      canManage || service.reviewStatus === "approved" ? (
                         <PackageActions
                           service={service}
                           canManage={canManage}
@@ -374,6 +430,7 @@ export function ServiceCatalogView({
                             toggleServiceActive.isPending &&
                             toggleServiceActive.variables?.id === service.id
                           }
+                          managerRequests={managerRequests}
                         />
                       ) : undefined
                     }
@@ -398,54 +455,69 @@ export function ServiceCatalogView({
         />
       )}
 
-      {canManage && (
-        <>
-          <Modal
-            open={Boolean(editingService)}
-            onClose={() => {
+      {/* Edit and delete open for a Manager only through an approved request
+          (the menu offers nothing else), and the server checks it again. */}
+      <Modal
+        open={Boolean(editingService)}
+        onClose={() => {
+          setEditingService(null);
+          setEditError(undefined);
+        }}
+        title="Edit Package"
+        description={
+          canManage
+            ? "Package details are shown across enrollment flows and the catalog."
+            : "Admin approved this edit. Saving uses the approval — it works once."
+        }
+      >
+        {editingService && (
+          <ServiceForm
+            initialValues={editingService}
+            onSubmit={handleUpdate}
+            onCancel={() => {
               setEditingService(null);
               setEditError(undefined);
             }}
-            title="Edit Package"
-            description="Package details are shown across enrollment flows and the catalog."
-          >
-            {editingService && (
-              <ServiceForm
-                initialValues={editingService}
-                onSubmit={handleUpdate}
-                onCancel={() => {
-                  setEditingService(null);
-                  setEditError(undefined);
-                }}
-                isSubmitting={updateService.isPending}
-                apiError={editError}
-              />
-            )}
-          </Modal>
-          <ConfirmDialog
-            open={Boolean(deletingService)}
-            onClose={() => setDeletingService(null)}
-            onConfirm={handleDelete}
-            title="Delete package?"
-            description={`"${deletingService?.name}" will be removed from the catalog. This can't be undone.`}
-            confirmLabel="Delete"
-            danger
-            isLoading={deleteService.isPending}
+            isSubmitting={updateService.isPending}
+            apiError={editError}
           />
-          <ConfirmDialog
-            open={Boolean(deleteBlocked)}
-            onClose={() => setDeleteBlocked(null)}
-            onConfirm={handleDeactivateInstead}
-            title="Can't delete this package"
-            description={deleteBlocked?.message}
-            confirmLabel="Deactivate Instead"
-            isLoading={toggleServiceActive.isPending}
-          />
-          <RejectPackageModal
-            service={rejectingService}
-            onClose={() => setRejectingService(null)}
-          />
-        </>
+        )}
+      </Modal>
+      <ConfirmDialog
+        open={Boolean(deletingService)}
+        onClose={() => setDeletingService(null)}
+        onConfirm={handleDelete}
+        title="Delete package?"
+        description={`"${deletingService?.name}" will be removed from the catalog. This can't be undone.`}
+        confirmLabel="Delete"
+        danger
+        isLoading={deleteService.isPending}
+      />
+      <ConfirmDialog
+        open={Boolean(deleteBlocked)}
+        onClose={() => setDeleteBlocked(null)}
+        onConfirm={handleDeactivateInstead}
+        title="Can't delete this package"
+        description={deleteBlocked?.message}
+        confirmLabel={
+          canManage || (deleteBlocked && hasApproval(deleteBlocked.service, "deactivate"))
+            ? "Deactivate Instead"
+            : "Request Deactivation"
+        }
+        isLoading={toggleServiceActive.isPending}
+      />
+      {canManage && (
+        <RejectPackageModal
+          service={rejectingService}
+          onClose={() => setRejectingService(null)}
+        />
+      )}
+      {!canManage && (
+        <RequestPackageActionModal
+          service={requesting?.service ?? null}
+          action={requesting?.action ?? null}
+          onClose={() => setRequesting(null)}
+        />
       )}
     </div>
   );

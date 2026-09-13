@@ -489,3 +489,35 @@ export interface PatientAttendance {
   markedBy: string;
   markedAt: string;
 }
+
+
+/** What a Manager may ask Admin's permission to do to an existing package. */
+export type PackageAction = "edit" | "delete" | "deactivate" | "activate";
+
+/** `expired` is derived server-side: approved, never used, and past its expiry. */
+export type PackageActionRequestStatus = "pending" | "approved" | "rejected" | "used" | "expired";
+
+/**
+ * A Manager's request to change a package. An approval is a one-time
+ * permission for that one action, for the Manager who asked, until `expiresAt`.
+ */
+export interface PackageActionRequest {
+  id: string;
+  serviceId: string;
+  serviceName: string;
+  serviceCode: string;
+  serviceIsActive: boolean;
+  branchId: string;
+  branchName: string;
+  action: PackageAction;
+  reason: string;
+  status: PackageActionRequestStatus;
+  requestedById: string;
+  requestedBy: string;
+  requestedAt: string;
+  reviewedBy: string;
+  reviewedAt?: string | null;
+  reviewNote: string;
+  expiresAt?: string | null;
+  usedAt?: string | null;
+}

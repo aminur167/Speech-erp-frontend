@@ -2,7 +2,7 @@
 
 import { clsx } from "clsx";
 import { Badge } from "@/components/ui/Badge";
-import { PackageActions } from "@/components/services/PackageActions";
+import { PackageActions, type ManagerPackageRequests } from "@/components/services/PackageActions";
 import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { formatCurrency } from "@/utils/currency";
 import type { Service, ServiceCategory } from "@/types/domain";
@@ -26,6 +26,7 @@ export function PackageTable({
   onToggleActive,
   approvingId,
   togglingId,
+  managerRequests,
 }: {
   services: Service[];
   canManage: boolean;
@@ -39,8 +40,11 @@ export function PackageTable({
   onToggleActive: (service: Service) => void;
   approvingId?: string;
   togglingId?: string;
+  /** The Manager's catalog: each change is requested from Admin first. */
+  managerRequests?: ManagerPackageRequests;
 }) {
   const detail = useRowDetail<Service>();
+  const showActions = canManage || Boolean(managerRequests);
 
   return (
     <div className="overflow-x-auto">
@@ -53,7 +57,11 @@ export function PackageTable({
             <th className="py-2 pr-3">Fee</th>
             <th className="py-2 pr-3">Status</th>
             <th className="py-2 pr-3">Enrolled</th>
-            {canManage && <th className="py-2 pr-3">Actions</th>}
+            {showActions && (
+              <th className="py-2 pr-3">
+                <span className="sr-only">Actions</span>
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -105,7 +113,7 @@ export function PackageTable({
               >
                 {enrollmentCounts?.[service.id] ?? "—"}
               </td>
-              {canManage && (
+              {showActions && (
                 <td className="py-2.5 pr-3">
                   <PackageActions
                     service={service}
@@ -117,6 +125,7 @@ export function PackageTable({
                     onToggleActive={onToggleActive}
                     isApproving={approvingId === service.id}
                     isToggling={togglingId === service.id}
+                    managerRequests={managerRequests}
                     compact
                   />
                 </td>

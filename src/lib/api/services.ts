@@ -1,7 +1,13 @@
 import { apiClient } from "@/lib/api/client";
 import { toSnakeCase } from "@/lib/api/caseUtils";
 import type { PaginatedResponse } from "@/types/api";
-import type { Service, ServiceCategory } from "@/types/domain";
+import type {
+  PackageAction,
+  PackageActionRequest,
+  PackageActionRequestStatus,
+  Service,
+  ServiceCategory,
+} from "@/types/domain";
 
 // Service, like Branch, has an integer primary key, while every place that
 // *refers* to one (Payment.serviceId, MonthlyEnrollment.serviceId, ...) does
@@ -54,9 +60,9 @@ export async function getService(id: string): Promise<Service> {
   return normalizeService(data);
 }
 
+/** No `code`: the server issues it on create and it never changes. */
 export interface ServiceInput {
   name: string;
-  code: string;
   category: ServiceCategory;
   fee: number;
   isOnline: boolean;
@@ -112,5 +118,77 @@ export async function reviewService(input: ReviewServiceInput): Promise<Service>
 /** Admin-only — powers the sidebar's Services badge. */
 export async function getPendingPackageCount(): Promise<number> {
   const { data } = await apiClient.get<{ count: number }>("/services/pending-count/");
+  return data.count;
+}
+
+
+// ---------------------------------------------------------------------------
+// Manager change requests — ask Admin first, then change the package
+// ---------------------------------------------------------------------------
+
+interface RawPackageActionRequest extends Omit<PackageActionRequest, "id"> {
+  id: number | string;
+}
+
+function normalizeActionRequest(raw: RawPackageActionRequest): PackageActionRequest {
+  return { ...raw, id: String(raw.id) };
+}
+
+/** A Manager asks for permission to edit, delete, deactivate or activate a package. */
+export async function requestPackageAction(input: {
+  serviceId: string;
+  action: PackageAction;
+  reason: string;
+}): Promise<PackageActionRequest> {
+  const { data } = await apiClient.post<RawPackageActionRequest>(
+    `/services/${input.serviceId}/request-action/`,
+    { action: input.action, reason: input.reason },
+  );
+  return normalizeActionRequest(data);
+}
+
+export interface PackageActionRequestListParams {
+  status?: PackageActionRequestStatus;
+  branchId?: string;
+  /** Only what is still in play: waiting for Admin, or approved and unspent. */
+  open?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export async function listPackageActionRequests(
+  params: PackageActionRequestListParams = {},
+): Promise<PaginatedResponse<PackageActionRequest>> {
+  const { data } = await apiClient.get<PaginatedResponse<RawPackageActionRequest>>(
+    "/services/action-requests/",
+    {
+      params: {
+        status: params.status || undefined,
+        branch: params.branchId || undefined,
+        open: params.open || undefined,
+        page: params.page,
+        pageSize: params.pageSize,
+      },
+    },
+  );
+  return { ...data, results: data.results.map(normalizeActionRequest) };
+}
+
+/** Admin approves (note optional) or rejects (note required) a request. */
+export async function reviewPackageAction(input: {
+  id: string;
+  approve: boolean;
+  reviewNote?: string;
+}): Promise<PackageActionRequest> {
+  const { data } = await apiClient.post<RawPackageActionRequest>(
+    `/services/action-requests/${input.id}/${input.approve ? "approve" : "reject"}/`,
+    { reviewNote: input.reviewNote },
+  );
+  return normalizeActionRequest(data);
+}
+
+/** Admin-only — powers the sidebar badge on Package Requests. */
+export async function getPendingPackageActionCount(): Promise<number> {
+  const { data } = await apiClient.get<{ count: number }>("/services/action-requests/pending-count/");
   return data.count;
 }

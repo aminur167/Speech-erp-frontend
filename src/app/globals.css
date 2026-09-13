@@ -192,22 +192,34 @@ body {
    * only cost its own rule.
    */
   button:not(:disabled),
+  a[href],
   [role="button"]:not([aria-disabled="true"]),
+  [role="link"]:not([aria-disabled="true"]),
   [role="menuitem"]:not(:disabled):not([aria-disabled="true"]),
+  [role="menuitemcheckbox"]:not([aria-disabled="true"]),
+  [role="menuitemradio"]:not([aria-disabled="true"]),
   [role="tab"]:not(:disabled),
-  [role="option"],
+  [role="switch"]:not(:disabled):not([aria-disabled="true"]),
+  [role="checkbox"]:not([aria-disabled="true"]),
+  [role="radio"]:not([aria-disabled="true"]),
+  [role="option"]:not([aria-disabled="true"]),
   summary,
   select:not(:disabled),
   input[type="checkbox"]:not(:disabled),
   input[type="radio"]:not(:disabled),
   input[type="file"]:not(:disabled),
   input[type="color"]:not(:disabled),
-  input[type="range"]:not(:disabled) {
+  input[type="range"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="reset"]:not(:disabled) {
     cursor: pointer;
   }
 
-  label:has(> input[type="checkbox"]:not(:disabled)),
-  label:has(> input[type="radio"]:not(:disabled)) {
+  /* Descendant, not only direct child: a label often wraps the box in a span. */
+  label:has(input[type="checkbox"]:not(:disabled)),
+  label:has(input[type="radio"]:not(:disabled)),
+  label:has(input[type="file"]:not(:disabled)) {
     cursor: pointer;
   }
 

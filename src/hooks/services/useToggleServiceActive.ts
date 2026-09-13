@@ -12,6 +12,8 @@ export function useToggleServiceActive() {
     mutationFn: ({ id, makeActive }) => (makeActive ? activateService(id) : deactivateService(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.services.all });
+      // A Manager's approval is spent by the change.
+      queryClient.invalidateQueries({ queryKey: queryKeys.packageActionRequests.all });
     },
   });
 }
