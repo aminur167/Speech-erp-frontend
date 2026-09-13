@@ -16,6 +16,7 @@ import { useStaff } from "@/hooks/staff/useStaff";
 import { useStaffSummary } from "@/hooks/staff/useStaffSummary";
 import { useTodayAttendance } from "@/hooks/staff/useTodayAttendance";
 import { useMonthlyStaffReport } from "@/hooks/staff/useMonthlyStaffReport";
+import { useSalaryPayments } from "@/hooks/salaryPayments/useSalaryPayments";
 import { useCreateStaff } from "@/hooks/staff/useCreateStaff";
 import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useDeleteStaff } from "@/hooks/staff/useDeleteStaff";
@@ -52,6 +53,16 @@ export function StaffListView({
   const { data: summary } = useStaffSummary(branchId);
   const { data: todayAttendance } = useTodayAttendance(branchId);
   const { data: monthlyReport } = useMonthlyStaffReport(branchId, currentMonth);
+  const { data: currentMonthPayments } = useSalaryPayments({
+    branchId,
+    month: currentMonth,
+    pageSize: 500,
+  });
+  const paidStaffIds = new Set(
+    (currentMonthPayments?.results ?? [])
+      .filter((payment) => payment.status === "paid")
+      .map((payment) => payment.staffId),
+  );
   const createStaff = useCreateStaff(branchId);
   const updateStaff = useUpdateStaff(branchId);
   const deleteStaffMutation = useDeleteStaff(branchId);
@@ -173,6 +184,7 @@ export function StaffListView({
             branchId={branchId}
             staff={staff}
             todayAttendance={todayAttendance ?? {}}
+            paidStaffIds={paidStaffIds}
             onViewDetails={(member) => setViewingStaffId(member.id)}
             onEdit={setEditingStaff}
             onDelete={setDeletingStaff}
