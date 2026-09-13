@@ -7,6 +7,6 @@ export default async function AdminBranchAppointmentsPage({
 }) {
   const { id } = await params;
   return (
-    <BookingCalendarView homeHref={`/admin/branches/${id}`} roleLabel="Admin" branchId={id} />
+    <BookingCalendarView branchId={id} />
   );
 }

@@ -222,10 +222,7 @@ export function SellMaterialsView() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref="/manager/dashboard"
-        breadcrumb={["Branch Manager", "Materials", "Sell"]}
         title="Sell Materials"
-        subtitle="Browse the catalog, add products to the cart, and check out a patient."
         action={
           <button
             type="button"

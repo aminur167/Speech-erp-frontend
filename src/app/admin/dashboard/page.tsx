@@ -108,11 +108,6 @@ export default function AdminDashboardPage() {
   const topBranches = [...branches].sort((a, b) => b.monthlyRevenue - a.monthlyRevenue).slice(0, 5);
   const maxBranchRevenue = Math.max(...topBranches.map((item) => item.monthlyRevenue), 1);
 
-  const todayDateLabel = now.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
 
   const selectedDateObj = new Date(selectedDate);
   const monthLabel = isToday
@@ -122,10 +117,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref="/admin/dashboard"
-        breadcrumb={["Admin", "Dashboard"]}
         title={`${getGreeting()}, ${user?.name ?? "Admin"}`}
-        subtitle={`${todayDateLabel} · Real-time overview across all branches`}
         action={
           <div className="flex items-center gap-3">
             <DashboardDateFilter value={selectedDate} onChange={setSelectedDate} />

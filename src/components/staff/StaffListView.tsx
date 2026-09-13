@@ -37,12 +37,10 @@ const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
  */
 export function StaffListView({
   branchId: branchIdOverride,
-  homeHref = "/manager/dashboard",
   roleLabel = "Branch Manager",
 }: {
   /** Admin only — a Manager is scoped to their own branch server-side. */
   branchId?: string;
-  homeHref?: string;
   roleLabel?: string;
 } = {}) {
   const user = useAuthStore((state) => state.user);
@@ -121,10 +119,7 @@ export function StaffListView({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref={homeHref}
-        breadcrumb={[roleLabel, "Staff"]}
         title="Staff"
-        subtitle="Manage the team, track daily attendance, and handle salary and bonuses."
         action={
           <div className="flex gap-2">
             <Button

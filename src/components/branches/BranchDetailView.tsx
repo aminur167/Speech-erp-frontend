@@ -82,8 +82,6 @@ export function BranchDetailView({ branchId }: { branchId: string }) {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader
-          homeHref="/admin/dashboard"
-          breadcrumb={["Admin", "Branches", "…"]}
           title="Loading branch…"
         />
         <Card>
@@ -96,7 +94,7 @@ export function BranchDetailView({ branchId }: { branchId: string }) {
   if (isError || !overview) {
     return (
       <div className="flex flex-col gap-6">
-        <PageHeader homeHref="/admin/dashboard" breadcrumb={["Admin", "Branches"]} title="Branch not found" />
+        <PageHeader title="Branch not found" />
         <Card>
           <EmptyState label="This branch doesn't exist or was removed." />
           <div className="mt-4">
@@ -115,10 +113,7 @@ export function BranchDetailView({ branchId }: { branchId: string }) {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        homeHref="/admin/dashboard"
-        breadcrumb={["Admin", "Branches", branch.name]}
         title={branch.name}
-        subtitle={`${branch.code} · Live, real-time view of this branch`}
         action={
           <div className="flex items-center gap-2">
             <Badge tone={isActive ? "success" : "warning"} label={isActive ? "Active" : "Inactive"} />

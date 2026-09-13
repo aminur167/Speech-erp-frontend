@@ -30,12 +30,8 @@ import type { SummaryPeriod } from "@/lib/api/expenses";
 const PAGE_SIZE = 10;
 
 export function ExpenseListView({
-  homeHref,
-  roleLabel,
   branchId: branchIdOverride,
 }: {
-  homeHref: string;
-  roleLabel: string;
   /** Scopes the view to one branch regardless of role — used when Admin is browsing a specific branch. */
   branchId?: string;
 }) {
@@ -97,10 +93,7 @@ export function ExpenseListView({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref={homeHref}
-        breadcrumb={[roleLabel, "Expense"]}
         title="Expense"
-        subtitle="Track branch expenses, manage approvals and monitor spending."
         action={
           canCreate && (
             <Button onClick={() => setIsModalOpen(true)}>

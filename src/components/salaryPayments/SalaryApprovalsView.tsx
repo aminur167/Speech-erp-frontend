@@ -60,10 +60,7 @@ export function SalaryApprovalsView() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref="/admin/dashboard"
-        breadcrumb={["Admin", "Salary Approvals"]}
         title="Salary Approvals"
-        subtitle="Review salary payment requests a branch manager has opened. Nothing is paid until you decide."
       />
 
       {branchSummary && branchSummary.length > 0 && (

@@ -9,8 +9,6 @@ export default async function AdminBranchAttendancePage({
   return (
     <PatientAttendanceView
       branchId={id}
-      homeHref={`/admin/branches/${id}`}
-      roleLabel="Admin"
       readOnly
     />
   );

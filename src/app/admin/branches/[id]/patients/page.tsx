@@ -9,8 +9,6 @@ export default async function AdminBranchPatientsPage({
   return (
     <PatientListView
       basePath="/admin/patients"
-      homeHref={`/admin/branches/${id}`}
-      roleLabel="Admin"
       branchId={id}
     />
   );

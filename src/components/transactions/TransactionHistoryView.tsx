@@ -28,12 +28,8 @@ import type { SummaryPeriod, TransactionItem } from "@/lib/api/transactions";
 const PAGE_SIZE = 10;
 
 export function TransactionHistoryView({
-  homeHref,
-  roleLabel,
   branchId: branchIdOverride,
 }: {
-  homeHref: string;
-  roleLabel: string;
   /** Scopes the view to one branch regardless of role — used when Admin is browsing a specific branch. */
   branchId?: string;
 }) {
@@ -87,10 +83,7 @@ export function TransactionHistoryView({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref={homeHref}
-        breadcrumb={[roleLabel, "Transactions"]}
         title="Transaction History"
-        subtitle="Every payment collected, searchable and exportable."
       />
 
       <FilterBar

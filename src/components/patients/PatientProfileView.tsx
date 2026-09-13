@@ -23,7 +23,6 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/states";
-import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { OverdueBadge } from "@/components/patients/OverdueBadge";
 import { PatientEditForm } from "@/components/patients/PatientEditForm";
 import { ScheduleList } from "@/components/services/ScheduleList";
@@ -82,12 +81,8 @@ function InfoItem({ icon: Icon, label, value }: { icon: LucideIcon; label: strin
 
 export function PatientProfileView({
   patientId,
-  homeHref,
-  roleLabel,
 }: {
   patientId: string;
-  homeHref: string;
-  roleLabel: string;
 }) {
   const { data: patient, isLoading, isError, refetch } = usePatient(patientId);
   const { data: activeServices, isLoading: servicesLoading } =
@@ -144,10 +139,6 @@ export function PatientProfileView({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 border-b border-border pb-5">
-        <Breadcrumb homeHref={homeHref} items={[roleLabel, "Patients", patient.name]} />
-      </div>
-
       <Card>
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-4">

@@ -8,10 +8,7 @@ export default async function AdminBranchPackagesPage({
   const { id } = await params;
   return (
     <ServiceCatalogView
-      homeHref={`/admin/branches/${id}`}
-      roleLabel="Admin"
       title="Packages"
-      subtitle="This branch's package catalog."
       addLabel="Add Package"
       canManage
       branchId={id}

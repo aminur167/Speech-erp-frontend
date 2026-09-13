@@ -9,8 +9,6 @@ export default async function AdminBranchDuePaymentsPage({
   return (
     <DuePaymentCollectionView
       branchId={id}
-      homeHref={`/admin/branches/${id}`}
-      roleLabel="Admin"
       readOnly
     />
   );

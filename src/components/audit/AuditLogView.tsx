@@ -94,7 +94,7 @@ function ChangeRow({ field, value }: { field: string; value: unknown }) {
   );
 }
 
-export function AuditLogView({ homeHref }: { homeHref: string }) {
+export function AuditLogView() {
   const [action, setAction] = useState<AuditLogAction | "">("");
   const [page, setPage] = useState(1);
   const detail = useRowDetail<AuditLogEntry>();
@@ -107,10 +107,7 @@ export function AuditLogView({ homeHref }: { homeHref: string }) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref={homeHref}
-        breadcrumb={["Admin", "Audit Log"]}
         title="Audit Log"
-        subtitle="Who approved, rejected, voided, or edited what — across every branch."
       />
 
       <FilterBar>

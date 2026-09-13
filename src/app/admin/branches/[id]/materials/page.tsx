@@ -7,6 +7,6 @@ export default async function AdminBranchMaterialsPage({
 }) {
   const { id } = await params;
   return (
-    <MaterialListView branchId={id} homeHref={`/admin/branches/${id}`} roleLabel="Admin" />
+    <MaterialListView branchId={id} />
   );
 }

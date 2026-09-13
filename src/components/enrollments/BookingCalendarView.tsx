@@ -44,12 +44,8 @@ const VIEW_OPTIONS: { value: View; label: string; icon: typeof Calendar }[] = [
 ];
 
 export function BookingCalendarView({
-  homeHref,
-  roleLabel,
   branchId: branchIdOverride,
 }: {
-  homeHref: string;
-  roleLabel: string;
   /** Scopes the view to one branch regardless of role — used when Admin is browsing a specific branch. */
   branchId?: string;
 }) {
@@ -169,10 +165,7 @@ export function BookingCalendarView({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref={homeHref}
-        breadcrumb={[roleLabel, "Appointments"]}
         title="Appointment Calendar"
-        subtitle="Online service bookings across the schedule."
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

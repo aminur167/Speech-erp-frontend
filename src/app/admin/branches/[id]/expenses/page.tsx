@@ -7,6 +7,6 @@ export default async function AdminBranchExpensesPage({
 }) {
   const { id } = await params;
   return (
-    <ExpenseListView homeHref={`/admin/branches/${id}`} roleLabel="Admin" branchId={id} />
+    <ExpenseListView branchId={id} />
   );
 }

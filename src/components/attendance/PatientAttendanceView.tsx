@@ -35,14 +35,10 @@ const SHEETS = [
 
 export function PatientAttendanceView({
   branchId: branchIdOverride,
-  homeHref = "/manager/dashboard",
-  roleLabel = "Branch Manager",
   readOnly = false,
 }: {
   /** Admin only — a Manager is scoped to their own branch server-side. */
   branchId?: string;
-  homeHref?: string;
-  roleLabel?: string;
   /** Admin can read a branch's sheet but not mark it. */
   readOnly?: boolean;
 } = {}) {
@@ -85,10 +81,7 @@ export function PatientAttendanceView({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref={homeHref}
-        breadcrumb={[roleLabel, "Attendance"]}
         title="Patient Attendance"
-        subtitle="Who came in today — and who has quietly stopped coming."
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

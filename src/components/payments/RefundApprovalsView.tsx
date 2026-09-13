@@ -45,10 +45,7 @@ export function RefundApprovalsView() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref="/admin/dashboard"
-        breadcrumb={["Admin", "Refund Approvals"]}
         title="Refund Approvals"
-        subtitle="Review refund requests a branch manager has opened. Nothing moves until you decide."
       />
 
       <FilterBar>

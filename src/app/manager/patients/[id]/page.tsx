@@ -7,6 +7,6 @@ export default async function ManagerPatientProfilePage({
 }) {
   const { id } = await params;
   return (
-    <PatientProfileView patientId={id} homeHref="/manager/dashboard" roleLabel="Branch Manager" />
+    <PatientProfileView patientId={id} />
   );
 }

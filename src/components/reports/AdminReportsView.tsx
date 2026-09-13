@@ -73,10 +73,7 @@ export function AdminReportsView() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref="/admin/dashboard"
-        breadcrumb={["Admin", "Reports"]}
         title="Reports"
-        subtitle="Revenue, service and payment-type reports across the organization."
       />
 
       <FilterBar

@@ -58,18 +58,12 @@ const SECTION_LABELS: Record<ServiceCategory, string> = {
 const CATEGORY_ORDER: ServiceCategory[] = ["daily", "monthly", "installment", "online"];
 
 export function ServiceCatalogView({
-  homeHref,
-  roleLabel,
   title,
-  subtitle,
   addLabel,
   canManage,
   branchId,
 }: {
-  homeHref: string;
-  roleLabel: string;
   title: string;
-  subtitle: string;
   addLabel: string;
   canManage: boolean;
   /** Admin's branch drill-down page passes this to scope the catalog (and creates) to one branch. Unset for Admin's org-wide overview and always for a Manager, who's scoped to their own branch server-side regardless. */
@@ -216,10 +210,7 @@ export function ServiceCatalogView({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref={homeHref}
-        breadcrumb={[roleLabel, title]}
         title={title}
-        subtitle={subtitle}
         action={
           canCreate ? (
             <Button onClick={() => setIsAddOpen(true)}>

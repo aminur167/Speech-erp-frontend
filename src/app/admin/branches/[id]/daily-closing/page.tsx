@@ -9,8 +9,6 @@ export default async function AdminBranchDailyClosingPage({
   return (
     <DailyClosingView
       branchId={id}
-      homeHref={`/admin/branches/${id}`}
-      roleLabel="Admin"
       readOnly
     />
   );

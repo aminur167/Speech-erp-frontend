@@ -100,10 +100,7 @@ export function BranchesView() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref="/admin/dashboard"
-        breadcrumb={["Admin", "Branches"]}
         title="Branch Management"
-        subtitle="Manage all organization branches from one place."
         action={
           <div className="flex gap-2">
             <Button variant="secondary" onClick={handleExport} disabled={filtered.length === 0}>

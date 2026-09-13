@@ -8,10 +8,7 @@ export default async function AdminBranchSummaryPage({
   const { id } = await params;
   return (
     <BranchSummaryView
-      homeHref={`/admin/branches/${id}`}
-      breadcrumb={["Admin", "Summary"]}
       branchId={id}
-      subtitle="Every invoice, expense, refund and closing this branch recorded, line by line."
     />
   );
 }

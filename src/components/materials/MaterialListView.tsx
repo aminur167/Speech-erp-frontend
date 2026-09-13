@@ -26,13 +26,9 @@ import type { MaterialInput } from "@/lib/api/materials";
 
 export function MaterialListView({
   branchId: branchIdOverride,
-  homeHref = "/manager/dashboard",
-  roleLabel = "Branch Manager",
 }: {
   /** Scopes the view to one branch regardless of the logged-in user — used when Admin is browsing a specific branch. */
   branchId?: string;
-  homeHref?: string;
-  roleLabel?: string;
 } = {}) {
   const user = useAuthStore((state) => state.user);
   const branchId = branchIdOverride ?? user?.branchId ?? "branch-1";
@@ -79,10 +75,7 @@ export function MaterialListView({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref={homeHref}
-        breadcrumb={[roleLabel, "Materials"]}
         title="Materials"
-        subtitle="Track therapy materials and equipment stock for this branch."
         action={
           <Button onClick={() => setIsAddOpen(true)}>
             <Plus className="h-4 w-4" />

@@ -50,13 +50,9 @@ const DEFAULT_COLUMNS: PatientTableColumns = {
 
 export function PatientListView({
   basePath,
-  homeHref,
-  roleLabel,
   branchId: branchIdOverride,
 }: {
   basePath: string;
-  homeHref: string;
-  roleLabel: string;
   /** Scopes the view to one branch regardless of role — used when Admin is browsing a specific branch. */
   branchId?: string;
 }) {
@@ -146,10 +142,7 @@ export function PatientListView({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref={homeHref}
-        breadcrumb={[roleLabel, "Patients"]}
         title="Patient Management"
-        subtitle="Manage all patients, registrations and therapy journeys in real time."
         action={
           <div className="flex gap-2">
             <Button

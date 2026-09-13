@@ -39,14 +39,10 @@ const VIEWS = [
 
 export function DuePaymentCollectionView({
   branchId: branchIdOverride,
-  homeHref = "/manager/dashboard",
-  roleLabel = "Branch Manager",
   readOnly = false,
 }: {
   /** Scopes the view to one branch regardless of the logged-in user — used when Admin is browsing a specific branch. */
   branchId?: string;
-  homeHref?: string;
-  roleLabel?: string;
   /** Hides the collect action — Admin can view dues but shouldn't collect on a branch's behalf. */
   readOnly?: boolean;
 } = {}) {
@@ -92,10 +88,7 @@ export function DuePaymentCollectionView({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref={homeHref}
-        breadcrumb={[roleLabel, "Due Payment Collection"]}
         title="Due Payment Collection"
-        subtitle="Collect what patients owe, one list at a time."
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

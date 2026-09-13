@@ -7,6 +7,6 @@ export default async function AdminBranchTransactionsPage({
 }) {
   const { id } = await params;
   return (
-    <TransactionHistoryView homeHref={`/admin/branches/${id}`} roleLabel="Admin" branchId={id} />
+    <TransactionHistoryView branchId={id} />
   );
 }

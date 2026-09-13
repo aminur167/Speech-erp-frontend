@@ -100,16 +100,10 @@ type TabKey = (typeof TABS)[number]["key"];
  * Manager, so the same screen can't leak another branch either way.
  */
 export function BranchSummaryView({
-  homeHref,
-  breadcrumb,
   branchId,
-  subtitle,
 }: {
-  homeHref: string;
-  breadcrumb: string[];
   /** Admin only — a Manager is scoped to their own branch server-side. */
   branchId?: string;
-  subtitle: string;
 }) {
   const [tab, setTab] = useState<TabKey>("daily");
   const [dateFrom, setDateFrom] = useState(firstOfThisMonth);
@@ -359,10 +353,7 @@ export function BranchSummaryView({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref={homeHref}
-        breadcrumb={breadcrumb}
         title="Summary"
-        subtitle={subtitle}
       />
 
       <div className="sticky top-0 z-20 -mx-4 bg-background/80 px-4 py-1 backdrop-blur md:-mx-8 md:px-8">

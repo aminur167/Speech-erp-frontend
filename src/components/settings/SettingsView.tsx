@@ -34,13 +34,7 @@ const passwordSchema = z
 
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
-export function SettingsView({
-  homeHref,
-  roleLabel,
-}: {
-  homeHref: string;
-  roleLabel: string;
-}) {
+export function SettingsView() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const router = useRouter();
@@ -101,10 +95,7 @@ export function SettingsView({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        homeHref={homeHref}
-        breadcrumb={[roleLabel, "Settings"]}
         title="Settings"
-        subtitle="Manage your account and preferences."
       />
 
       <Card className="max-w-xl">
