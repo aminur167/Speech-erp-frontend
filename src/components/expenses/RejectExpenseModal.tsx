@@ -5,7 +5,6 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { useUpdateExpenseStatus } from "@/hooks/expenses/useUpdateExpenseStatus";
-import type { ApiError } from "@/types/api";
 import type { Expense } from "@/types/domain";
 
 export function RejectExpenseModal({
@@ -36,7 +35,6 @@ export function RejectExpenseModal({
       { id: expense.id, approve: false, reviewNote },
       {
         onSuccess: handleClose,
-        onError: (apiError: ApiError) => setError(apiError.message),
       },
     );
   };

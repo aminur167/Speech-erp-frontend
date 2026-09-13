@@ -8,6 +8,7 @@ export function useAmendClosing() {
   const queryClient = useQueryClient();
 
   return useMutation<DailyClosing, ApiError, AmendClosingInput>({
+    meta: { successMessage: "Daily closing corrected." },
     mutationFn: amendClosing,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.dailyClosing.all });

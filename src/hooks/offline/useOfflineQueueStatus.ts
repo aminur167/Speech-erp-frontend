@@ -1,6 +1,6 @@
 import { useMutationState, useQueryClient } from "@tanstack/react-query";
 import { OFFLINE_MUTATION_KEYS } from "@/lib/offline/mutationDefaults";
-import type { ApiError } from "@/types/api";
+import { toApiError } from "@/lib/api/errors";
 
 function isOfflineQueueableMutation(mutationKey: readonly unknown[] | undefined): boolean {
   const key = mutationKey?.[0];
@@ -18,26 +18,11 @@ const ACTION_LABELS: Record<string, string> = {
   collectDuePayment: "Due payment collection",
 };
 
-function humanizeFieldName(field: string): string {
-  const spaced = field.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
-}
-
-// A rejected mutation carries an ApiError, not a generic Error -- and when
-// the backend rejects on a specific field (e.g. "phone already registered
-// to another patient") rather than the request as a whole, that detail
-// lives in `fieldErrors`, not `message` (which falls back to a generic
-// "Something went wrong" in that case). Prefer the field-level reason so
-// staff see what actually needs fixing instead of a dead end.
+// The client already turns a field-level rejection ("phone already
+// registered to another patient") into a readable sentence, so the sync
+// indicator and the toast say exactly the same thing.
 function describeMutationError(error: unknown): string {
-  const apiError = error as ApiError | null;
-  if (apiError?.fieldErrors) {
-    const [field, messages] = Object.entries(apiError.fieldErrors)[0] ?? [];
-    if (field && messages?.[0]) {
-      return `${humanizeFieldName(field)}: ${messages[0]}`;
-    }
-  }
-  return apiError?.message ?? "Failed to sync.";
+  return toApiError(error).message;
 }
 
 export interface FailedMutation {

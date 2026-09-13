@@ -8,6 +8,7 @@ import type { InstallmentPlan } from "@/types/domain";
 
 export function useCreateInstallmentPlan() {
   return useMutation<InstallmentPlan, ApiError, CreateInstallmentPlanInput>({
+    meta: { successMessage: "Installment plan created." },
     mutationFn: createInstallmentPlan,
   });
 }

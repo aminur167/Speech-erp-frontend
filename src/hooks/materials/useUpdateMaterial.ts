@@ -8,6 +8,7 @@ export function useUpdateMaterial() {
   const queryClient = useQueryClient();
 
   return useMutation<Material, ApiError, { id: string; input: MaterialInput }>({
+    meta: { successMessage: "Material updated." },
     mutationFn: ({ id, input }) => updateMaterial(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.materials.all });

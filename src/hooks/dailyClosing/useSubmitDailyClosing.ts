@@ -8,6 +8,7 @@ export function useSubmitDailyClosing() {
   const queryClient = useQueryClient();
 
   return useMutation<DailyClosing, ApiError, SubmitDailyClosingInput>({
+    meta: { successMessage: "Daily closing submitted." },
     mutationFn: submitDailyClosing,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.dailyClosing.all });

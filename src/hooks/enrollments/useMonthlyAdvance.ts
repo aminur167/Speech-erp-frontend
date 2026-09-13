@@ -50,6 +50,7 @@ export function useCollectMonthlyAdvance() {
     ApiError,
     CollectAdvanceInput
   >({
+    meta: { successMessage: "Advance payment collected." },
     mutationFn: collectMonthlyAdvance,
     onSuccess: () => {
       for (const key of [

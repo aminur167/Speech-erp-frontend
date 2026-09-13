@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { useRequestRefund } from "@/hooks/payments/useRequestRefund";
 import { formatCurrency } from "@/utils/currency";
-import type { ApiError } from "@/types/api";
 import type { Payment } from "@/types/domain";
 
 export function RequestRefundModal({
@@ -45,7 +44,6 @@ export function RequestRefundModal({
       { paymentId: payment.id, amount: numericAmount, reason },
       {
         onSuccess: handleClose,
-        onError: (apiError: ApiError) => setError(apiError.message),
       },
     );
   };

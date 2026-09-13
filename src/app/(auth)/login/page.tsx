@@ -54,6 +54,7 @@ export default function LoginPage() {
   };
 
   const loginMutation = useMutation({
+    meta: { errorTitle: "Sign-in failed" },
     mutationFn: authApi.login,
     onSuccess: ({ user, accessToken }) => {
       login(user, accessToken);
@@ -64,8 +65,6 @@ export default function LoginPage() {
         Object.entries(error.fieldErrors).forEach(([field, messages]) => {
           setError(field as keyof LoginFormValues, { message: messages[0] });
         });
-      } else {
-        setError("password", { message: error.message });
       }
     },
   });

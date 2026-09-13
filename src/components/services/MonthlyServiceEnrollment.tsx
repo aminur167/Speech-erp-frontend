@@ -74,7 +74,6 @@ export function MonthlyServiceEnrollment() {
   const [payment, setPayment] = useState<Payment | null>(null);
   const [advanceMonths, setAdvanceMonths] = useState<string[]>([]);
   const [advancePayments, setAdvancePayments] = useState<Payment[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
   const { data: services, isLoading: servicesLoading } = useServices("monthly");
   const { data: patientResults, isLoading: patientsLoading } = usePatients({
@@ -105,7 +104,6 @@ export function MonthlyServiceEnrollment() {
 
   const handleCreateEnrollment = () => {
     if (!selectedService || !selectedPatient || !user) return;
-    setError(null);
     createEnrollment.mutate(
       {
         patientId: selectedPatient.id,
@@ -116,9 +114,6 @@ export function MonthlyServiceEnrollment() {
           setEnrollment(created);
           setStep("bills");
         },
-        // Chiefly the outstanding-due refusal. The server is the authority on
-        // it; the notice above the button is only the explanation.
-        onError: (failure) => setError(failure.message),
       },
     );
   };
@@ -132,7 +127,6 @@ export function MonthlyServiceEnrollment() {
 
   const handleCollectAdvance = () => {
     if (!enrollment || advanceMonths.length === 0) return;
-    setError(null);
     collectAdvance.mutate(
       {
         enrollmentId: enrollment.id,
@@ -145,7 +139,6 @@ export function MonthlyServiceEnrollment() {
           setAdvancePayments(result.payments);
           setStep("receipt");
         },
-        onError: (failure) => setError(failure.message),
       },
     );
   };
@@ -182,7 +175,6 @@ export function MonthlyServiceEnrollment() {
     setPayment(null);
     setAdvanceMonths([]);
     setAdvancePayments([]);
-    setError(null);
   };
 
   return (
@@ -248,7 +240,6 @@ export function MonthlyServiceEnrollment() {
                 total={outstandingTotal}
               />
             )}
-            {error && <p className="text-sm text-danger">{error}</p>}
             <div className="flex gap-2">
               <Button variant="secondary" onClick={() => setStep("patient")}>
                 ← Back
@@ -345,8 +336,6 @@ export function MonthlyServiceEnrollment() {
             {advanceMonths.length > 0 && (
               <PaymentMethodSelector value={method} onChange={setMethod} />
             )}
-
-            {error && <p className="text-sm text-danger">{error}</p>}
 
             <div className="flex gap-2">
               <Button variant="secondary" onClick={() => setStep("receipt")}>

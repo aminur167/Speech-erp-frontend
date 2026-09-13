@@ -8,6 +8,7 @@ export function useUpdateExpenseStatus() {
   const queryClient = useQueryClient();
 
   return useMutation<Expense, ApiError, ReviewExpenseInput>({
+    meta: { successMessage: "Expense updated." },
     mutationFn: reviewExpense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all });

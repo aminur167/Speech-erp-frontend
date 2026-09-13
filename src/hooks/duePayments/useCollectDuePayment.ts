@@ -8,6 +8,7 @@ export function useCollectDuePayment() {
   const queryClient = useQueryClient();
 
   return useMutation<Payment, ApiError, CollectDuePaymentInput>({
+    meta: { successMessage: "Payment collected." },
     mutationKey: ["collectDuePayment"],
     mutationFn: collectDuePayment,
     onSuccess: () => {

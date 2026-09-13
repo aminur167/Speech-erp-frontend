@@ -8,6 +8,7 @@ export function useVoidPayment() {
   const queryClient = useQueryClient();
 
   return useMutation<Payment, ApiError, { paymentId: string; reason: string }>({
+    meta: { successMessage: "Payment voided." },
     mutationFn: ({ paymentId, reason }) => voidPayment(paymentId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });

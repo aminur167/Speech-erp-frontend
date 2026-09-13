@@ -12,7 +12,6 @@ import { useDisburseSalaryPayment } from "@/hooks/salaryPayments/useDisburseSala
 import { SalaryInvoiceModal } from "@/components/salaryPayments/SalaryInvoiceModal";
 import { PAYMENT_METHOD_OPTIONS } from "@/utils/paymentMethod";
 import { formatCurrency } from "@/utils/currency";
-import type { ApiError } from "@/types/api";
 import type { PaymentMethod, SalaryPayment, SalaryPaymentStatus, StaffMember } from "@/types/domain";
 
 const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
@@ -45,7 +44,6 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
 
   const [isChoosingMethod, setIsChoosingMethod] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
-  const [error, setError] = useState<string | undefined>();
   const [viewingInvoice, setViewingInvoice] = useState<SalaryPayment | null>(null);
 
   const records = data?.results ?? [];
@@ -53,21 +51,15 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
   const history = records.filter((record) => record.id !== current?.id).slice(0, 5);
 
   const handleRequest = () => {
-    setError(undefined);
-    requestPayment.mutate(
-      { staffId: staff.id, month: currentMonth },
-      { onError: (apiError: ApiError) => setError(apiError.message) },
-    );
+    requestPayment.mutate({ staffId: staff.id, month: currentMonth });
   };
 
   const handleDisburse = () => {
     if (!current) return;
-    setError(undefined);
     disbursePayment.mutate(
       { id: current.id, paymentMethod },
       {
         onSuccess: () => setIsChoosingMethod(false),
-        onError: (apiError: ApiError) => setError(apiError.message),
       },
     );
   };
@@ -184,8 +176,6 @@ export function SalaryPaymentSection({ staff }: { staff: StaffMember }) {
               )}
             </div>
           )}
-
-          {error && <p className="mt-2 text-[11px] text-danger">{error}</p>}
         </div>
       )}
 

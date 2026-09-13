@@ -8,6 +8,7 @@ export function useDisburseSalaryPayment() {
   const queryClient = useQueryClient();
 
   return useMutation<SalaryPayment, ApiError, DisburseSalaryPaymentInput>({
+    meta: { successMessage: "Salary disbursed." },
     mutationFn: disburseSalaryPayment,
     onSuccess: () => {
       // Disbursing creates an Expense, so payroll now shows up there too.

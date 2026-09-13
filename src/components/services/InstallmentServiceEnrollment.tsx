@@ -71,7 +71,6 @@ export function InstallmentServiceEnrollment() {
     pageSize: 5,
   });
   const createPlan = useCreateInstallmentPlan();
-  const [createError, setCreateError] = useState<string | null>(null);
   // Read as soon as a patient is chosen, so the block is explained on this
   // step rather than discovered when Create Plan is refused.
   const { data: outstanding } = usePatientOutstandingDues(selectedPatient?.id);
@@ -116,7 +115,6 @@ export function InstallmentServiceEnrollment() {
 
   const handleCreatePlan = () => {
     if (!selectedService || !selectedPatient || !user || rangeError) return;
-    setCreateError(null);
     createPlan.mutate(
       {
         patientId: selectedPatient.id,
@@ -130,9 +128,6 @@ export function InstallmentServiceEnrollment() {
           setPlan(created);
           setStep("schedule");
         },
-        // Chiefly the outstanding-due refusal. The server is the authority on
-        // it; the notice above the button is only the explanation.
-        onError: (failure) => setCreateError(failure.message),
       },
     );
   };
@@ -290,7 +285,6 @@ export function InstallmentServiceEnrollment() {
                 total={outstandingTotal}
               />
             )}
-            {createError && <p className="text-sm text-danger">{createError}</p>}
 
             <div className="flex gap-2">
               <Button variant="secondary" onClick={() => setStep("patient")}>

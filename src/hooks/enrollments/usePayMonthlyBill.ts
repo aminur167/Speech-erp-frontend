@@ -8,6 +8,7 @@ export function usePayMonthlyBill() {
     ApiError,
     { enrollmentId: string; billId: string; method: string; idempotencyKey?: string }
   >({
+    meta: { successMessage: "Monthly payment collected." },
     mutationKey: ["payMonthlyBill"],
     mutationFn: ({ enrollmentId, billId, method, idempotencyKey }) =>
       payMonthlyBill(enrollmentId, billId, method, idempotencyKey),

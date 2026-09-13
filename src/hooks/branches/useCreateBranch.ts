@@ -8,6 +8,7 @@ export function useCreateBranch() {
   const queryClient = useQueryClient();
 
   return useMutation<Branch, ApiError, BranchInput>({
+    meta: { successMessage: "Branch created." },
     mutationFn: createBranch,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.branches.all });

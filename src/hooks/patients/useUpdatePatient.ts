@@ -8,6 +8,7 @@ export function useUpdatePatient() {
   const queryClient = useQueryClient();
 
   return useMutation<Patient, ApiError, { id: string; input: UpdatePatientInput }>({
+    meta: { successMessage: "Patient details updated." },
     mutationFn: ({ id, input }) => updatePatient(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.patients.all });

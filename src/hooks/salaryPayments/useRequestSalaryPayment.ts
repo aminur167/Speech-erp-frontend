@@ -8,6 +8,7 @@ export function useRequestSalaryPayment() {
   const queryClient = useQueryClient();
 
   return useMutation<SalaryPayment, ApiError, { staffId: string; month: string }>({
+    meta: { successMessage: "Salary payment requested." },
     mutationFn: ({ staffId, month }) => requestSalaryPayment(staffId, month),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.salaryPayments.all });

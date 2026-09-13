@@ -110,9 +110,6 @@ export function ServiceForm({
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(submit)}>
-      {apiError && !apiError.fieldErrors && (
-        <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{apiError.message}</p>
-      )}
       <Input
         placeholder="Service Name"
         autoComplete="off"

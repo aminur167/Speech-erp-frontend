@@ -8,6 +8,7 @@ export function useUpdateProfile() {
   const updateUser = useAuthStore((state) => state.updateUser);
 
   return useMutation<AuthUser, ApiError, UpdateProfileInput>({
+    meta: { successMessage: "Profile saved." },
     mutationFn: updateProfile,
     onSuccess: (user) => updateUser(user),
   });

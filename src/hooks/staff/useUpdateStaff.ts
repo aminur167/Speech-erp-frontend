@@ -7,6 +7,7 @@ export function useUpdateStaff(branchId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation<StaffMember, Error, { id: string; input: StaffInput }>({
+    meta: { successMessage: "Staff details updated." },
     mutationFn: ({ id, input }) => updateStaff(branchId, id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.staff.all });

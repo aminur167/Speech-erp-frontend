@@ -40,7 +40,6 @@ export function CollectDuePaymentModal({
   // exactly what it was: collect this month and nothing else.
   const [takingAdvance, setTakingAdvance] = useState(false);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
-  const [advanceError, setAdvanceError] = useState<string | null>(null);
   const collectPayment = useCollectDuePayment();
   const collectAdvance = useCollectMonthlyAdvance();
 
@@ -78,7 +77,6 @@ export function CollectDuePaymentModal({
     setAmount("");
     setTakingAdvance(false);
     setSelectedMonths([]);
-    setAdvanceError(null);
     onClose();
   };
 
@@ -86,7 +84,6 @@ export function CollectDuePaymentModal({
     if (!user || !item || amountError) return;
 
     if (isAdvance) {
-      setAdvanceError(null);
       collectAdvance.mutate(
         {
           enrollmentId: item.refId,
@@ -96,7 +93,6 @@ export function CollectDuePaymentModal({
         },
         {
           onSuccess: (result) => setPayments(result.payments),
-          onError: (failure) => setAdvanceError(failure.message),
         },
       );
       return;
@@ -199,7 +195,6 @@ export function CollectDuePaymentModal({
                   onClick={() => {
                     setTakingAdvance((current) => !current);
                     setSelectedMonths([]);
-                    setAdvanceError(null);
                   }}
                 >
                   {takingAdvance ? "This month only" : "Take advance payment"}
@@ -247,8 +242,6 @@ export function CollectDuePaymentModal({
                   </div>
                 </div>
               )}
-
-              {advanceError && <p className="text-xs text-danger">{advanceError}</p>}
             </div>
           )}
 

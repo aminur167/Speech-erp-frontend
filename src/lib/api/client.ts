@@ -1,7 +1,6 @@
 import axios from "axios";
-import type { ApiError } from "@/types/api";
 import { useAuthTokenStore } from "@/store/authTokenStore";
-import { fieldErrorsToCamelCase } from "@/lib/api/caseUtils";
+import { normalizeRequestError } from "@/lib/api/errors";
 import { getRefreshToken, setRefreshToken } from "@/lib/api/authTokenPersistence";
 
 export const apiClient = axios.create({
@@ -79,26 +78,7 @@ apiClient.interceptors.response.use(
       }
     }
 
-    const rawFieldErrors = isFieldErrorShape(error.response?.data)
-      ? error.response.data
-      : undefined;
-
-    const normalized: ApiError = {
-      message:
-        error.response?.data?.detail ??
-        error.response?.data?.message ??
-        "Something went wrong. Please try again.",
-      fieldErrors: rawFieldErrors ? fieldErrorsToCamelCase(rawFieldErrors) : undefined,
-      status: error.response?.status,
-    };
-    return Promise.reject(normalized);
+    // Classified and put into words once, here — see lib/api/errors.ts.
+    return Promise.reject(normalizeRequestError(error));
   },
 );
-
-function isFieldErrorShape(data: unknown): data is Record<string, string[]> {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    Object.values(data as Record<string, unknown>).every((v) => Array.isArray(v))
-  );
-}

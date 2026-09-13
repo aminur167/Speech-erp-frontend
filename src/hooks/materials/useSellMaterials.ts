@@ -11,6 +11,7 @@ export function useSellMaterials() {
   const queryClient = useQueryClient();
 
   return useMutation<MaterialsSaleResult, ApiError, SellMaterialsInput>({
+    meta: { successMessage: "Sale recorded." },
     mutationKey: ["sellMaterials"],
     mutationFn: sellMaterials,
     onSuccess: () => {

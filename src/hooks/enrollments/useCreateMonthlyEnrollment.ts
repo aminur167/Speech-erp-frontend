@@ -8,6 +8,7 @@ import type { MonthlyEnrollment } from "@/types/domain";
 
 export function useCreateMonthlyEnrollment() {
   return useMutation<MonthlyEnrollment, ApiError, CreateMonthlyEnrollmentInput>({
+    meta: { successMessage: "Enrollment created." },
     mutationFn: createMonthlyEnrollment,
   });
 }

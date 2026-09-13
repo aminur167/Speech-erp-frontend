@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { QueryClient, onlineManager } from "@tanstack/react-query";
+import { MutationCache, QueryClient, onlineManager } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { indexedDbPersister } from "@/lib/offline/persister";
 import { startConnectivityDetection } from "@/lib/offline/connectivity";
 import { registerServiceWorker } from "@/lib/offline/registerServiceWorker";
 import { registerOfflineMutationDefaults } from "@/lib/offline/mutationDefaults";
+import { toast } from "@/store/toastStore";
 import type { ApiError } from "@/types/api";
 
 const SEVEN_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
@@ -32,6 +33,24 @@ function shouldRetry(failureCount: number, error: unknown): boolean {
 export function QueryProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => {
     const client = new QueryClient({
+      // Every write in the app reports its outcome here, once, instead of
+      // each of ~47 hooks and their screens deciding separately how to show
+      // it. Errors always toast — a screen with its own answer opts out with
+      // `meta.errorToast: false`. Successes toast only when the hook names a
+      // message, because confirming every attendance click would be noise.
+      //
+      // A mutation paused offline does not error; it waits in the outbox, so
+      // nothing toasts until the server has actually answered.
+      mutationCache: new MutationCache({
+        onError: (error, _variables, _onMutateResult, mutation) => {
+          if (mutation.meta?.errorToast === false) return;
+          toast.error(error, { title: mutation.meta?.errorTitle });
+        },
+        onSuccess: (_data, _variables, _onMutateResult, mutation) => {
+          const message = mutation.meta?.successMessage;
+          if (message) toast.success(message);
+        },
+      }),
       defaultOptions: {
         queries: {
           staleTime: 60 * 1000,

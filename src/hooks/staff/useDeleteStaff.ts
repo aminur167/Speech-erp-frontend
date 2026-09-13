@@ -6,6 +6,7 @@ export function useDeleteStaff(branchId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation<void, Error, string>({
+    meta: { successMessage: "Staff member removed." },
     mutationFn: (id) => deleteStaff(branchId, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.staff.all });

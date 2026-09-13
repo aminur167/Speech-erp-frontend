@@ -8,6 +8,7 @@ export function useCancelBooking() {
   const queryClient = useQueryClient();
 
   return useMutation<Booking, ApiError, { bookingId: string; reason?: string }>({
+    meta: { successMessage: "Booking cancelled." },
     mutationFn: ({ bookingId, reason }) => cancelBooking(bookingId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all });

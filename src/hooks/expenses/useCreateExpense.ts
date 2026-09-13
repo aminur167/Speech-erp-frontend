@@ -8,6 +8,7 @@ export function useCreateExpense() {
   const queryClient = useQueryClient();
 
   return useMutation<Expense, ApiError, CreateExpenseInput>({
+    meta: { successMessage: "Expense added." },
     mutationKey: ["createExpense"],
     mutationFn: createExpense,
     onSuccess: () => {

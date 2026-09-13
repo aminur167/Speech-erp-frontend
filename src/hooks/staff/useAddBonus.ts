@@ -7,6 +7,7 @@ export function useAddBonus(branchId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation<StaffBonus, Error, BonusInput>({
+    meta: { successMessage: "Bonus added." },
     mutationFn: (input) => addBonus(branchId, input),
     onSuccess: (bonus) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.staff.bonuses(bonus.staffId) });

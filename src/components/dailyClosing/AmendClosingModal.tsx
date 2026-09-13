@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { useAmendClosing } from "@/hooks/dailyClosing/useAmendClosing";
 import { formatCurrency } from "@/utils/currency";
-import type { ApiError } from "@/types/api";
 import type { DailyClosing } from "@/types/domain";
 
 export function AmendClosingModal({
@@ -45,7 +44,6 @@ export function AmendClosingModal({
       { id: closing.id, correctedActualTotal: numericTotal, reason },
       {
         onSuccess: handleClose,
-        onError: (apiError: ApiError) => setError(apiError.message),
       },
     );
   };

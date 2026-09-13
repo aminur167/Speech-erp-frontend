@@ -7,6 +7,7 @@ export function useCreateStaff(branchId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation<StaffMember, Error, StaffInput>({
+    meta: { successMessage: "Staff member added." },
     mutationFn: (input) => createStaff(branchId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.staff.all });

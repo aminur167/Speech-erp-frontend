@@ -8,6 +8,7 @@ export function useRejectRefund() {
   const queryClient = useQueryClient();
 
   return useMutation<RefundRequest, ApiError, RejectRefundInput>({
+    meta: { successMessage: "Refund request rejected." },
     mutationFn: rejectRefund,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.refundRequests.all });

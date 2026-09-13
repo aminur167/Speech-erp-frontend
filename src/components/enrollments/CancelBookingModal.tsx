@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { useCancelBooking } from "@/hooks/enrollments/useCancelBooking";
 import { formatTimeLabel } from "@/utils/time";
-import type { ApiError } from "@/types/api";
 import type { Booking } from "@/types/domain";
 
 export function CancelBookingModal({
@@ -33,7 +32,6 @@ export function CancelBookingModal({
       { bookingId: booking.id, reason: reason.trim() || undefined },
       {
         onSuccess: handleClose,
-        onError: (apiError: ApiError) => setError(apiError.message),
       },
     );
   };

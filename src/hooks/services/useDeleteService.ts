@@ -7,6 +7,7 @@ export function useDeleteService() {
   const queryClient = useQueryClient();
 
   return useMutation<void, ApiError, string>({
+    meta: { successMessage: "Service deleted.", errorToast: false },
     mutationFn: deleteService,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.services.all });

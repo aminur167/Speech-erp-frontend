@@ -8,6 +8,7 @@ export function useReviewService() {
   const queryClient = useQueryClient();
 
   return useMutation<Service, ApiError, ReviewServiceInput>({
+    meta: { successMessage: "Package review saved." },
     mutationFn: reviewService,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.services.all });

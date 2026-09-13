@@ -8,6 +8,7 @@ export function useCreatePayment() {
   const queryClient = useQueryClient();
 
   return useMutation<Payment, ApiError, CreatePaymentInput>({
+    meta: { successMessage: "Payment recorded." },
     mutationFn: createPayment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });

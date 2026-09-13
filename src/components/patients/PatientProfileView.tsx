@@ -104,7 +104,6 @@ export function PatientProfileView({
     serviceRefId: string;
     serviceName: string;
   } | null>(null);
-  const [reactivateError, setReactivateError] = useState<string | null>(null);
   const [servicePage, setServicePage] = useState(1);
   const [paymentPage, setPaymentPage] = useState(1);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -354,7 +353,6 @@ export function PatientProfileView({
                         // server refuses it either way.
                         disabled={outstandingTotal > 0 || reactivate.isPending}
                         onClick={() => {
-                          setReactivateError(null);
                           reactivate.mutate(
                             {
                               kind: item.type,
@@ -363,7 +361,6 @@ export function PatientProfileView({
                                   ? item.enrollment.id
                                   : item.plan.id,
                             },
-                            { onError: (failure) => setReactivateError(failure.message) },
                           );
                         }}
                       >
@@ -396,9 +393,6 @@ export function PatientProfileView({
                 />
               </div>
             ))}
-            {reactivateError && (
-              <p className="text-sm text-danger">{reactivateError}</p>
-            )}
           </div>
         </Card>
       )}

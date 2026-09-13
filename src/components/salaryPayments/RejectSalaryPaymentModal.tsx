@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { useReviewSalaryPayment } from "@/hooks/salaryPayments/useReviewSalaryPayment";
 import { formatCurrency } from "@/utils/currency";
-import type { ApiError } from "@/types/api";
 import type { SalaryPayment } from "@/types/domain";
 
 export function RejectSalaryPaymentModal({
@@ -35,7 +34,7 @@ export function RejectSalaryPaymentModal({
     }
     reviewPayment.mutate(
       { id: payment.id, approve: false, reviewNote },
-      { onSuccess: handleClose, onError: (apiError: ApiError) => setError(apiError.message) },
+      { onSuccess: handleClose },
     );
   };
 

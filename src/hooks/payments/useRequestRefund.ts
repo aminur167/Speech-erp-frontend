@@ -8,6 +8,7 @@ export function useRequestRefund() {
   const queryClient = useQueryClient();
 
   return useMutation<RefundRequest, ApiError, RequestRefundInput>({
+    meta: { successMessage: "Refund request sent to Admin for approval." },
     mutationFn: requestRefund,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.refundRequests.all });

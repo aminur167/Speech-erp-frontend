@@ -8,6 +8,7 @@ export function useCreatePatient() {
   const queryClient = useQueryClient();
 
   return useMutation<Patient, ApiError, CreatePatientInput>({
+    meta: { successMessage: "Patient registered." },
     mutationKey: ["createPatient"],
     mutationFn: createPatient,
     onSuccess: () => {

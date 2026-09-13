@@ -8,6 +8,7 @@ export function useUpdateService() {
   const queryClient = useQueryClient();
 
   return useMutation<Service, ApiError, { id: string; input: ServiceInput }>({
+    meta: { successMessage: "Service updated." },
     mutationFn: ({ id, input }) => updateService(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.services.all });

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { useRejectRefund } from "@/hooks/payments/useRejectRefund";
 import { formatCurrency } from "@/utils/currency";
-import type { ApiError } from "@/types/api";
 import type { RefundRequest } from "@/types/domain";
 
 export function RejectRefundModal({
@@ -37,7 +36,6 @@ export function RejectRefundModal({
       { id: refund.id, reviewNote },
       {
         onSuccess: handleClose,
-        onError: (apiError: ApiError) => setError(apiError.message),
       },
     );
   };

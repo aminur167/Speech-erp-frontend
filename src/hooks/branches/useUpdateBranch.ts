@@ -8,6 +8,7 @@ export function useUpdateBranch() {
   const queryClient = useQueryClient();
 
   return useMutation<Branch, ApiError, { id: string; input: BranchInput }>({
+    meta: { successMessage: "Branch updated." },
     mutationFn: ({ id, input }) => updateBranch(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.branches.all });

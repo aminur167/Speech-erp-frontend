@@ -5,7 +5,6 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { useReviewService } from "@/hooks/services/useReviewService";
-import type { ApiError } from "@/types/api";
 import type { Service } from "@/types/domain";
 
 export function RejectPackageModal({
@@ -36,7 +35,6 @@ export function RejectPackageModal({
       { id: service.id, approve: false, reviewNote },
       {
         onSuccess: handleClose,
-        onError: (apiError: ApiError) => setError(apiError.message),
       },
     );
   };

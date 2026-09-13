@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { useVoidPayment } from "@/hooks/payments/useVoidPayment";
 import { formatCurrency } from "@/utils/currency";
-import type { ApiError } from "@/types/api";
 import type { Payment } from "@/types/domain";
 
 export function VoidPaymentModal({
@@ -37,7 +36,6 @@ export function VoidPaymentModal({
       { paymentId: payment.id, reason },
       {
         onSuccess: handleClose,
-        onError: (apiError: ApiError) => setError(apiError.message),
       },
     );
   };

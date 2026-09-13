@@ -58,7 +58,6 @@ export function InactivateServiceModal({
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [reason, setReason] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
   // A different service means a different set of months to answer for, so the
   // answers reset. Adjusted during render rather than in an effect — React's
@@ -71,7 +70,6 @@ export function InactivateServiceModal({
     setDecisions({});
     setReasons({});
     setReason("");
-    setError(null);
   }
 
   const owed = preview?.owed ?? [];
@@ -104,7 +102,6 @@ export function InactivateServiceModal({
           onInactivated?.();
           onClose();
         },
-        onError: (failure) => setError(failure.message),
       },
     );
   };
@@ -260,8 +257,6 @@ export function InactivateServiceModal({
               </span>
             </div>
           )}
-
-          {error && <p className="text-sm text-danger">{error}</p>}
 
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={onClose} disabled={inactivate.isPending}>

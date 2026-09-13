@@ -8,6 +8,7 @@ export function useCreateMaterial() {
   const queryClient = useQueryClient();
 
   return useMutation<Material, ApiError, MaterialInput>({
+    meta: { successMessage: "Material added." },
     mutationFn: createMaterial,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.materials.all });

@@ -15,6 +15,7 @@ export function usePayInstallment() {
       amount?: number;
     }
   >({
+    meta: { successMessage: "Installment payment collected." },
     mutationKey: ["payInstallment"],
     mutationFn: ({ planId, installmentId, method, idempotencyKey, amount }) =>
       payInstallment(planId, installmentId, method, idempotencyKey, amount),

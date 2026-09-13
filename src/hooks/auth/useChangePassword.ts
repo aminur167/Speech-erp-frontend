@@ -4,6 +4,7 @@ import type { ApiError } from "@/types/api";
 
 export function useChangePassword() {
   return useMutation<void, ApiError, ChangePasswordInput>({
+    meta: { successMessage: "Password changed. Signing you out…" },
     mutationFn: changePassword,
   });
 }

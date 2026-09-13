@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/store/toastStore";
 import { useMemo, useState } from "react";
 import {
   Plus,
@@ -170,8 +171,13 @@ export function ServiceCatalogView({
       onSuccess: () => setDeletingService(null),
       onError: (error: ApiError) => {
         setDeletingService(null);
+        // A blocked delete has its own answer — offer to deactivate instead —
+        // so the hook's global toast is off and every other failure is
+        // raised here.
         if (error.status === 400) {
           setDeleteBlocked({ service, message: error.message });
+        } else {
+          toast.error(error);
         }
       },
     });

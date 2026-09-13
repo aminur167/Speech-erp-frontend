@@ -7,7 +7,6 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { useApproveRefund } from "@/hooks/payments/useApproveRefund";
 import { formatCurrency } from "@/utils/currency";
-import type { ApiError } from "@/types/api";
 import type { RefundBillAction, RefundRequest } from "@/types/domain";
 
 /** Only meaningful for monthly/installment payments — a material sale's stock return doesn't touch a bill. */
@@ -39,7 +38,6 @@ export function ApproveRefundModal({
       { id: refund.id, billAction, reviewNote: reviewNote.trim() || undefined },
       {
         onSuccess: handleClose,
-        onError: (apiError: ApiError) => setError(apiError.message),
       },
     );
   };

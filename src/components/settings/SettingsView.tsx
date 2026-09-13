@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,8 +47,6 @@ export function SettingsView({
   const branchName = useCurrentBranchName();
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
-  const [showSaved, setShowSaved] = useState(false);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   const {
     register,
@@ -71,15 +68,7 @@ export function SettingsView({
   if (!user) return null;
 
   const onSubmit = (values: ProfileFormValues) => {
-    updateProfile.mutate(
-      { userId: user.id, name: values.name },
-      {
-        onSuccess: () => {
-          setShowSaved(true);
-          setTimeout(() => setShowSaved(false), 2500);
-        },
-      },
-    );
+    updateProfile.mutate({ userId: user.id, name: values.name });
   };
 
   const onSubmitPassword = (values: PasswordFormValues) => {
@@ -88,7 +77,6 @@ export function SettingsView({
       {
         onSuccess: () => {
           resetPasswordForm();
-          setPasswordSuccess(true);
           // Changing a password ends every other session too (server-side
           // blacklist), including this one's refresh token -- sign out
           // cleanly here rather than let this tab discover that the next
@@ -104,8 +92,6 @@ export function SettingsView({
             setPasswordError("currentPassword", { message: error.fieldErrors.currentPassword[0] });
           } else if (error.fieldErrors?.newPassword) {
             setPasswordError("newPassword", { message: error.fieldErrors.newPassword[0] });
-          } else {
-            setPasswordError("currentPassword", { message: error.message });
           }
         },
       },
@@ -152,7 +138,6 @@ export function SettingsView({
             <Button type="submit" isLoading={updateProfile.isPending}>
               Save Changes
             </Button>
-            {showSaved && <span className="text-sm text-success">Saved.</span>}
           </div>
         </form>
       </Card>
@@ -196,9 +181,6 @@ export function SettingsView({
             <Button type="submit" isLoading={changePassword.isPending}>
               Change Password
             </Button>
-            {passwordSuccess && (
-              <span className="text-sm text-success">Password changed. Signing you out…</span>
-            )}
           </div>
         </form>
       </Card>

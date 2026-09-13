@@ -64,6 +64,7 @@ export function useInactivateService() {
       reason?: string;
     }
   >({
+    meta: { successMessage: "Service made inactive." },
     mutationFn: ({ kind, serviceRefId, decisions, reason }) =>
       kind === "monthly"
         ? stopMonthlyService({ enrollmentId: serviceRefId, decisions, reason })
@@ -83,6 +84,7 @@ export function useReactivateService() {
   const queryClient = useQueryClient();
 
   return useMutation<unknown, ApiError, { kind: ServiceKind; serviceRefId: string }>({
+    meta: { successMessage: "Service reactivated." },
     mutationFn: ({ kind, serviceRefId }) =>
       kind === "monthly"
         ? resumeMonthlyService(serviceRefId)

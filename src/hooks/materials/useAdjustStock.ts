@@ -8,6 +8,7 @@ export function useAdjustStock() {
   const queryClient = useQueryClient();
 
   return useMutation<Material, ApiError, AdjustStockInput>({
+    meta: { successMessage: "Stock updated." },
     mutationKey: ["adjustStock"],
     mutationFn: adjustStock,
     onSuccess: () => {

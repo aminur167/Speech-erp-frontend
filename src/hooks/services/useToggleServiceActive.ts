@@ -8,6 +8,7 @@ export function useToggleServiceActive() {
   const queryClient = useQueryClient();
 
   return useMutation<Service, ApiError, { id: string; makeActive: boolean }>({
+    meta: { successMessage: "Service status updated." },
     mutationFn: ({ id, makeActive }) => (makeActive ? activateService(id) : deactivateService(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.services.all });

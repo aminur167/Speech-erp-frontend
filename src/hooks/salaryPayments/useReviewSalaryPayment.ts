@@ -8,6 +8,7 @@ export function useReviewSalaryPayment() {
   const queryClient = useQueryClient();
 
   return useMutation<SalaryPayment, ApiError, ReviewSalaryPaymentInput>({
+    meta: { successMessage: "Salary payment reviewed." },
     mutationFn: reviewSalaryPayment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.salaryPayments.all });

@@ -7,6 +7,7 @@ export function useDeleteMaterial() {
   const queryClient = useQueryClient();
 
   return useMutation<void, ApiError, string>({
+    meta: { successMessage: "Material deleted." },
     mutationFn: deleteMaterial,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.materials.all });

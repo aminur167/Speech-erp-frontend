@@ -8,6 +8,7 @@ export function useCreateService() {
   const queryClient = useQueryClient();
 
   return useMutation<Service, ApiError, ServiceInput>({
+    meta: { successMessage: "Service created." },
     mutationFn: createService,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.services.all });
