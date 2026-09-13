@@ -15,6 +15,7 @@ export function StaffTable({
   branchId,
   staff,
   todayAttendance,
+  paidStaffIds,
   onViewDetails,
   onEdit,
   onDelete,
@@ -23,6 +24,8 @@ export function StaffTable({
   branchId?: string;
   staff: StaffMember[];
   todayAttendance: Record<string, StaffAttendance>;
+  /** Staff already disbursed this month's salary — everyone else reads as "Unpaid" at a glance. */
+  paidStaffIds: Set<string>;
   onViewDetails: (member: StaffMember) => void;
   onEdit: (member: StaffMember) => void;
   onDelete: (member: StaffMember) => void;
@@ -37,6 +40,7 @@ export function StaffTable({
             <th className="py-2 pr-4 font-medium">Contact</th>
             <th className="py-2 pr-4 font-medium">Monthly Salary</th>
             <th className="py-2 pr-4 font-medium">Today&apos;s Attendance</th>
+            <th className="py-2 pr-4 font-medium">This Month&apos;s Salary</th>
             <th className="py-2 pr-4 font-medium">Status</th>
             <th className="py-2 pr-4 font-medium">Actions</th>
           </tr>
@@ -83,6 +87,12 @@ export function StaffTable({
                   branchId={branchId}
                   staffId={member.id}
                   record={todayAttendance[member.id]}
+                />
+              </td>
+              <td className="py-3 pr-4">
+                <Badge
+                  tone={paidStaffIds.has(member.id) ? "success" : "warning"}
+                  label={paidStaffIds.has(member.id) ? "Paid" : "Unpaid"}
                 />
               </td>
               <td className="py-3 pr-4">
