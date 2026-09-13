@@ -5,12 +5,13 @@ import { Check, FileText, X } from "lucide-react";
 import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Pagination } from "@/components/ui/Pagination";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
-import { FilterBar } from "@/components/ui/FilterBar";
+import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
 import { useSalaryPayments } from "@/hooks/salaryPayments/useSalaryPayments";
 import { useSalaryPaymentBranchSummary } from "@/hooks/salaryPayments/useSalaryPaymentBranchSummary";
 import { useAuthStore } from "@/store/authStore";
@@ -52,6 +53,7 @@ export function SalaryApprovalsView() {
 
   const [status, setStatus] = useState<SalaryPaymentStatus | "">("pending_approval");
   const [branchId, setBranchId] = useState("");
+  const [month, setMonth] = useState("");
   const [page, setPage] = useState(1);
   const [approving, setApproving] = useState<SalaryPayment | null>(null);
   const [rejecting, setRejecting] = useState<SalaryPayment | null>(null);
@@ -61,10 +63,11 @@ export function SalaryApprovalsView() {
   const { data, isLoading, isError, refetch } = useSalaryPayments({
     status: status || undefined,
     branchId: branchId || undefined,
+    month: month || undefined,
     page,
     pageSize: PAGE_SIZE,
   });
-  const { data: branchSummary } = useSalaryPaymentBranchSummary();
+  const { data: branchSummary } = useSalaryPaymentBranchSummary(month || undefined);
 
   return (
     <div className="flex flex-col gap-6">
@@ -76,7 +79,11 @@ export function SalaryApprovalsView() {
       />
 
       {branchSummary && branchSummary.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="flex flex-col gap-2.5">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+            Branch-wise Approved Salary — {month ? monthLabel(month) : "All Time"}
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {branchSummary.map((row) => (
             <div
               key={row.branchId}
@@ -116,10 +123,24 @@ export function SalaryApprovalsView() {
               </div>
             </div>
           ))}
+          </div>
         </div>
       )}
 
-      <FilterBar>
+      <FilterBar
+        dateSlot={
+          <Input
+            label="Month"
+            type="month"
+            value={month}
+            onChange={(event) => {
+              setMonth(event.target.value);
+              setPage(1);
+            }}
+            containerClassName={FILTER_FIELD_WIDTH}
+          />
+        }
+      >
         <BranchFilterSelect
           value={branchId}
           onChange={(value) => {
@@ -133,6 +154,7 @@ export function SalaryApprovalsView() {
             setStatus(event.target.value as SalaryPaymentStatus | "");
             setPage(1);
           }}
+          containerClassName={FILTER_FIELD_WIDTH}
         >
           <option value="pending_approval">Pending Approval</option>
           <option value="approved">Approved</option>
