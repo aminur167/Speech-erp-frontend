@@ -106,6 +106,7 @@ export interface StaffInput {
   email?: string;
   joinedAt: string;
   monthlySalary: number;
+  photoUrl?: string;
   status: StaffStatus;
 }
 

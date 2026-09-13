@@ -369,6 +369,8 @@ export interface StaffMember {
   branchId: string;
   joinedAt: string; // ISO date
   monthlySalary: number;
+  /** A data URL produced client-side, not a hosted file — see StaffPhotoPicker. */
+  photoUrl?: string;
   status: StaffStatus;
   createdAt: string;
 }

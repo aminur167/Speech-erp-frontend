@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import { StaffAvatar } from "@/components/staff/StaffAvatar";
+import { StaffPhotoPicker } from "@/components/staff/StaffPhotoPicker";
 import { SalaryPaymentSection } from "@/components/staff/SalaryPaymentSection";
 import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useAddBonus } from "@/hooks/staff/useAddBonus";
@@ -65,11 +65,31 @@ export function StaffDetailDrawer({
           email: staff.email,
           joinedAt: staff.joinedAt,
           monthlySalary: amount,
+          photoUrl: staff.photoUrl,
           status: staff.status,
         },
       },
       { onSuccess: () => setIsEditingSalary(false) },
     );
+  };
+
+  const savePhoto = (photoUrl: string | undefined) => {
+    updateStaff.mutate({
+      id: staff.id,
+      input: {
+        name: staff.name,
+        designation: staff.designation,
+        phone: staff.phone,
+        email: staff.email,
+        joinedAt: staff.joinedAt,
+        monthlySalary: staff.monthlySalary,
+        // An explicit "" rather than undefined -- axios drops an undefined
+        // value when serialising the request body, which would leave the
+        // photo untouched server-side instead of clearing it.
+        photoUrl: photoUrl ?? "",
+        status: staff.status,
+      },
+    });
   };
 
   const submitBonus = () => {
@@ -92,8 +112,13 @@ export function StaffDetailDrawer({
   return (
     <Drawer open={Boolean(staff)} onClose={onClose} title="Staff Details">
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-2.5">
-          <StaffAvatar name={staff.name} />
+        <div className="flex items-center gap-3">
+          <StaffPhotoPicker
+            name={staff.name}
+            value={staff.photoUrl}
+            onChange={savePhoto}
+            disabled={updateStaff.isPending}
+          />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-text-primary">{staff.name}</p>
             <p className="font-mono text-xs text-text-secondary">{staff.staffCode}</p>

@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { StaffPhotoPicker } from "@/components/staff/StaffPhotoPicker";
 import { toLocalDateString } from "@/utils/time";
 import type { StaffInput } from "@/lib/api/staff";
 import type { StaffMember } from "@/types/domain";
@@ -36,9 +38,11 @@ export function StaffForm({
   onCancel: () => void;
   isSubmitting?: boolean;
 }) {
+  const [photoUrl, setPhotoUrl] = useState(initialValues?.photoUrl);
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<StaffFormValues>({
     resolver: zodResolver(staffSchema),
@@ -68,12 +72,16 @@ export function StaffForm({
       email: values.email || undefined,
       joinedAt: values.joinedAt,
       monthlySalary: Number(values.monthlySalary),
+      photoUrl,
       status: values.status,
     });
   };
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(submit)}>
+      <div className="flex justify-center">
+        <StaffPhotoPicker name={watch("name") || "?"} value={photoUrl} onChange={setPhotoUrl} />
+      </div>
       <Input placeholder="Full Name" autoComplete="off" error={errors.name?.message} {...register("name")} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Select {...register("designation")}>

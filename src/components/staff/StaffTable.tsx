@@ -61,7 +61,7 @@ export function StaffTable({
             >
               <td className="py-3 pr-4">
                 <div className="flex items-center gap-3">
-                  <StaffAvatar name={member.name} />
+                  <StaffAvatar name={member.name} photoUrl={member.photoUrl} />
                   <div className="min-w-0">
                     <p className="truncate font-medium text-text-primary">{member.name}</p>
                     <p className="font-mono text-xs text-text-secondary">{member.staffCode}</p>
