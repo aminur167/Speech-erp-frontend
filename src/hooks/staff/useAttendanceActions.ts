@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { checkInStaff, checkOutStaff, markAttendanceStatus } from "@/lib/api/staff";
 import { queryKeys } from "@/lib/queryKeys";
+import type { ApiError } from "@/types/api";
 import type { AttendanceStatus, StaffAttendance } from "@/types/domain";
 
 function useInvalidateAttendance(branchId?: string) {
@@ -14,7 +15,7 @@ function useInvalidateAttendance(branchId?: string) {
 
 export function useCheckIn(branchId?: string) {
   const invalidate = useInvalidateAttendance(branchId);
-  return useMutation<StaffAttendance, Error, string>({
+  return useMutation<StaffAttendance, ApiError, string>({
     mutationFn: (staffId) => checkInStaff(branchId, staffId),
     onSuccess: (_, staffId) => invalidate(staffId),
   });
@@ -22,7 +23,7 @@ export function useCheckIn(branchId?: string) {
 
 export function useCheckOut(branchId?: string) {
   const invalidate = useInvalidateAttendance(branchId);
-  return useMutation<StaffAttendance, Error, string>({
+  return useMutation<StaffAttendance, ApiError, string>({
     mutationFn: (staffId) => checkOutStaff(branchId, staffId),
     onSuccess: (_, staffId) => invalidate(staffId),
   });

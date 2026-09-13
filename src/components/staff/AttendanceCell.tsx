@@ -4,6 +4,7 @@ import { CalendarOff, Clock, LogIn, LogOut, UserX } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useCheckIn, useCheckOut, useMarkAttendanceStatus } from "@/hooks/staff/useAttendanceActions";
+import { useIsBeforeOfficeHours } from "@/hooks/staff/useIsBeforeOfficeHours";
 import { ATTENDANCE_STATUS_TONE } from "@/components/staff/attendanceStatusTone";
 import { humanizeField } from "@/utils/fields";
 import type { StaffAttendance } from "@/types/domain";
@@ -26,45 +27,65 @@ export function AttendanceCell({
   const checkIn = useCheckIn(branchId);
   const checkOut = useCheckOut(branchId);
   const markStatus = useMarkAttendanceStatus(branchId);
+  const isBeforeOfficeHours = useIsBeforeOfficeHours();
+  const checkInTitle = isBeforeOfficeHours ? "Check-in opens at 9:00 AM" : undefined;
 
   if (!record) {
     return (
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Button variant="secondary" onClick={() => checkIn.mutate(staffId)} isLoading={checkIn.isPending}>
-          <LogIn className="h-3.5 w-3.5" />
-          Check In
-        </Button>
-        <Button
-          variant="ghost"
-          title="Mark on leave"
-          aria-label="Mark on leave"
-          className="px-2"
-          onClick={() => markStatus.mutate({ staffId, status: "on_leave" })}
-          isLoading={markStatus.isPending && markStatus.variables?.status === "on_leave"}
-        >
-          <CalendarOff className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          title="Mark absent"
-          aria-label="Mark absent"
-          className="px-2 text-danger hover:bg-danger/10"
-          onClick={() => markStatus.mutate({ staffId, status: "absent" })}
-          isLoading={markStatus.isPending && markStatus.variables?.status === "absent"}
-        >
-          <UserX className="h-3.5 w-3.5" />
-        </Button>
+      <div className="flex flex-col items-start gap-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Button
+            variant="secondary"
+            title={checkInTitle}
+            disabled={isBeforeOfficeHours}
+            onClick={() => checkIn.mutate(staffId)}
+            isLoading={checkIn.isPending}
+          >
+            <LogIn className="h-3.5 w-3.5" />
+            Check In
+          </Button>
+          <Button
+            variant="ghost"
+            title="Mark on leave"
+            aria-label="Mark on leave"
+            className="px-2"
+            onClick={() => markStatus.mutate({ staffId, status: "on_leave" })}
+            isLoading={markStatus.isPending && markStatus.variables?.status === "on_leave"}
+          >
+            <CalendarOff className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            title="Mark absent"
+            aria-label="Mark absent"
+            className="px-2 text-danger hover:bg-danger/10"
+            onClick={() => markStatus.mutate({ staffId, status: "absent" })}
+            isLoading={markStatus.isPending && markStatus.variables?.status === "absent"}
+          >
+            <UserX className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        {checkIn.isError && <p className="text-[11px] text-danger">{checkIn.error.message}</p>}
       </div>
     );
   }
 
   if (record.status === "on_leave" || record.status === "absent") {
     return (
-      <div className="flex items-center gap-2">
-        <Badge tone={ATTENDANCE_STATUS_TONE[record.status]} label={humanizeField(record.status)} />
-        <Button variant="secondary" onClick={() => checkIn.mutate(staffId)} isLoading={checkIn.isPending}>
-          Check In
-        </Button>
+      <div className="flex flex-col items-start gap-1">
+        <div className="flex items-center gap-2">
+          <Badge tone={ATTENDANCE_STATUS_TONE[record.status]} label={humanizeField(record.status)} />
+          <Button
+            variant="secondary"
+            title={checkInTitle}
+            disabled={isBeforeOfficeHours}
+            onClick={() => checkIn.mutate(staffId)}
+            isLoading={checkIn.isPending}
+          >
+            Check In
+          </Button>
+        </div>
+        {checkIn.isError && <p className="text-[11px] text-danger">{checkIn.error.message}</p>}
       </div>
     );
   }
@@ -85,6 +106,7 @@ export function AttendanceCell({
           Check Out
         </Button>
       )}
+      {checkOut.isError && <p className="text-[11px] text-danger">{checkOut.error.message}</p>}
     </div>
   );
 }
