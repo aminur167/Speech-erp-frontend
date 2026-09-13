@@ -17,7 +17,8 @@ import { formatCurrency } from "@/utils/currency";
 import { ApproveSalaryPaymentModal } from "@/components/salaryPayments/ApproveSalaryPaymentModal";
 import { RejectSalaryPaymentModal } from "@/components/salaryPayments/RejectSalaryPaymentModal";
 import { SalaryInvoiceModal } from "@/components/salaryPayments/SalaryInvoiceModal";
-import { StaffPerformanceModal } from "@/components/salaryPayments/StaffPerformanceModal";
+import { StaffPerformanceDrawer } from "@/components/salaryPayments/StaffPerformanceDrawer";
+import { StaffAvatar } from "@/components/staff/StaffAvatar";
 import { cameFromControl } from "@/utils/interactiveClick";
 import type { SalaryPayment, SalaryPaymentStatus } from "@/types/domain";
 
@@ -147,38 +148,41 @@ export function SalaryApprovalsView() {
                       setViewingPerformance(payment);
                     }}
                     tabIndex={0}
-                    title="View staff performance"
+                    title="View staff details"
                     className="flex cursor-pointer flex-col gap-3 rounded-lg py-4 transition-colors hover:bg-primary-light/40 focus:outline-none focus-visible:bg-primary-light/40 sm:flex-row sm:items-start sm:justify-between sm:px-2"
                   >
-                    <div className="flex flex-col gap-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium text-text-primary">{payment.staffName}</span>
-                        <span className="font-mono text-xs text-text-secondary">
-                          {payment.staffCode}
-                        </span>
-                        <Badge tone={STATUS_TONE[payment.status]} label={payment.status.replace("_", " ")} />
+                    <div className="flex items-start gap-3">
+                      <StaffAvatar name={payment.staffName} photoUrl={payment.staffPhotoUrl || undefined} />
+                      <div className="flex flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium text-text-primary">{payment.staffName}</span>
+                          <span className="font-mono text-xs text-text-secondary">
+                            {payment.staffCode}
+                          </span>
+                          <Badge tone={STATUS_TONE[payment.status]} label={payment.status.replace("_", " ")} />
+                        </div>
+                        <p className="text-sm font-medium text-text-primary">
+                          {formatCurrency(payment.amount)} — {monthLabel(payment.month)} ·{" "}
+                          {payment.branchName}
+                        </p>
+                        <p className="text-xs text-text-secondary">
+                          Requested by {payment.requestedBy || "—"} on{" "}
+                          {new Date(payment.createdAt).toLocaleString()}
+                        </p>
+                        {payment.status !== "pending_approval" && payment.reviewedBy && (
+                          <p className="text-xs text-text-secondary">
+                            {payment.status === "rejected" ? "Rejected" : "Approved"} by{" "}
+                            {payment.reviewedBy}
+                            {payment.reviewNote ? ` — "${payment.reviewNote}"` : ""}
+                          </p>
+                        )}
+                        {payment.status === "paid" && (
+                          <p className="text-xs text-text-secondary">
+                            Paid via {payment.paymentMethod.replace("_", " ")} — logged as{" "}
+                            <span className="font-mono">{payment.expenseCode}</span> in Expenses.
+                          </p>
+                        )}
                       </div>
-                      <p className="text-sm font-medium text-text-primary">
-                        {formatCurrency(payment.amount)} — {monthLabel(payment.month)} ·{" "}
-                        {payment.branchName}
-                      </p>
-                      <p className="text-xs text-text-secondary">
-                        Requested by {payment.requestedBy || "—"} on{" "}
-                        {new Date(payment.createdAt).toLocaleString()}
-                      </p>
-                      {payment.status !== "pending_approval" && payment.reviewedBy && (
-                        <p className="text-xs text-text-secondary">
-                          {payment.status === "rejected" ? "Rejected" : "Approved"} by{" "}
-                          {payment.reviewedBy}
-                          {payment.reviewNote ? ` — "${payment.reviewNote}"` : ""}
-                        </p>
-                      )}
-                      {payment.status === "paid" && (
-                        <p className="text-xs text-text-secondary">
-                          Paid via {payment.paymentMethod.replace("_", " ")} — logged as{" "}
-                          <span className="font-mono">{payment.expenseCode}</span> in Expenses.
-                        </p>
-                      )}
                     </div>
                     <div className="flex shrink-0 gap-2">
                       {(payment.status === "approved" || payment.status === "paid") && (
@@ -224,7 +228,7 @@ export function SalaryApprovalsView() {
       <ApproveSalaryPaymentModal payment={approving} onClose={() => setApproving(null)} />
       <RejectSalaryPaymentModal payment={rejecting} onClose={() => setRejecting(null)} />
       <SalaryInvoiceModal payment={viewingInvoice} onClose={() => setViewingInvoice(null)} />
-      <StaffPerformanceModal payment={viewingPerformance} onClose={() => setViewingPerformance(null)} />
+      <StaffPerformanceDrawer payment={viewingPerformance} onClose={() => setViewingPerformance(null)} />
     </div>
   );
 }
