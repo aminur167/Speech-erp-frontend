@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, FileText, X } from "lucide-react";
+import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Select";
@@ -29,6 +30,13 @@ const STATUS_TONE: Record<SalaryPaymentStatus, "warning" | "info" | "danger" | "
   approved: "info",
   rejected: "danger",
   paid: "success",
+};
+
+const STATUS_BORDER: Record<SalaryPaymentStatus, string> = {
+  pending_approval: "border-l-warning",
+  approved: "border-l-info",
+  rejected: "border-l-danger",
+  paid: "border-l-success",
 };
 
 function monthLabel(month: string): string {
@@ -68,39 +76,47 @@ export function SalaryApprovalsView() {
       />
 
       {branchSummary && branchSummary.length > 0 && (
-        <Card>
-          <h2 className="mb-3 text-sm font-semibold text-text-primary">
-            Branch-wise Approved Salary
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-border text-text-secondary">
-                  <th className="py-2 pr-4 font-medium">Branch</th>
-                  <th className="py-2 pr-4 font-medium">Awaiting Payment</th>
-                  <th className="py-2 pr-4 font-medium">Paid</th>
-                  <th className="py-2 pr-4 font-medium">Total Approved</th>
-                  <th className="py-2 pr-4 font-medium">Payments</th>
-                </tr>
-              </thead>
-              <tbody>
-                {branchSummary.map((row) => (
-                  <tr key={row.branchId} className="border-b border-border/60 last:border-0">
-                    <td className="py-2 pr-4 font-medium text-text-primary">{row.branchName}</td>
-                    <td className="py-2 pr-4 text-text-primary">
-                      {formatCurrency(row.approvedAmount)}
-                    </td>
-                    <td className="py-2 pr-4 text-success">{formatCurrency(row.paidAmount)}</td>
-                    <td className="py-2 pr-4 font-semibold text-text-primary">
-                      {formatCurrency(row.totalApprovedAmount)}
-                    </td>
-                    <td className="py-2 pr-4 text-text-secondary">{row.paymentCount}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {branchSummary.map((row) => (
+            <div
+              key={row.branchId}
+              className="rounded-xl border border-border bg-surface p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_1px_6px_rgba(15,23,42,0.04)]"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="truncate text-sm font-semibold text-text-primary">{row.branchName}</h3>
+                <span className="shrink-0 rounded-full bg-primary-light px-2 py-0.5 text-[11px] font-medium text-primary-dark">
+                  {row.paymentCount} payment{row.paymentCount === 1 ? "" : "s"}
+                </span>
+              </div>
+              <div className="mt-3 grid grid-cols-3 divide-x divide-border text-center">
+                <div className="px-1">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">
+                    Awaiting
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold text-warning">
+                    {formatCurrency(row.approvedAmount)}
+                  </p>
+                </div>
+                <div className="px-1">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">
+                    Paid
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold text-success">
+                    {formatCurrency(row.paidAmount)}
+                  </p>
+                </div>
+                <div className="px-1">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">
+                    Total
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-text-primary">
+                    {formatCurrency(row.totalApprovedAmount)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       <FilterBar>
@@ -151,7 +167,10 @@ export function SalaryApprovalsView() {
                     }}
                     tabIndex={0}
                     title="View staff details"
-                    className="flex cursor-pointer flex-col gap-3 rounded-lg py-4 transition-colors hover:bg-primary-light/40 focus:outline-none focus-visible:bg-primary-light/40 sm:flex-row sm:items-start sm:justify-between sm:px-2"
+                    className={clsx(
+                      "flex cursor-pointer flex-col gap-3 rounded-lg border-l-4 bg-surface py-4 pl-3 pr-2 transition-colors hover:bg-primary-light/40 focus:outline-none focus-visible:bg-primary-light/40 sm:flex-row sm:items-center sm:justify-between",
+                      STATUS_BORDER[payment.status],
+                    )}
                   >
                     <div className="flex items-start gap-3">
                       <StaffAvatar name={payment.staffName} photoUrl={payment.staffPhotoUrl || undefined} />
@@ -163,9 +182,11 @@ export function SalaryApprovalsView() {
                           </span>
                           <Badge tone={STATUS_TONE[payment.status]} label={payment.status.replace("_", " ")} />
                         </div>
-                        <p className="text-sm font-medium text-text-primary">
-                          {formatCurrency(payment.amount)} — {monthLabel(payment.month)} ·{" "}
-                          {payment.branchName}
+                        <p className="text-base font-semibold text-text-primary">
+                          {formatCurrency(payment.amount)}
+                          <span className="ml-1.5 text-sm font-normal text-text-secondary">
+                            — {monthLabel(payment.month)} · {payment.branchName}
+                          </span>
                         </p>
                         <p className="text-xs text-text-secondary">
                           Requested by {payment.requestedBy || "—"} on{" "}

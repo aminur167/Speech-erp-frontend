@@ -2,18 +2,22 @@
 
 import { useRef, useState } from "react";
 import { Camera, X } from "lucide-react";
+import { clsx } from "clsx";
 import { StaffAvatar } from "@/components/staff/StaffAvatar";
+import { resizeImageToDataUrl } from "@/utils/resizeImage";
 
-// Same cap as MaterialImagePicker — keeps a data URL (there's no hosted
-// file storage wired up yet) a reasonable size for a JSON payload and a DB row.
-const MAX_BYTES = 512 * 1024;
+// A generous cap on the *source* file — the actual stored value is always
+// shrunk to a small square avatar (see resizeImageToDataUrl), so this only
+// exists to reject something absurd before the browser tries to decode it.
+const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
 
 /**
  * A staff member's avatar, editable in place: a small camera badge opens the
  * file picker, and — once a photo is set — a remove badge appears on hover.
- * Reads the chosen image into a data URL the same way MaterialImagePicker
- * does; a real backend would take a multipart upload and hand back a hosted
- * URL instead, stored in exactly the same `photoUrl` field either way.
+ * The chosen image is downscaled/compressed client-side into a small data
+ * URL (there's no hosted file storage wired up yet); a real backend would
+ * take a multipart upload and hand back a hosted URL instead, stored in
+ * exactly the same `photoUrl` field either way.
  */
 export function StaffPhotoPicker({
   name,
@@ -28,24 +32,28 @@ export function StaffPhotoPicker({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string>();
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleFile = (file: File | undefined) => {
+  const handleFile = async (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setError("Choose an image file.");
       return;
     }
-    if (file.size > MAX_BYTES) {
-      setError("Photo must be under 512KB.");
+    if (file.size > MAX_SOURCE_BYTES) {
+      setError("Photo must be under 8MB.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
+    setIsProcessing(true);
+    try {
+      const resized = await resizeImageToDataUrl(file);
       setError(undefined);
-      onChange(reader.result as string);
-    };
-    reader.onerror = () => setError("Couldn't read that file.");
-    reader.readAsDataURL(file);
+      onChange(resized);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't process that image.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -56,9 +64,12 @@ export function StaffPhotoPicker({
           type="button"
           title={value ? "Change photo" : "Add photo"}
           aria-label={value ? "Change photo" : "Add photo"}
-          disabled={disabled}
+          disabled={disabled || isProcessing}
           onClick={() => inputRef.current?.click()}
-          className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-primary text-white shadow-sm transition-transform hover:scale-110 disabled:cursor-not-allowed disabled:opacity-60"
+          className={clsx(
+            "absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-primary text-white shadow-sm transition-transform hover:scale-110 disabled:cursor-not-allowed disabled:opacity-60",
+            isProcessing && "animate-pulse",
+          )}
         >
           <Camera className="h-3 w-3" />
         </button>
