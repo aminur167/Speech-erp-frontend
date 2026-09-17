@@ -73,7 +73,9 @@ export function WeekView({
                     "flex items-center gap-1.5 rounded-md border p-1.5 text-left text-xs transition-colors",
                     booking.status === "cancelled"
                       ? "border-danger/20 bg-danger/5"
-                      : "border-info/20 bg-info/5 hover:border-info/40",
+                      : !booking.advancePaid
+                        ? "border-warning/30 bg-warning/5 hover:border-warning/50"
+                        : "border-info/20 bg-info/5 hover:border-info/40",
                   )}
                 >
                   <PatientAvatar name={booking.patientName} />
@@ -89,7 +91,7 @@ export function WeekView({
                       {booking.patientName}
                     </p>
                     <p className="flex items-center gap-1 truncate text-[10px] text-text-secondary">
-                      <StatusDot status={booking.status} />
+                      <StatusDot booking={booking} />
                       {formatTimeLabel(booking.time)}
                     </p>
                   </div>

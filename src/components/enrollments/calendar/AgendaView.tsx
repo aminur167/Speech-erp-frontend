@@ -28,10 +28,12 @@ export function AgendaView({
   bookings,
   isManager,
   onCancel,
+  onCollectAdvance,
 }: {
   bookings: Booking[];
   isManager: boolean;
   onCancel: (booking: Booking) => void;
+  onCollectAdvance: (booking: Booking) => void;
 }) {
   const todayISO = toISO(new Date());
 
@@ -96,10 +98,22 @@ export function AgendaView({
                     {formatCurrency(booking.advanceAmount)}
                   </p>
                 </div>
+                {booking.status === "confirmed" && !booking.advancePaid && (
+                  <Badge tone="warning" label="Payment Pending" />
+                )}
                 <Badge
                   tone={booking.status === "cancelled" ? "danger" : "success"}
                   label={booking.status}
                 />
+                {isManager && booking.status === "confirmed" && !booking.advancePaid && (
+                  <Button
+                    variant="secondary"
+                    className="px-3 py-1.5 text-xs"
+                    onClick={() => onCollectAdvance(booking)}
+                  >
+                    Collect Payment
+                  </Button>
+                )}
                 {isManager && booking.status === "confirmed" && (
                   <Button
                     variant="secondary"

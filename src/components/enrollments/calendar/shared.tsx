@@ -28,10 +28,14 @@ export function PatientAvatar({ name, size = "sm" }: { name: string; size?: "sm"
   );
 }
 
-export function StatusDot({ status }: { status: Booking["status"] }) {
-  return (
-    <span
-      className={clsx("h-2 w-2 shrink-0 rounded-full", status === "cancelled" ? "bg-danger" : "bg-info")}
-    />
-  );
+/**
+ * A booking still awaiting its advance (only ever one the public website
+ * made — see create_public_booking) gets its own colour, distinct from an
+ * ordinary confirmed one, so it doesn't read as already settled while
+ * scanning the calendar.
+ */
+export function StatusDot({ booking }: { booking: Pick<Booking, "status" | "advancePaid"> }) {
+  const tone =
+    booking.status === "cancelled" ? "bg-danger" : !booking.advancePaid ? "bg-warning" : "bg-info";
+  return <span className={clsx("h-2 w-2 shrink-0 rounded-full", tone)} />;
 }

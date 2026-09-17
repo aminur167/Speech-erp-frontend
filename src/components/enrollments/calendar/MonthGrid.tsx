@@ -101,10 +101,12 @@ export function MonthGrid({
                     "flex items-center gap-1 truncate rounded px-1 py-0.5 text-[11px] leading-tight",
                     booking.status === "cancelled"
                       ? "bg-danger/5 text-text-secondary line-through"
-                      : "bg-info/10 text-info",
+                      : !booking.advancePaid
+                        ? "bg-warning/10 text-warning"
+                        : "bg-info/10 text-info",
                   )}
                 >
-                  <StatusDot status={booking.status} />
+                  <StatusDot booking={booking} />
                   <span className="truncate">
                     {formatTimeLabel(booking.time)} · {booking.patientName}
                   </span>
