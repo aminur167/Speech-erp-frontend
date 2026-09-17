@@ -33,6 +33,7 @@ export function WeekView({
       {days.map((day, i) => {
         const iso = toISODate(day);
         const isToday = iso === todayISO;
+        const isWeekend = i === 0 || i === 6;
         const dayBookings = (bookingsByDate.get(iso) ?? []).sort((a, b) =>
           a.time.localeCompare(b.time),
         );
@@ -41,18 +42,29 @@ export function WeekView({
           <div
             key={iso}
             className={clsx(
-              "flex flex-col gap-2 rounded-lg border p-2",
-              isToday ? "border-primary/40 bg-primary-light/20" : "border-border/60 bg-surface",
+              "flex flex-col gap-2 rounded-xl border p-2.5 transition-shadow",
+              isToday
+                ? "border-primary bg-gradient-to-b from-primary-light/50 to-primary-light/10 shadow-sm ring-1 ring-primary/30"
+                : isWeekend
+                  ? "border-border/60 bg-primary-light/10"
+                  : "border-border/60 bg-surface",
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-text-secondary">
+              <span
+                className={clsx(
+                  "text-[11px] font-bold tracking-wider uppercase",
+                  isWeekend ? "text-primary/60" : "text-text-secondary",
+                )}
+              >
                 {WEEKDAY_LABELS[i]}
               </span>
               <span
                 className={clsx(
                   "flex h-6 w-6 items-center justify-center rounded-full text-xs",
-                  isToday ? "bg-primary font-semibold text-white" : "text-text-primary",
+                  isToday
+                    ? "bg-gradient-to-br from-primary to-primary-dark font-bold text-white shadow-sm"
+                    : "font-medium text-text-primary",
                 )}
               >
                 {day.getDate()}
@@ -60,7 +72,7 @@ export function WeekView({
             </div>
             <div className="flex min-h-[60px] flex-col gap-1.5">
               {dayBookings.length === 0 && (
-                <p className="py-4 text-center text-[11px] text-text-secondary/60">
+                <p className="py-4 text-center text-[11px] text-text-secondary/50">
                   No appointments
                 </p>
               )}
@@ -70,19 +82,19 @@ export function WeekView({
                   type="button"
                   onClick={() => onSelectDay(iso)}
                   className={clsx(
-                    "flex items-center gap-1.5 rounded-md border p-1.5 text-left text-xs transition-colors",
+                    "flex items-center gap-1.5 rounded-lg border p-1.5 text-left text-xs shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
                     booking.status === "cancelled"
                       ? "border-danger/20 bg-danger/5"
                       : !booking.advancePaid
-                        ? "border-warning/30 bg-warning/5 hover:border-warning/50"
-                        : "border-info/20 bg-info/5 hover:border-info/40",
+                        ? "border-warning/30 bg-warning/10 hover:border-warning/50"
+                        : "border-info/20 bg-info/10 hover:border-info/40",
                   )}
                 >
                   <PatientAvatar name={booking.patientName} />
                   <div className="min-w-0">
                     <p
                       className={clsx(
-                        "truncate font-medium",
+                        "truncate font-semibold",
                         booking.status === "cancelled"
                           ? "text-text-secondary line-through"
                           : "text-text-primary",
