@@ -91,3 +91,23 @@ export async function cancelBooking(bookingId: string, reason?: string): Promise
   );
   return normalizeBooking(data);
 }
+
+export interface CollectBookingAdvanceResult {
+  booking: Booking;
+  payment: Payment;
+}
+
+/** A website booking arrives with `advancePaid: false` — this is how a Manager records taking it in person. */
+export async function collectBookingAdvance(
+  bookingId: string,
+  method: PaymentMethod,
+): Promise<CollectBookingAdvanceResult> {
+  const { data } = await apiClient.post<{ booking: RawBooking; payment: RawPayment }>(
+    `/enrollments/bookings/${bookingId}/collect-advance/`,
+    { method },
+  );
+  return {
+    booking: normalizeBooking(data.booking),
+    payment: normalizePayment(data.payment),
+  };
+}

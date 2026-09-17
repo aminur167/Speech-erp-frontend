@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/layout/PageHeader";
-import { OnlineServiceEnrollment } from "@/components/services/OnlineServiceEnrollment";
+import { OnlineServicesView } from "@/components/services/OnlineServicesView";
 
 export default function OnlineServicesPage() {
   return (
@@ -10,7 +10,7 @@ export default function OnlineServicesPage() {
         title="Online Services / Booking"
         subtitle="Book an online session and collect the advance payment."
       />
-      <OnlineServiceEnrollment />
+      <OnlineServicesView />
     </div>
   );
 }
