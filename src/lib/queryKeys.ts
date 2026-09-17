@@ -58,6 +58,8 @@ export const queryKeys = {
       ["transactions", "branch-summary", branchId, dateFrom, dateTo] as const,
     branchDailyLedger: (branchId?: string, dateFrom?: string, dateTo?: string) =>
       ["transactions", "branch-summary", "daily", branchId, dateFrom, dateTo] as const,
+    branchActivity: (branchId?: string, dateFrom?: string, dateTo?: string) =>
+      ["transactions", "branch-summary", "activity", branchId, dateFrom, dateTo] as const,
     collectionForDate: (branchId: string | undefined, date: string) =>
       ["transactions", "collection-for-date", branchId, date] as const,
   },
