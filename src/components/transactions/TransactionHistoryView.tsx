@@ -28,6 +28,7 @@ import { VoidPaymentModal } from "@/components/payments/VoidPaymentModal";
 import { RequestRefundModal } from "@/components/payments/RequestRefundModal";
 import { useTransactions } from "@/hooks/transactions/useTransactions";
 import { useTransactionsSummary } from "@/hooks/transactions/useTransactionsSummary";
+import { useExpenses } from "@/hooks/expenses/useExpenses";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { exportToCsv } from "@/utils/exportCsv";
@@ -48,6 +49,9 @@ function monthBounds(monthKey: string): { dateFrom: string; dateTo: string } {
 }
 
 const PAGE_SIZE = 10;
+// A generous "fetch all" size: one branch's monthly expenses are a small
+// list, not something worth its own pagination inside this merged feed.
+const EXPENSE_PAGE_SIZE = 200;
 
 export function TransactionHistoryView({
   branchId: branchIdOverride,
@@ -84,10 +88,27 @@ export function TransactionHistoryView({
   });
   const { data: summary } = useTransactionsSummary(branchId);
 
+  // "Out" isn't just refunds — expenses (salaries included, since a disbursed
+  // salary is an Expense) are money leaving the branch too, matching the
+  // summary cards above. Shown only on the feed's first page: expenses have
+  // no page of their own here, so repeating them on page 2+ would just look
+  // like duplicates.
+  const { data: expensesData } = useExpenses(
+    { search, dateFrom, dateTo, branchId, pageSize: EXPENSE_PAGE_SIZE },
+    { enabled: tab !== "in" && page === 1 },
+  );
+  const countedExpenses = (expensesData?.results ?? []).filter(
+    (expense) => expense.status !== "rejected",
+  );
+  const visibleExpenses = tab === "in" || page !== 1 ? [] : countedExpenses;
+
   const visibleTransactions = (data?.results ?? []).filter((transaction) => {
     if (tab === "all") return true;
     return transactionDirection(transaction) === tab;
   });
+
+  const hasAnyRows = (data?.results.length ?? 0) > 0 || countedExpenses.length > 0;
+  const hasVisibleRows = visibleTransactions.length > 0 || visibleExpenses.length > 0;
 
   const changeMonth = (by: number) => {
     setMonthKey((current) => shiftMonthKey(current, by));
@@ -267,16 +288,17 @@ export function TransactionHistoryView({
         <div className="flex flex-col gap-4">
           {isLoading && <LoadingState label="Loading transactions…" />}
           {isError && <ErrorState onRetry={() => refetch()} />}
-          {!isLoading && !isError && data?.results.length === 0 && (
+          {!isLoading && !isError && data && !hasAnyRows && (
             <EmptyState label="No transactions found." />
           )}
-          {!isLoading && !isError && data && data.results.length > 0 && visibleTransactions.length === 0 && (
+          {!isLoading && !isError && data && hasAnyRows && !hasVisibleRows && (
             <EmptyState label={`No ${tab} transactions this month.`} />
           )}
-          {!isLoading && !isError && data && visibleTransactions.length > 0 && (
+          {!isLoading && !isError && data && hasVisibleRows && (
             <>
               <TransactionFeed
                 transactions={visibleTransactions}
+                expenses={visibleExpenses}
                 canVoid={Boolean(user)}
                 canRequestRefund={user?.role === "manager"}
                 onVoid={setVoidingTransaction}

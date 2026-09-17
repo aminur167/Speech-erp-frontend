@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { clsx } from "clsx";
 import { ArrowDownLeft, ArrowUpRight, Ban, Minus, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
+import { RowDetailDrawer } from "@/components/ui/RowDetailDrawer";
 import { formatCurrency } from "@/utils/currency";
 import { cameFromControl } from "@/utils/interactiveClick";
+import { humanizeField } from "@/utils/fields";
 import type { TransactionItem } from "@/lib/api/transactions";
+import type { Expense } from "@/types/domain";
 
 /** A payment can only be voided or refunded while it's still money that actually moved. */
 const ACTIONABLE_STATUSES = new Set(["paid", "partial"]);
@@ -24,20 +27,38 @@ export function transactionDirection(transaction: TransactionItem): TransactionD
   return "in";
 }
 
+type FeedEntry =
+  | { kind: "payment"; id: string; amount: number; createdAt: string; item: TransactionItem }
+  | { kind: "expense"; id: string; amount: number; createdAt: string; item: Expense };
+
+/** One list, oldest-first ordering undone: the most recent thing that happened sits on top. */
+function sortByRecency(entries: FeedEntry[]): FeedEntry[] {
+  return [...entries].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+}
+
 /**
  * A minimal, wallet-style feed row per transaction: a direction icon, who and
  * what on the left, the signed amount and when on the right. Replaces the
  * dense table on the main Transaction History page, where a manager scans
  * many rows at a glance rather than compares columns.
+ *
+ * Mixes in expenses (salaries included, since a disbursed salary is an
+ * Expense) alongside payments — "Out" means everything that actually left
+ * the branch, not just refunds, matching the summary cards above it.
  */
 export function TransactionFeed({
   transactions,
+  expenses = [],
   canVoid,
   canRequestRefund,
   onVoid,
   onRequestRefund,
 }: {
   transactions: TransactionItem[];
+  /** Approved/pending only — a rejected expense never happened, same reasoning as a void payment. */
+  expenses?: Expense[];
   /** Manager (same-day, enforced server-side) or Admin (any day). */
   canVoid?: boolean;
   /** Manager only — opens a request an Admin must approve. */
@@ -45,26 +66,41 @@ export function TransactionFeed({
   onVoid?: (transaction: TransactionItem) => void;
   onRequestRefund?: (transaction: TransactionItem) => void;
 }) {
-  const detail = useRowDetail<TransactionItem>();
-  const selected = detail.selected;
-  const selectedActionable = Boolean(selected && ACTIONABLE_STATUSES.has(selected.status));
+  const [selected, setSelected] = useState<FeedEntry | null>(null);
+
+  const entries = sortByRecency([
+    ...transactions.map(
+      (item): FeedEntry => ({ kind: "payment", id: item.id, amount: item.amount, createdAt: item.createdAt, item }),
+    ),
+    ...expenses.map(
+      (item): FeedEntry => ({ kind: "expense", id: item.id, amount: item.amount, createdAt: item.createdAt, item }),
+    ),
+  ]);
+
+  const selectedPayment = selected?.kind === "payment" ? selected.item : null;
+  const selectedActionable = Boolean(selectedPayment && ACTIONABLE_STATUSES.has(selectedPayment.status));
 
   return (
     <div className="flex flex-col">
-      {transactions.map((transaction) => {
-        const direction = transactionDirection(transaction);
+      {entries.map((entry) => {
+        const direction: TransactionDirection =
+          entry.kind === "expense" ? "out" : transactionDirection(entry.item);
+        const title = entry.kind === "expense" ? entry.item.description : entry.item.patientName;
+        const subtitle =
+          entry.kind === "expense" ? entry.item.expenseCode : entry.item.receiptNumber;
+
         return (
           <div
-            key={transaction.id}
+            key={`${entry.kind}-${entry.id}`}
             onClick={(event) => {
               if (cameFromControl(event)) return;
-              detail.setSelected(transaction);
+              setSelected(entry);
             }}
             onKeyDown={(event) => {
               if (event.key !== "Enter" && event.key !== " ") return;
               if (cameFromControl(event)) return;
               event.preventDefault();
-              detail.setSelected(transaction);
+              setSelected(entry);
             }}
             tabIndex={0}
             title="View full details"
@@ -84,10 +120,10 @@ export function TransactionFeed({
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-text-primary">{transaction.patientName}</p>
-              <p className="truncate font-mono text-xs text-text-secondary">
-                {transaction.receiptNumber}
+              <p className="truncate font-medium text-text-primary">
+                {entry.kind === "expense" ? humanizeField(entry.item.category) : title}
               </p>
+              <p className="truncate font-mono text-xs text-text-secondary">{subtitle}</p>
             </div>
 
             <div className="shrink-0 text-right">
@@ -100,10 +136,10 @@ export function TransactionFeed({
                 )}
               >
                 {direction === "out" ? "−" : direction === "in" ? "+" : ""}
-                {formatCurrency(transaction.amount)}
+                {formatCurrency(entry.amount)}
               </p>
               <p className="text-xs text-text-secondary">
-                {new Date(transaction.createdAt).toLocaleString(undefined, {
+                {new Date(entry.createdAt).toLocaleString(undefined, {
                   month: "short",
                   day: "numeric",
                   hour: "numeric",
@@ -116,21 +152,33 @@ export function TransactionFeed({
       })}
 
       <RowDetailDrawer
-        open={detail.isOpen}
-        onClose={detail.close}
-        title={selected?.receiptNumber ?? ""}
-        subtitle={selected?.patientName}
-        data={selected}
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        title={
+          selected
+            ? selected.kind === "expense"
+              ? selected.item.expenseCode
+              : selected.item.receiptNumber
+            : ""
+        }
+        subtitle={
+          selected
+            ? selected.kind === "expense"
+              ? selected.item.description
+              : selected.item.patientName
+            : undefined
+        }
+        data={selected?.item ?? null}
         footer={
-          selectedActionable && (canVoid || canRequestRefund) ? (
+          selectedPayment && selectedActionable && (canVoid || canRequestRefund) ? (
             <div className="flex gap-2">
               {canRequestRefund && (
                 <Button
                   variant="secondary"
                   className="flex-1 justify-center"
                   onClick={() => {
-                    onRequestRefund?.(selected!);
-                    detail.close();
+                    onRequestRefund?.(selectedPayment);
+                    setSelected(null);
                   }}
                 >
                   <Undo2 className="h-4 w-4" />
@@ -142,8 +190,8 @@ export function TransactionFeed({
                   variant="danger"
                   className="flex-1 justify-center"
                   onClick={() => {
-                    onVoid?.(selected!);
-                    detail.close();
+                    onVoid?.(selectedPayment);
+                    setSelected(null);
                   }}
                 >
                   <Ban className="h-4 w-4" />
