@@ -286,7 +286,7 @@ export async function getBranchSummary(params: {
 }
 
 
-export type ActivityType = "invoice" | "expense" | "refund";
+export type ActivityType = "invoice" | "expense" | "refund" | "patient" | "enrollment" | "salary";
 
 export interface ActivityRow {
   id: string;
@@ -297,7 +297,8 @@ export interface ActivityRow {
   person: string;
   performedBy: string;
   amount: number;
-  direction: "in" | "out";
+  /** "neutral" is a non-money event (a new patient, an enrollment, a salary decision) -- nothing actually moved. */
+  direction: "in" | "out" | "neutral";
   status: string;
 }
 
@@ -306,8 +307,9 @@ interface RawActivityRow extends Omit<ActivityRow, "amount"> {
 }
 
 /**
- * The Summary page's merged feed — every invoice, expense and refund in the
- * range, newest first, in one list. Not paginated, same reasoning as
+ * The Summary page's merged feed — every invoice, expense, refund, new
+ * patient, service enrollment and salary-payment decision in the range,
+ * newest first, in one list. Not paginated, same reasoning as
  * `getBranchDailyLedger`: the page charts and exports the whole range at once.
  */
 export async function getBranchActivity(params: {
