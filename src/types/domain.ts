@@ -283,6 +283,7 @@ export interface Booking {
   bookingCode: string; // e.g. BKG-2026-00001
   patientId: string;
   patientName: string;
+  patientPhone: string;
   serviceId: string;
   serviceName: string;
   branchId: string;
@@ -290,6 +291,8 @@ export interface Booking {
   date: string;
   time: string;
   advanceAmount: number;
+  /** False only for a booking the public website made — see create_public_booking. */
+  advancePaid: boolean;
   status: "confirmed" | "cancelled";
 }
 
