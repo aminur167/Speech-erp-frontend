@@ -66,7 +66,9 @@ export function PatientAttendanceView({
 
   const rows = data?.results ?? [];
   const count = data?.count ?? 0;
-  const markedOnPage = rows.filter((row) => row.record !== null).length;
+  // Present, not "marked": everyone on the sheet is absent until somebody
+  // says otherwise, so the number worth showing is how many walked in.
+  const presentOnPage = rows.filter((row) => row.status === "present").length;
   const alertsOnPage = rows.filter((row) => row.alert).length;
 
   /** Any filter change restarts paging — page 3 of a different sheet is meaningless. */
@@ -88,8 +90,8 @@ export function PatientAttendanceView({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="On this sheet" value={String(count)} icon={Users} />
         <StatCard
-          label="Marked on this page"
-          value={`${markedOnPage} / ${rows.length}`}
+          label="Present on this page"
+          value={`${presentOnPage} / ${rows.length}`}
           icon={CalendarCheck}
           tone="success"
         />
@@ -159,14 +161,14 @@ export function PatientAttendanceView({
 
       <Card>
         <div className="flex flex-col gap-4">
-          {isLoading && <TableSkeleton columns={readOnly ? 3 : 4} />}
+          {isLoading && <TableSkeleton columns={readOnly ? 4 : 5} />}
           {isError && <ErrorState onRetry={() => refetch()} />}
           {!isLoading && !isError && rows.length === 0 && (
             <EmptyState
               label={
                 search || unmarked || alertsOnly
                   ? "No patient matches that."
-                  : "Nobody has a running service of this kind yet."
+                  : `Nobody had a running service of this kind on ${date}.`
               }
             />
           )}
@@ -189,9 +191,12 @@ export function PatientAttendanceView({
           )}
 
           <p className="text-xs text-text-secondary">
-            Attendance is a record only — it never changes what a patient owes. Marking
-            an informed absence stops that patient being flagged as having stopped
-            coming.
+            Everyone on the sheet counts as absent until they are marked present, and a
+            mark can be changed afterwards. The sheet is built for the date chosen
+            above: a patient appears only on the days their service was actually
+            running. Attendance is a record only — it never changes what a patient
+            owes, and marking an informed absence stops that patient being flagged as
+            having stopped coming.
           </p>
         </div>
       </Card>

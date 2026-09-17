@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarOff, Check, UserX } from "lucide-react";
+import { CalendarOff, Check, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -27,11 +27,51 @@ const label: Record<PatientAttendanceStatus, string> = {
 };
 
 /**
+ * The row's status badge.
+ *
+ * Every row has one, including the ones nobody has touched: absent is the
+ * resting state, not a blank waiting to be filled in. A sheet where the
+ * manager marked the four people who came in is a *finished* sheet, and it
+ * should look like one.
+ *
+ * A default absent is grey and an explicitly marked one is red, because on a
+ * sheet where most rows are absent by definition, painting all of them in the
+ * danger colour makes the colour mean nothing. Red here says a manager looked
+ * at this person and recorded a no-show.
+ */
+export function PatientAttendanceStatusBadge({
+  status,
+  marked,
+}: {
+  status: PatientAttendanceStatus;
+  /** Whether anybody actually acted on this row, as opposed to the default. */
+  marked: boolean;
+}) {
+  return (
+    <div className="flex flex-col items-start gap-0.5">
+      <Badge
+        tone={status === "absent" && !marked ? "neutral" : tone[status]}
+        label={label[status]}
+      />
+      {!marked && (
+        <span className="text-[11px] text-text-secondary">not marked yet</span>
+      )}
+    </div>
+  );
+}
+
+/**
  * One row's mark, owning its own mutation.
  *
  * The table doesn't thread callbacks for this — the same shape as the staff
  * roster's cell — so a row re-renders on its own answer without the whole
  * sheet re-rendering with it.
+ *
+ * **Present is a toggle, not a one-way door.** Everyone starts absent, so the
+ * button asserts "this person came in" and pressing it again takes that back.
+ * The mark is an upsert server-side, so the correction replaces the row
+ * instead of appending one that contradicts it — which matters, because the
+ * row most likely to need fixing is the one marked present by mistake.
  *
  * "Informed absence" opens a dialog for the return date rather than marking
  * immediately, because that date is the entire difference between a patient
@@ -41,63 +81,75 @@ export function PatientAttendanceCell({
   patientId,
   serviceKind,
   date,
+  status,
   record,
 }: {
   patientId: string;
   serviceKind: AttendanceServiceKind;
   /** The day being marked — the sheet can be back-dated. */
   date: string;
+  /** The row's current status; `absent` when nobody has marked it. */
+  status: PatientAttendanceStatus;
   record: PatientAttendance | null;
 }) {
   const mark = useMarkPatientAttendance();
   const [askingReturn, setAskingReturn] = useState(false);
   const [returnOn, setReturnOn] = useState("");
 
-  const send = (status: PatientAttendanceStatus, expectedReturnOn?: string) =>
-    mark.mutate({ patientId, serviceKind, status, date, expectedReturnOn });
+  const send = (next: PatientAttendanceStatus, expectedReturnOn?: string) =>
+    mark.mutate({ patientId, serviceKind, status: next, date, expectedReturnOn });
 
   const pendingStatus = mark.isPending ? mark.variables?.status : undefined;
+  const isPresent = status === "present";
+  const isExcused = status === "informed_absence";
 
   return (
     <>
       <div className="flex flex-wrap items-center gap-1.5">
-        {record && (
-          <Badge tone={tone[record.status]} label={label[record.status]} />
-        )}
-
         <Button
-          variant={record?.status === "present" ? "primary" : "secondary"}
+          variant={isPresent ? "primary" : "secondary"}
           className="px-3 py-1.5 text-xs"
-          onClick={() => send("present")}
-          isLoading={pendingStatus === "present"}
+          aria-pressed={isPresent}
+          title={
+            isPresent
+              ? "Marked present — press again to put it back to absent"
+              : "Mark present"
+          }
+          onClick={() => send(isPresent ? "absent" : "present")}
+          isLoading={pendingStatus === "present" || pendingStatus === "absent"}
         >
           <Check className="h-3.5 w-3.5" />
           Present
         </Button>
 
         <Button
-          variant="ghost"
+          variant={isExcused ? "primary" : "ghost"}
           title="Informed absence — they told us they'd be away"
           aria-label="Informed absence"
+          aria-pressed={isExcused}
           className="px-2"
           onClick={() => {
-            setReturnOn("");
+            setReturnOn(record?.expectedReturnOn ?? "");
             setAskingReturn(true);
           }}
         >
           <CalendarOff className="h-3.5 w-3.5" />
         </Button>
 
-        <Button
-          variant="ghost"
-          title="Absent"
-          aria-label="Absent"
-          className="px-2 text-danger hover:bg-danger/10"
-          onClick={() => send("absent")}
-          isLoading={pendingStatus === "absent"}
-        >
-          <UserX className="h-3.5 w-3.5" />
-        </Button>
+        {/* Only offered once there is something to undo. A plain absent row is
+            already the default, so "clear" on it would do nothing visible. */}
+        {record && (
+          <Button
+            variant="ghost"
+            title="Clear this mark — back to plain absent"
+            aria-label="Clear this mark"
+            className="px-2 text-text-secondary"
+            onClick={() => send("absent")}
+            isLoading={pendingStatus === "absent"}
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
 
       <Modal

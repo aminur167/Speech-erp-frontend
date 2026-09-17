@@ -27,6 +27,14 @@ export interface AttendanceRosterRow {
   serviceNames: string[];
   /** Null until somebody marks this patient today. */
   record: PatientAttendance | null;
+  /**
+   * What the row *is* on this date — `absent` unless somebody marked
+   * otherwise. There is no "unmarked" status: the manager marks who came in,
+   * and the rest of the sheet is the answer. `record` is still worth reading
+   * separately, because null there means nobody has touched the row, which is
+   * a different question and its own filter.
+   */
+  status: PatientAttendanceStatus;
   lastPresentOn: string | null;
   daysSinceLastVisit: number;
   /** Set while a stated absence is still running. */
@@ -48,7 +56,11 @@ function normalizeRow(raw: RawRosterRow): AttendanceRosterRow {
 
 export interface AttendanceRosterParams {
   kind: AttendanceServiceKind;
-  /** ISO date; defaults to today server-side. */
+  /**
+   * ISO date; defaults to today server-side. The roster itself is scoped to
+   * it — a past day lists only the patients whose service was running then,
+   * not today's roster read backwards.
+   */
   date?: string;
   search?: string;
   /** Only patients nobody has marked yet. */
