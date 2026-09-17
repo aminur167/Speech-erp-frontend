@@ -7,7 +7,6 @@ import {
   UserPlus,
   Wallet,
   BarChart3,
-  CalendarCheck,
   ClipboardCheck,
   CalendarClock,
   Receipt,
@@ -65,7 +64,6 @@ export const managerNav: NavItem[] = [
   { label: "Due Payment Collection", href: "/manager/due-payments", icon: Wallet },
   { label: "Expenses", href: "/manager/expenses", icon: Receipt },
   { label: "Transactions", href: "/manager/transactions", icon: History },
-  { label: "Daily Closing", href: "/manager/daily-closing", icon: CalendarCheck },
   { label: "Settings", href: "/manager/settings", icon: Settings },
 ];
 
@@ -94,7 +92,6 @@ export function branchNav(branchId: string): NavItem[] {
     { label: "Due Payments", href: `${base}/due-payments`, icon: Wallet },
     { label: "Expenses", href: `${base}/expenses`, icon: Receipt },
     { label: "Transactions", href: `${base}/transactions`, icon: History },
-    { label: "Daily Closing", href: `${base}/daily-closing`, icon: CalendarCheck },
   ];
 }
 
