@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Search } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
-import { SearchField } from "@/components/ui/SearchField";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
@@ -55,27 +55,17 @@ export function OnlineBookingsTable() {
 
   return (
     <div className="flex flex-col gap-4">
-      <FilterBar
-        search={
-          <SearchField
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search patient, phone or booking code…"
-          />
-        }
-      >
+      <FilterBar>
         <Select
-          label="Payment"
           value={paymentFilter}
           onChange={(event) => setPaymentFilter(event.target.value as PaymentFilter)}
           containerClassName={FILTER_FIELD_WIDTH}
         >
-          <option value="">All</option>
+          <option value="">All payments</option>
           <option value="pending">Pending</option>
           <option value="paid">Paid</option>
         </Select>
         <Select
-          label="Status"
           value={status}
           onChange={(event) => setStatus(event.target.value as Booking["status"] | "")}
           containerClassName={FILTER_FIELD_WIDTH}
@@ -84,6 +74,15 @@ export function OnlineBookingsTable() {
           <option value="confirmed">Confirmed</option>
           <option value="cancelled">Cancelled</option>
         </Select>
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-text-secondary" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search patient, phone or booking code…"
+            className="pl-8"
+          />
+        </div>
       </FilterBar>
 
       <Card>
