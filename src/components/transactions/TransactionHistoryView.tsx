@@ -120,10 +120,12 @@ export function TransactionHistoryView({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label="Total (Net)"
-          value={formatCurrency((summary?.totalCollected ?? 0) - (summary?.totalRefunded ?? 0))}
+          value={formatCurrency(
+            (summary?.totalCollected ?? 0) - (summary?.totalRefunded ?? 0) - (summary?.totalExpenses ?? 0),
+          )}
           icon={Wallet}
           tone="primary"
-          hint="All-time collections minus refunds"
+          hint="All-time collections minus refunds and expenses"
         />
         <StatCard
           label="In"
@@ -134,10 +136,10 @@ export function TransactionHistoryView({
         />
         <StatCard
           label="Out"
-          value={formatCurrency(summary?.totalRefunded ?? 0)}
+          value={formatCurrency((summary?.totalRefunded ?? 0) + (summary?.totalExpenses ?? 0))}
           icon={ArrowUpRight}
           tone="danger"
-          hint="All-time money refunded"
+          hint="All-time refunds, expenses and salaries"
         />
       </div>
 
