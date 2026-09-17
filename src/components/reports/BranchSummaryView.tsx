@@ -11,33 +11,20 @@ import { Pagination } from "@/components/ui/Pagination";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { TransactionTable } from "@/components/transactions/TransactionTable";
-import { ExpenseTable } from "@/components/expenses/ExpenseTable";
 import { DuePaymentTable } from "@/components/duePayments/DuePaymentTable";
 import { ActivityLedgerTable } from "@/components/reports/summary/ActivityLedgerTable";
 import { DailyLedgerTable } from "@/components/reports/summary/DailyLedgerTable";
-import { RefundLedgerTable } from "@/components/reports/summary/RefundLedgerTable";
 import { ClosingLedgerTable } from "@/components/reports/summary/ClosingLedgerTable";
 import { BreakdownTable } from "@/components/reports/summary/BreakdownTable";
 import { useBranchSummary } from "@/hooks/reports/useBranchSummary";
 import { useBranchActivity } from "@/hooks/reports/useBranchActivity";
 import { useBranchDailyLedger } from "@/hooks/reports/useBranchDailyLedger";
-import { useTransactions } from "@/hooks/transactions/useTransactions";
-import { useExpenses } from "@/hooks/expenses/useExpenses";
-import { useRefundRequests } from "@/hooks/payments/useRefundRequests";
 import { useDailyClosings } from "@/hooks/dailyClosing/useDailyClosings";
 import { useDuePayments } from "@/hooks/duePayments/useDuePayments";
 import { exportToCsv } from "@/utils/exportCsv";
 import { formatCurrency } from "@/utils/currency";
 import { toLocalDateString } from "@/utils/time";
-import type {
-  DailyClosingStatus,
-  ExpenseCategory,
-  ExpenseStatus,
-  PaymentMethod,
-  PaymentStatus,
-  RefundRequestStatus,
-} from "@/types/domain";
+import type { DailyClosingStatus } from "@/types/domain";
 import type { DuePaymentType } from "@/lib/api/duePayments";
 
 const PAGE_SIZE = 10;
@@ -83,9 +70,6 @@ function presetRange(preset: Exclude<Preset, "custom">): [string, string] {
 const TABS = [
   { key: "activity", label: "Activity", ranged: true },
   { key: "daily", label: "Daily Ledger", ranged: true },
-  { key: "invoices", label: "Invoices", ranged: true },
-  { key: "expenses", label: "Expenses", ranged: true },
-  { key: "refunds", label: "Refunds", ranged: true },
   { key: "closings", label: "Daily Closing", ranged: true },
   { key: "dues", label: "Outstanding Dues", ranged: false },
   { key: "methods", label: "By Payment Method", ranged: true },
@@ -120,15 +104,7 @@ export function BranchSummaryView({
   const [page, setPage] = useState(1);
 
   // Each tab keeps its own filters, so switching away and back doesn't lose
-  // what you had narrowed to — and a status meant for expenses can never end
-  // up applied to refunds.
-  const [search, setSearch] = useState("");
-  const [method, setMethod] = useState<PaymentMethod | "">("");
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | "">("");
-  const [expenseSearch, setExpenseSearch] = useState("");
-  const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory | "">("");
-  const [expenseStatus, setExpenseStatus] = useState<ExpenseStatus | "">("");
-  const [refundStatus, setRefundStatus] = useState<RefundRequestStatus | "">("");
+  // what you had narrowed to.
   const [closingStatus, setClosingStatus] = useState<DailyClosingStatus | "">("");
   const [dueSearch, setDueSearch] = useState("");
   const [dueType, setDueType] = useState<DuePaymentType | "">("");
@@ -176,28 +152,6 @@ export function BranchSummaryView({
     { branchId, ...range },
     { enabled: rangeIsValid && (tab === "methods" || tab === "services") },
   );
-  const invoices = useTransactions(
-    {
-      branchId, ...range, page, pageSize: PAGE_SIZE,
-      search: search || undefined,
-      method: method || undefined,
-      status: paymentStatus || undefined,
-    },
-    on("invoices"),
-  );
-  const expenses = useExpenses(
-    {
-      branchId, ...range, page, pageSize: PAGE_SIZE,
-      search: expenseSearch || undefined,
-      category: expenseCategory || undefined,
-      status: expenseStatus || undefined,
-    },
-    on("expenses"),
-  );
-  const refunds = useRefundRequests(
-    { branchId, ...range, page, pageSize: PAGE_SIZE, status: refundStatus || undefined },
-    on("refunds"),
-  );
   const closings = useDailyClosings(
     { branchId, ...range, page, pageSize: PAGE_SIZE, status: closingStatus || undefined },
     on("closings"),
@@ -225,9 +179,6 @@ export function BranchSummaryView({
   const query = {
     activity,
     daily: ledger,
-    invoices,
-    expenses,
-    refunds,
     closings,
     dues,
     methods: summary,
@@ -237,9 +188,6 @@ export function BranchSummaryView({
   const count = {
     activity: activityRows.length,
     daily: ledgerRows.length,
-    invoices: invoices.data?.count ?? 0,
-    expenses: expenses.data?.count ?? 0,
-    refunds: refunds.data?.count ?? 0,
     closings: closings.data?.count ?? 0,
     dues: dues.data?.count ?? 0,
     methods: methodRows.length,
@@ -285,51 +233,6 @@ export function BranchSummaryView({
           Expenses: row.expenses,
           Net: row.netRevenue,
           Closing: row.closingStatus || "not closed",
-        })),
-      );
-      return;
-    }
-    if (tab === "invoices") {
-      exportToCsv(
-        filename,
-        (invoices.data?.results ?? []).map((row) => ({
-          "Receipt No": row.receiptNumber,
-          Date: new Date(row.createdAt).toLocaleString(),
-          Patient: row.patientName,
-          "Patient ID": row.patientCode,
-          Method: row.method,
-          Status: row.status,
-          Amount: row.amount,
-          "Collected By": row.collectedBy,
-        })),
-      );
-      return;
-    }
-    if (tab === "expenses") {
-      exportToCsv(
-        filename,
-        (expenses.data?.results ?? []).map((row) => ({
-          Voucher: row.expenseCode,
-          Date: new Date(row.createdAt).toLocaleDateString(),
-          Category: row.category,
-          Description: row.description,
-          "Paid To": row.paidTo,
-          Status: row.status,
-          Amount: row.amount,
-        })),
-      );
-      return;
-    }
-    if (tab === "refunds") {
-      exportToCsv(
-        filename,
-        (refunds.data?.results ?? []).map((row) => ({
-          "Receipt No": row.payment.receiptNumber,
-          Requested: new Date(row.requestedAt).toLocaleDateString(),
-          Reason: row.reason,
-          "Requested By": row.requestedBy,
-          Status: row.status,
-          Amount: row.amount,
         })),
       );
       return;
@@ -424,106 +327,6 @@ export function BranchSummaryView({
           </div>
         }
       >
-        {tab === "invoices" && (
-          <>
-            <Input
-              value={search}
-              onChange={(event) => filtering(setSearch)(event.target.value)}
-              placeholder="Patient, receipt or transaction ID…"
-              containerClassName="w-full sm:w-56 shrink-0"
-            />
-            <Select
-              value={method}
-              aria-label="Payment method"
-              onChange={(event) =>
-                filtering(setMethod)(event.target.value as PaymentMethod | "")
-              }
-              containerClassName={FILTER_FIELD_WIDTH}
-            >
-              <option value="">All methods</option>
-              <option value="cash">Cash</option>
-              <option value="bkash">bKash</option>
-              <option value="nagad">Nagad</option>
-              <option value="rocket">Rocket</option>
-              <option value="bank_transfer">Bank Transfer</option>
-              <option value="online_payment">Online Payment</option>
-              <option value="card">Card</option>
-            </Select>
-            <Select
-              value={paymentStatus}
-              aria-label="Invoice status"
-              onChange={(event) =>
-                filtering(setPaymentStatus)(event.target.value as PaymentStatus | "")
-              }
-              containerClassName={FILTER_FIELD_WIDTH}
-            >
-              <option value="">All statuses</option>
-              <option value="paid">Paid</option>
-              <option value="due">Due</option>
-              <option value="refunded">Refunded</option>
-              <option value="void">Void</option>
-            </Select>
-          </>
-        )}
-
-        {tab === "expenses" && (
-          <>
-            <Input
-              value={expenseSearch}
-              onChange={(event) => filtering(setExpenseSearch)(event.target.value)}
-              placeholder="Voucher, description or payee…"
-              containerClassName="w-full sm:w-56 shrink-0"
-            />
-            <Select
-              value={expenseCategory}
-              aria-label="Expense category"
-              onChange={(event) =>
-                filtering(setExpenseCategory)(event.target.value as ExpenseCategory | "")
-              }
-              containerClassName={FILTER_FIELD_WIDTH}
-            >
-              <option value="">All categories</option>
-              <option value="rent">Rent</option>
-              <option value="utilities">Utilities</option>
-              <option value="salaries">Salaries</option>
-              <option value="supplies">Supplies</option>
-              <option value="equipment">Equipment</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="marketing">Marketing</option>
-              <option value="other">Other</option>
-            </Select>
-            <Select
-              value={expenseStatus}
-              aria-label="Expense status"
-              onChange={(event) =>
-                filtering(setExpenseStatus)(event.target.value as ExpenseStatus | "")
-              }
-              containerClassName={FILTER_FIELD_WIDTH}
-            >
-              <option value="">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </Select>
-          </>
-        )}
-
-        {tab === "refunds" && (
-          <Select
-            value={refundStatus}
-            aria-label="Refund status"
-            onChange={(event) =>
-              filtering(setRefundStatus)(event.target.value as RefundRequestStatus | "")
-            }
-            containerClassName={FILTER_FIELD_WIDTH}
-          >
-            <option value="">All statuses</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </Select>
-        )}
-
         {tab === "closings" && (
           <Select
             value={closingStatus}
@@ -633,15 +436,6 @@ export function BranchSummaryView({
                 )}
                 {tab === "daily" && (
                   <DailyLedgerTable rows={ledgerPage} totalsFor={ledgerRows} />
-                )}
-                {tab === "invoices" && (
-                  <TransactionTable transactions={invoices.data?.results ?? []} />
-                )}
-                {tab === "expenses" && (
-                  <ExpenseTable expenses={expenses.data?.results ?? []} canApprove={false} />
-                )}
-                {tab === "refunds" && (
-                  <RefundLedgerTable refunds={refunds.data?.results ?? []} />
                 )}
                 {tab === "closings" && (
                   <ClosingLedgerTable closings={closings.data?.results ?? []} />
