@@ -225,8 +225,8 @@ export function BookingCalendarView({
         </div>
       </FilterBar>
 
-      <Card>
-        <div className="flex flex-col gap-4">
+      <Card padding="none" className="overflow-hidden">
+        <div className="flex flex-col gap-4 bg-gradient-to-r from-primary-light/40 via-primary-light/10 to-transparent p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               {view !== "agenda" && (
@@ -235,28 +235,30 @@ export function BookingCalendarView({
                     variant="secondary"
                     onClick={() => (view === "month" ? goToMonth(-1) : goToWeek(-1))}
                     aria-label="Previous"
+                    className="!rounded-full !p-2"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <h2 className="min-w-[170px] text-center text-sm font-semibold text-text-primary">
+                  <h2 className="min-w-[170px] text-center text-base font-bold text-text-primary">
                     {rangeLabel}
                   </h2>
                   <Button
                     variant="secondary"
                     onClick={() => (view === "month" ? goToMonth(1) : goToWeek(1))}
                     aria-label="Next"
+                    className="!rounded-full !p-2"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </>
               )}
               {view === "agenda" && (
-                <h2 className="text-sm font-semibold text-text-primary">{rangeLabel}</h2>
+                <h2 className="text-base font-bold text-text-primary">{rangeLabel}</h2>
               )}
             </div>
 
             {/* Segmented view switcher — the Month/Week/Agenda pattern from Google Calendar/Cal.com. */}
-            <div className="flex rounded-lg border border-border bg-background p-0.5">
+            <div className="flex rounded-full border border-border bg-surface p-1 shadow-sm">
               {VIEW_OPTIONS.map((option) => {
                 const Icon = option.icon;
                 const active = view === option.value;
@@ -266,10 +268,10 @@ export function BookingCalendarView({
                     type="button"
                     onClick={() => setView(option.value)}
                     className={clsx(
-                      "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                      "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all",
                       active
-                        ? "bg-surface text-primary shadow-sm"
-                        : "text-text-secondary hover:text-text-primary",
+                        ? "bg-gradient-to-r from-primary to-primary-dark text-white shadow-sm"
+                        : "text-text-secondary hover:bg-primary-light/50 hover:text-primary-dark",
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -281,11 +283,16 @@ export function BookingCalendarView({
 
             <div className="flex gap-2">
               {view !== "agenda" && (
-                <Button variant="secondary" onClick={goToToday}>
+                <Button variant="secondary" onClick={goToToday} className="!rounded-full">
                   Today
                 </Button>
               )}
-              <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
+              <Button
+                variant="secondary"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="!rounded-full"
+              >
                 <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
                 Refresh
               </Button>
@@ -293,18 +300,21 @@ export function BookingCalendarView({
           </div>
 
           {!isLoading && (
-            <div className="flex items-center gap-3 text-xs text-text-secondary">
-              <span className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
+              <span className="flex items-center gap-1.5 rounded-full bg-info/15 px-3 py-1 text-info">
                 <span className="h-2 w-2 rounded-full bg-info" /> Confirmed
               </span>
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 rounded-full bg-warning/15 px-3 py-1 text-warning">
                 <span className="h-2 w-2 rounded-full bg-warning" /> Payment Pending
               </span>
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 rounded-full bg-danger/15 px-3 py-1 text-danger">
                 <span className="h-2 w-2 rounded-full bg-danger" /> Cancelled
               </span>
             </div>
           )}
+        </div>
+
+        <div className="flex flex-col gap-4 p-4">
 
           {isLoading && view === "month" && <MonthGridSkeleton />}
           {isLoading && view !== "month" && (

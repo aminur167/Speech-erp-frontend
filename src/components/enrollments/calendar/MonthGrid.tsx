@@ -23,9 +23,9 @@ export function buildCalendarGrid(year: number, month: number): Date[] {
 
 export function MonthGridSkeleton() {
   return (
-    <div className="grid grid-cols-7 gap-1.5">
+    <div className="grid grid-cols-7 gap-2">
       {Array.from({ length: 35 }, (_, i) => (
-        <div key={i} className="min-h-[100px] animate-pulse rounded-lg bg-background" />
+        <div key={i} className="min-h-[104px] animate-pulse rounded-xl bg-background" />
       ))}
     </div>
   );
@@ -45,13 +45,13 @@ export function MonthGrid({
   const todayISO = toISODate(new Date());
 
   return (
-    <div className="grid grid-cols-7 gap-1.5">
+    <div className="grid grid-cols-7 gap-2">
       {WEEKDAY_LABELS.map((label, i) => (
         <div
           key={label}
           className={clsx(
-            "pb-1 text-center text-xs font-semibold tracking-wide text-text-secondary",
-            (i === 0 || i === 6) && "text-text-secondary/70",
+            "pb-2 text-center text-[11px] font-bold tracking-wider uppercase",
+            i === 0 || i === 6 ? "text-primary/60" : "text-text-secondary",
           )}
         >
           {label}
@@ -74,20 +74,23 @@ export function MonthGrid({
             type="button"
             onClick={() => dayBookings.length > 0 && onSelectDay(iso)}
             className={clsx(
-              "flex min-h-[100px] flex-col gap-1 rounded-lg border p-1.5 text-left transition-all",
+              "group flex min-h-[104px] flex-col gap-1.5 rounded-xl border p-2 text-left transition-all duration-150",
               isToday
-                ? "border-primary/40 bg-primary-light/30 ring-1 ring-primary/30"
+                ? "border-primary bg-gradient-to-br from-primary-light/60 to-primary-light/10 shadow-sm ring-1 ring-primary/30"
                 : "border-border/60 bg-surface",
-              !inMonth && "border-transparent bg-transparent opacity-40",
+              !inMonth && "border-transparent bg-transparent opacity-30",
               inMonth && isPast && !isToday && "bg-background/40",
-              inMonth && isWeekend && !isToday && "bg-background/60",
-              dayBookings.length > 0 && "cursor-pointer hover:border-primary/40 hover:shadow-sm",
+              inMonth && isWeekend && !isToday && "bg-primary-light/10",
+              dayBookings.length > 0 &&
+                "cursor-pointer hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md",
             )}
           >
             <span
               className={clsx(
-                "flex h-6 w-6 items-center justify-center rounded-full text-xs",
-                isToday ? "bg-primary font-semibold text-white" : "text-text-primary",
+                "flex h-6 w-6 items-center justify-center rounded-full text-xs transition-colors",
+                isToday
+                  ? "bg-gradient-to-br from-primary to-primary-dark font-bold text-white shadow-sm"
+                  : "font-medium text-text-primary group-hover:bg-primary-light/60",
                 !inMonth && "text-text-secondary/50",
               )}
             >
@@ -98,12 +101,12 @@ export function MonthGrid({
                 <div
                   key={booking.id}
                   className={clsx(
-                    "flex items-center gap-1 truncate rounded px-1 py-0.5 text-[11px] leading-tight",
+                    "flex items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-tight transition-colors",
                     booking.status === "cancelled"
-                      ? "bg-danger/5 text-text-secondary line-through"
+                      ? "bg-danger/10 text-text-secondary line-through"
                       : !booking.advancePaid
-                        ? "bg-warning/10 text-warning"
-                        : "bg-info/10 text-info",
+                        ? "bg-warning/15 text-warning"
+                        : "bg-info/15 text-info",
                   )}
                 >
                   <StatusDot booking={booking} />
@@ -113,7 +116,7 @@ export function MonthGrid({
                 </div>
               ))}
               {overflow > 0 && (
-                <span className="px-1 text-[11px] font-medium text-text-secondary">
+                <span className="rounded-md bg-primary-light/50 px-1.5 py-0.5 text-[11px] font-semibold text-primary-dark">
                   +{overflow} more
                 </span>
               )}

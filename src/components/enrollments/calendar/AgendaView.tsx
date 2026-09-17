@@ -59,7 +59,16 @@ export function AgendaView({
       {groups.map(([date, dayBookings]) => (
         <div key={date} className="flex flex-col gap-2">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-            {dateGroupLabel(date, todayISO)}
+            <span
+              className={clsx(
+                "rounded-full px-2.5 py-0.5",
+                date === todayISO
+                  ? "bg-gradient-to-r from-primary to-primary-dark text-white shadow-sm"
+                  : "bg-primary-light/60 text-primary-dark",
+              )}
+            >
+              {dateGroupLabel(date, todayISO)}
+            </span>
             <span className="font-normal text-text-secondary">
               {new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
                 year: "numeric",
@@ -72,7 +81,14 @@ export function AgendaView({
             {dayBookings.map((booking) => (
               <div
                 key={booking.id}
-                className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3 text-sm transition-colors hover:border-primary/30"
+                className={clsx(
+                  "flex flex-wrap items-center gap-3 rounded-xl border-l-4 border-y border-r border-border bg-surface p-3 text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
+                  booking.status === "cancelled"
+                    ? "border-l-danger/60"
+                    : !booking.advancePaid
+                      ? "border-l-warning"
+                      : "border-l-info",
+                )}
               >
                 <PatientAvatar name={booking.patientName} size="md" />
                 <div className="min-w-[140px] flex-1">
