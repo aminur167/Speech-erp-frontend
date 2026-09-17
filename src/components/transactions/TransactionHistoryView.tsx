@@ -9,6 +9,8 @@ import {
   Download,
   ArrowDownLeft,
   ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
@@ -21,7 +23,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
-import { TransactionTable } from "@/components/transactions/TransactionTable";
+import { TransactionFeed, transactionDirection } from "@/components/transactions/TransactionFeed";
 import { VoidPaymentModal } from "@/components/payments/VoidPaymentModal";
 import { RequestRefundModal } from "@/components/payments/RequestRefundModal";
 import { useTransactions } from "@/hooks/transactions/useTransactions";
@@ -29,9 +31,21 @@ import { useTransactionsSummary } from "@/hooks/transactions/useTransactionsSumm
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
 import { exportToCsv } from "@/utils/exportCsv";
+import { monthKeyLabel, shiftMonthKey, splitMonthKey, toMonthKey } from "@/utils/months";
 import { toLocalDateString } from "@/utils/time";
-import type { PaymentMethod, PaymentStatus } from "@/types/domain";
-import type { SummaryPeriod, TransactionItem } from "@/lib/api/transactions";
+import type { PaymentMethod } from "@/types/domain";
+import type { TransactionItem } from "@/lib/api/transactions";
+
+type FeedTab = "all" | "in" | "out";
+
+/** First and last calendar day of a "YYYY-MM" cycle, as "YYYY-MM-DD". */
+function monthBounds(monthKey: string): { dateFrom: string; dateTo: string } {
+  const { year, month } = splitMonthKey(monthKey);
+  return {
+    dateFrom: toLocalDateString(new Date(year, month - 1, 1)),
+    dateTo: toLocalDateString(new Date(year, month, 0)),
+  };
+}
 
 const PAGE_SIZE = 10;
 
@@ -56,24 +70,33 @@ export function TransactionHistoryView({
 
   const [search, setSearch] = useState("");
   const [method, setMethod] = useState<PaymentMethod | "">("");
-  const [status, setStatus] = useState<PaymentStatus | "">("");
-  const [period, setPeriod] = useState<SummaryPeriod>("");
-  const [date, setDate] = useState("");
+  const [monthKey, setMonthKey] = useState(toMonthKey());
+  const [tab, setTab] = useState<FeedTab>("all");
   const [page, setPage] = useState(1);
   const [voidingTransaction, setVoidingTransaction] = useState<TransactionItem | null>(null);
   const [refundingTransaction, setRefundingTransaction] = useState<TransactionItem | null>(null);
 
+  const { dateFrom, dateTo } = monthBounds(monthKey);
   const { data, isLoading, isFetching, isError, refetch } = useTransactions({
     search,
     method: method || undefined,
-    status: status || undefined,
-    period: period || undefined,
-    date: date || undefined,
+    dateFrom,
+    dateTo,
     branchId,
     page,
     pageSize: PAGE_SIZE,
   });
   const { data: summary } = useTransactionsSummary(branchId);
+
+  const visibleTransactions = (data?.results ?? []).filter((transaction) => {
+    if (tab === "all") return true;
+    return transactionDirection(transaction) === tab;
+  });
+
+  const changeMonth = (by: number) => {
+    setMonthKey((current) => shiftMonthKey(current, by));
+    setPage(1);
+  };
 
   const handleExport = () => {
     exportToCsv(
@@ -100,76 +123,6 @@ export function TransactionHistoryView({
         title="Transaction History"
         subtitle="Every payment collected, searchable and exportable."
       />
-
-      <FilterBar
-        dateSlot={
-          <Input
-            type="date"
-            value={date}
-            onChange={(event) => {
-              setDate(event.target.value);
-              setPeriod("");
-              setPage(1);
-            }}
-            containerClassName={FILTER_FIELD_WIDTH}
-            max={toLocalDateString()}
-          />
-        }
-      >
-        {canPickBranch && (
-          <BranchFilterSelect
-            value={selectedBranch}
-            onChange={(value) => {
-              setSelectedBranch(value);
-              setPage(1);
-            }}
-          />
-        )}
-        <Select
-          value={period}
-          onChange={(event) => {
-            setPeriod(event.target.value as SummaryPeriod);
-            setDate("");
-            setPage(1);
-          }}
-          containerClassName={FILTER_FIELD_WIDTH}
-        >
-          <option value="">All time</option>
-          <option value="today">Today</option>
-          <option value="month">This month</option>
-        </Select>
-        <Select
-          value={method}
-          onChange={(event) => {
-            setMethod(event.target.value as PaymentMethod | "");
-            setPage(1);
-          }}
-          containerClassName={FILTER_FIELD_WIDTH}
-        >
-          <option value="">All methods</option>
-          <option value="cash">Cash</option>
-          <option value="bkash">bKash</option>
-          <option value="nagad">Nagad</option>
-          <option value="rocket">Rocket</option>
-          <option value="bank_transfer">Bank Transfer</option>
-          <option value="online_payment">Online Payment</option>
-          <option value="card">Card</option>
-        </Select>
-        <Select
-          value={status}
-          onChange={(event) => {
-            setStatus(event.target.value as PaymentStatus | "");
-            setPage(1);
-          }}
-          containerClassName={FILTER_FIELD_WIDTH}
-        >
-          <option value="">All statuses</option>
-          <option value="paid">Paid</option>
-          <option value="due">Due</option>
-          <option value="refunded">Refunded</option>
-          <option value="void">Void</option>
-        </Select>
-      </FilterBar>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
@@ -216,6 +169,77 @@ export function TransactionHistoryView({
         />
       </div>
 
+      <div className="flex items-center justify-center gap-3 rounded-xl border border-border bg-surface px-4 py-2.5 shadow-sm">
+        <button
+          type="button"
+          onClick={() => changeMonth(-1)}
+          aria-label="Previous month"
+          title="Previous month"
+          className="rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-primary-light hover:text-text-primary"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <span className="min-w-[9rem] text-center text-sm font-semibold text-text-primary">
+          {monthKeyLabel(monthKey)}
+        </span>
+        <button
+          type="button"
+          onClick={() => changeMonth(1)}
+          aria-label="Next month"
+          title="Next month"
+          className="rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-primary-light hover:text-text-primary"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="flex items-center gap-6 border-b border-border px-1">
+        {(["all", "in", "out"] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setTab(value)}
+            className={clsx(
+              "border-b-2 pb-2.5 text-sm font-semibold capitalize transition-colors",
+              tab === value
+                ? "border-primary text-primary"
+                : "border-transparent text-text-secondary hover:text-text-primary",
+            )}
+          >
+            {value}
+          </button>
+        ))}
+      </div>
+
+      <FilterBar>
+        {canPickBranch && (
+          <BranchFilterSelect
+            value={selectedBranch}
+            onChange={(value) => {
+              setSelectedBranch(value);
+              setPage(1);
+            }}
+          />
+        )}
+        <Select
+          value={method}
+          onChange={(event) => {
+            setMethod(event.target.value as PaymentMethod | "");
+            setPage(1);
+          }}
+          containerClassName={FILTER_FIELD_WIDTH}
+        >
+          <option value="">All methods</option>
+          <option value="cash">Cash</option>
+          <option value="bkash">bKash</option>
+          <option value="nagad">Nagad</option>
+          <option value="rocket">Rocket</option>
+          <option value="bank_transfer">Bank Transfer</option>
+          <option value="online_payment">Online Payment</option>
+          <option value="card">Card</option>
+        </Select>
+      </FilterBar>
+
       <Card>
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-3">
@@ -250,10 +274,13 @@ export function TransactionHistoryView({
           {!isLoading && !isError && data?.results.length === 0 && (
             <EmptyState label="No transactions found." />
           )}
-          {!isLoading && !isError && data && data.results.length > 0 && (
+          {!isLoading && !isError && data && data.results.length > 0 && visibleTransactions.length === 0 && (
+            <EmptyState label={`No ${tab} transactions this month.`} />
+          )}
+          {!isLoading && !isError && data && visibleTransactions.length > 0 && (
             <>
-              <TransactionTable
-                transactions={data.results}
+              <TransactionFeed
+                transactions={visibleTransactions}
                 canVoid={Boolean(user)}
                 canRequestRefund={user?.role === "manager"}
                 onVoid={setVoidingTransaction}
