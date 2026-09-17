@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Wallet, Receipt, CalendarClock, RefreshCw, Download } from "lucide-react";
+import {
+  Wallet,
+  Receipt,
+  CalendarClock,
+  RefreshCw,
+  Download,
+  ArrowDownLeft,
+  ArrowUpRight,
+} from "lucide-react";
 import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -163,13 +171,31 @@ export function TransactionHistoryView({
         </Select>
       </FilterBar>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
-          label="Total Collected"
-          value={formatCurrency(summary?.totalCollected ?? 0)}
+          label="Total (Net)"
+          value={formatCurrency((summary?.totalCollected ?? 0) - (summary?.totalRefunded ?? 0))}
           icon={Wallet}
-          tone="success"
+          tone="primary"
+          hint="All-time collections minus refunds"
         />
+        <StatCard
+          label="In"
+          value={formatCurrency(summary?.totalCollected ?? 0)}
+          icon={ArrowDownLeft}
+          tone="success"
+          hint="All-time money collected"
+        />
+        <StatCard
+          label="Out"
+          value={formatCurrency(summary?.totalRefunded ?? 0)}
+          icon={ArrowUpRight}
+          tone="danger"
+          hint="All-time money refunded"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label="Today's Collection"
           value={formatCurrency(summary?.todayCollected ?? 0)}

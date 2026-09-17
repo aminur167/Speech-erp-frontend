@@ -84,10 +84,19 @@ export async function getCollectionForDate(
 
 export interface TransactionsSummary {
   totalCollected: number;
+  totalRefunded: number;
   transactionCount: number;
   todayCollected: number;
   monthCollected: number;
   byMethod: { method: PaymentMethod; amount: number }[];
+}
+
+interface RawTransactionsSummary
+  extends Omit<TransactionsSummary, "totalCollected" | "totalRefunded" | "todayCollected" | "monthCollected"> {
+  totalCollected: number | string;
+  totalRefunded: number | string;
+  todayCollected: number | string;
+  monthCollected: number | string;
 }
 
 /** `date` (an ISO "YYYY-MM-DD" from a date picker) defaults to today when omitted. */
@@ -95,10 +104,16 @@ export async function getTransactionsSummary(
   branchId?: string,
   date?: string,
 ): Promise<TransactionsSummary> {
-  const { data } = await apiClient.get<TransactionsSummary>("/transactions/summary/", {
+  const { data } = await apiClient.get<RawTransactionsSummary>("/transactions/summary/", {
     params: { branch: branchId, date },
   });
-  return data;
+  return {
+    ...data,
+    totalCollected: Number(data.totalCollected),
+    totalRefunded: Number(data.totalRefunded),
+    todayCollected: Number(data.todayCollected),
+    monthCollected: Number(data.monthCollected),
+  };
 }
 
 /** Daily collection totals for the last `days` calendar days (oldest first) — powers a revenue trend chart. */
