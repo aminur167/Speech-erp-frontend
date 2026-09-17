@@ -3,7 +3,10 @@
 import { AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
-import { PatientAttendanceCell } from "@/components/attendance/PatientAttendanceCell";
+import {
+  PatientAttendanceCell,
+  PatientAttendanceStatusBadge,
+} from "@/components/attendance/PatientAttendanceCell";
 import type { AttendanceRosterRow } from "@/lib/api/patientAttendance";
 import type { AttendanceServiceKind } from "@/types/domain";
 
@@ -13,6 +16,11 @@ import type { AttendanceServiceKind } from "@/types/domain";
  * "Last seen" carries the weight of the whole screen: it is what tells a
  * manager that someone has quietly stopped coming, which is the thing
  * attendance is being taken to find out.
+ *
+ * Status is its own column rather than something tucked in beside the
+ * buttons, and it survives `readOnly`: everyone is absent until marked, so
+ * every row has an answer worth reading — including on the Admin's view of a
+ * branch, where there are no buttons to sit next to.
  */
 export function PatientAttendanceTable({
   rows,
@@ -36,6 +44,7 @@ export function PatientAttendanceTable({
             <th className="py-2 pr-4 font-medium">Patient</th>
             <th className="py-2 pr-4 font-medium">Service</th>
             <th className="py-2 pr-4 font-medium">Last Seen</th>
+            <th className="py-2 pr-4 font-medium">Status</th>
             {!readOnly && <th className="py-2 pr-4 font-medium">Attendance</th>}
           </tr>
         </thead>
@@ -88,12 +97,19 @@ export function PatientAttendanceTable({
                   />
                 )}
               </td>
+              <td className="py-2 pr-4">
+                <PatientAttendanceStatusBadge
+                  status={row.status}
+                  marked={row.record !== null}
+                />
+              </td>
               {!readOnly && (
                 <td className="py-2 pr-4">
                   <PatientAttendanceCell
                     patientId={row.patientId}
                     serviceKind={serviceKind}
                     date={date}
+                    status={row.status}
                     record={row.record}
                   />
                 </td>
