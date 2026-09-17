@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Columns3 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 
 export interface ColumnOption {
   key: string;
@@ -22,10 +21,15 @@ export function ColumnsMenu({
 
   return (
     <div className="relative">
-      <Button variant="secondary" onClick={() => setOpen((prev) => !prev)}>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-label="Columns"
+        title="Columns"
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-text-secondary transition-colors hover:border-primary/40 hover:bg-primary-light/60 hover:text-text-primary"
+      >
         <Columns3 className="h-4 w-4" />
-        Columns
-      </Button>
+      </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />

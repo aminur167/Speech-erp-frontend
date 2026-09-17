@@ -185,6 +185,16 @@ export function PatientListView({
           />
         }
       >
+        <div className="min-w-[220px] flex-1">
+          <Input
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+            placeholder="Search name, phone, patient ID or guardian"
+          />
+        </div>
         {canPickBranch && (
           <BranchFilterSelect
             value={selectedBranch}
@@ -259,6 +269,36 @@ export function PatientListView({
             Reset
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          aria-label="Refresh"
+          title="Refresh"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-text-secondary transition-colors hover:border-primary/40 hover:bg-primary-light/60 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
+        </button>
+        <ColumnsMenu
+          options={[
+            { key: "age", label: "Age" },
+            { key: "gender", label: "Gender" },
+            { key: "guardian", label: "Guardian" },
+            { key: "phone", label: "Phone" },
+            { key: "therapyType", label: "Therapy Type" },
+            { key: "serviceType", label: "Service Type" },
+            { key: "paymentType", label: "Payment Type" },
+            { key: "status", label: "Status" },
+            { key: "branch", label: "Branch" },
+          ]}
+          visible={columns}
+          onToggle={(key) =>
+            setColumns((prev) => ({
+              ...prev,
+              [key]: !prev[key as keyof PatientTableColumns],
+            }))
+          }
+        />
       </FilterBar>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -305,48 +345,6 @@ export function PatientListView({
 
       <Card>
         <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="min-w-[220px] flex-1">
-              <Input
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
-                placeholder="Search name, phone, patient ID or guardian"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
-                <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
-                Refresh
-              </Button>
-              <ColumnsMenu
-                options={[
-                  { key: "age", label: "Age" },
-                  { key: "gender", label: "Gender" },
-                  { key: "guardian", label: "Guardian" },
-                  { key: "phone", label: "Phone" },
-                  { key: "therapyType", label: "Therapy Type" },
-                  { key: "serviceType", label: "Service Type" },
-                  { key: "paymentType", label: "Payment Type" },
-                  { key: "status", label: "Status" },
-                  { key: "branch", label: "Branch" },
-                ]}
-                visible={columns}
-                onToggle={(key) =>
-                  setColumns((prev) => ({
-                    ...prev,
-                    [key]: !prev[key as keyof PatientTableColumns],
-                  }))
-                }
-              />
-            </div>
-          </div>
-          <p className="text-xs text-text-secondary">
-            Filters apply instantly and combine with the search box.
-          </p>
-
           {isLoading && <LoadingState label="Loading patients…" />}
           {isError && <ErrorState onRetry={() => refetch()} />}
           {!isLoading && !isError && data?.results.length === 0 && (
