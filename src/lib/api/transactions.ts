@@ -286,6 +286,41 @@ export async function getBranchSummary(params: {
 }
 
 
+export type ActivityType = "invoice" | "expense" | "refund";
+
+export interface ActivityRow {
+  id: string;
+  type: ActivityType;
+  occurredAt: string;
+  reference: string;
+  description: string;
+  person: string;
+  performedBy: string;
+  amount: number;
+  direction: "in" | "out";
+  status: string;
+}
+
+interface RawActivityRow extends Omit<ActivityRow, "amount"> {
+  amount: number | string;
+}
+
+/**
+ * The Summary page's merged feed — every invoice, expense and refund in the
+ * range, newest first, in one list. Not paginated, same reasoning as
+ * `getBranchDailyLedger`: the page charts and exports the whole range at once.
+ */
+export async function getBranchActivity(params: {
+  branchId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<ActivityRow[]> {
+  const { data } = await apiClient.get<RawActivityRow[]>("/transactions/branch-summary/activity/", {
+    params: { branch: params.branchId, dateFrom: params.dateFrom, dateTo: params.dateTo },
+  });
+  return data.map((row) => ({ ...row, amount: Number(row.amount) }));
+}
+
 export interface DailyLedgerRow {
   date: string;
   transactionCount: number;

@@ -14,11 +14,13 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { ExpenseTable } from "@/components/expenses/ExpenseTable";
 import { DuePaymentTable } from "@/components/duePayments/DuePaymentTable";
+import { ActivityLedgerTable } from "@/components/reports/summary/ActivityLedgerTable";
 import { DailyLedgerTable } from "@/components/reports/summary/DailyLedgerTable";
 import { RefundLedgerTable } from "@/components/reports/summary/RefundLedgerTable";
 import { ClosingLedgerTable } from "@/components/reports/summary/ClosingLedgerTable";
 import { BreakdownTable } from "@/components/reports/summary/BreakdownTable";
 import { useBranchSummary } from "@/hooks/reports/useBranchSummary";
+import { useBranchActivity } from "@/hooks/reports/useBranchActivity";
 import { useBranchDailyLedger } from "@/hooks/reports/useBranchDailyLedger";
 import { useTransactions } from "@/hooks/transactions/useTransactions";
 import { useExpenses } from "@/hooks/expenses/useExpenses";
@@ -79,6 +81,7 @@ function presetRange(preset: Exclude<Preset, "custom">): [string, string] {
  * different question than the tab asks.
  */
 const TABS = [
+  { key: "activity", label: "Activity", ranged: true },
   { key: "daily", label: "Daily Ledger", ranged: true },
   { key: "invoices", label: "Invoices", ranged: true },
   { key: "expenses", label: "Expenses", ranged: true },
@@ -110,7 +113,7 @@ export function BranchSummaryView({
   branchId?: string;
   subtitle: string;
 }) {
-  const [tab, setTab] = useState<TabKey>("daily");
+  const [tab, setTab] = useState<TabKey>("activity");
   const [dateFrom, setDateFrom] = useState(firstOfThisMonth);
   const [dateTo, setDateTo] = useState(() => isoDate(new Date()));
   const [preset, setPreset] = useState<Preset>("month");
@@ -167,6 +170,7 @@ export function BranchSummaryView({
     else setDateTo(value);
   };
 
+  const activity = useBranchActivity({ branchId, ...range }, on("activity"));
   const ledger = useBranchDailyLedger({ branchId, ...range }, on("daily"));
   const summary = useBranchSummary(
     { branchId, ...range },
@@ -207,8 +211,10 @@ export function BranchSummaryView({
     on("dues"),
   );
 
-  // The ledger and the two breakdowns come back whole rather than paginated,
-  // so their paging happens here.
+  // The activity feed, the ledger, and the two breakdowns come back whole
+  // rather than paginated, so their paging happens here.
+  const activityRows = useMemo(() => activity.data ?? [], [activity.data]);
+  const activityPage = activityRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const ledgerRows = useMemo(() => ledger.data ?? [], [ledger.data]);
   const ledgerPage = ledgerRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const methodRows = summary.data?.byMethod ?? [];
@@ -217,6 +223,7 @@ export function BranchSummaryView({
   const active = TABS.find((entry) => entry.key === tab)!;
 
   const query = {
+    activity,
     daily: ledger,
     invoices,
     expenses,
@@ -228,6 +235,7 @@ export function BranchSummaryView({
   }[tab];
 
   const count = {
+    activity: activityRows.length,
     daily: ledgerRows.length,
     invoices: invoices.data?.count ?? 0,
     expenses: expenses.data?.count ?? 0,
@@ -248,6 +256,23 @@ export function BranchSummaryView({
   const handleExport = () => {
     const filename = `${active.key}-${dateFrom}-to-${dateTo}.csv`;
 
+    if (tab === "activity") {
+      exportToCsv(
+        filename,
+        activityRows.map((row) => ({
+          Date: new Date(row.occurredAt).toLocaleString(),
+          Type: row.type,
+          Reference: row.reference,
+          Description: row.description,
+          Person: row.person,
+          "Performed By": row.performedBy,
+          Status: row.status,
+          Direction: row.direction,
+          Amount: row.amount,
+        })),
+      );
+      return;
+    }
     if (tab === "daily") {
       exportToCsv(
         filename,
@@ -538,7 +563,7 @@ export function BranchSummaryView({
           </>
         )}
 
-        {(tab === "daily" || tab === "methods" || tab === "services") && (
+        {(tab === "activity" || tab === "daily" || tab === "methods" || tab === "services") && (
           <span className="text-xs text-text-secondary">
             Filtered by date range only.
           </span>
@@ -599,6 +624,13 @@ export function BranchSummaryView({
 
             {!query.isLoading && !query.isError && !isEmpty && (
               <>
+                {tab === "activity" && (
+                  <ActivityLedgerTable
+                    rows={activityPage}
+                    startIndex={(page - 1) * PAGE_SIZE}
+                    totalsFor={activityRows}
+                  />
+                )}
                 {tab === "daily" && (
                   <DailyLedgerTable rows={ledgerPage} totalsFor={ledgerRows} />
                 )}
