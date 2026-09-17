@@ -232,10 +232,16 @@ export function PatientListView({
         }
         actions={
           <>
-            <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              aria-label="Refresh"
+              title="Refresh"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-text-secondary transition-colors hover:border-primary/40 hover:bg-primary-light/60 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+            >
               <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
-              Refresh
-            </Button>
+            </button>
             <ColumnsMenu
               options={[
                 { key: "age", label: "Age" },
