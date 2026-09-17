@@ -85,6 +85,8 @@ export async function getCollectionForDate(
 export interface TransactionsSummary {
   totalCollected: number;
   totalRefunded: number;
+  /** Every approved/pending expense, salary payouts included — see getTransactionsSummary. */
+  totalExpenses: number;
   transactionCount: number;
   todayCollected: number;
   monthCollected: number;
@@ -92,14 +94,22 @@ export interface TransactionsSummary {
 }
 
 interface RawTransactionsSummary
-  extends Omit<TransactionsSummary, "totalCollected" | "totalRefunded" | "todayCollected" | "monthCollected"> {
+  extends Omit<TransactionsSummary, "totalCollected" | "totalRefunded" | "totalExpenses" | "todayCollected" | "monthCollected"> {
   totalCollected: number | string;
   totalRefunded: number | string;
+  totalExpenses: number | string;
   todayCollected: number | string;
   monthCollected: number | string;
 }
 
-/** `date` (an ISO "YYYY-MM-DD" from a date picker) defaults to today when omitted. */
+/**
+ * `date` (an ISO "YYYY-MM-DD" from a date picker) defaults to today when omitted.
+ *
+ * `totalExpenses` covers every expense the branch has logged, salaries
+ * included: a salary payment becomes an Expense the moment it's disbursed, so
+ * "money out" here is refunds plus this one total, not a separate salary
+ * figure that could drift out of sync with the Expenses page.
+ */
 export async function getTransactionsSummary(
   branchId?: string,
   date?: string,
@@ -111,6 +121,7 @@ export async function getTransactionsSummary(
     ...data,
     totalCollected: Number(data.totalCollected),
     totalRefunded: Number(data.totalRefunded),
+    totalExpenses: Number(data.totalExpenses),
     todayCollected: Number(data.todayCollected),
     monthCollected: Number(data.monthCollected),
   };
