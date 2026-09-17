@@ -2,6 +2,7 @@ import { type HTMLAttributes } from "react";
 import { clsx } from "clsx";
 
 const paddingStyles = {
+  none: "",
   sm: "p-5",
   md: "p-6",
 } as const;

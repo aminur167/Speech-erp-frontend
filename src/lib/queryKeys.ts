@@ -99,6 +99,9 @@ export const queryKeys = {
     all: ["audit-logs"] as const,
     list: (params?: object) => ["audit-logs", "list", params] as const,
   },
+  systemSettings: {
+    all: ["system-settings"] as const,
+  },
   notifications: {
     all: ["notifications"] as const,
     list: (params?: object) => ["notifications", "list", params] as const,
