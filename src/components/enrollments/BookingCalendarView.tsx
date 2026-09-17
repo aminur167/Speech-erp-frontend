@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   XCircle,
   Search,
+  AlertCircle,
   Calendar,
   Rows3,
   ListTodo,
@@ -24,6 +25,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
 import { CancelBookingModal } from "@/components/enrollments/CancelBookingModal";
+import { CollectAdvanceModal } from "@/components/enrollments/CollectAdvanceModal";
 import { DayDetailModal } from "@/components/enrollments/calendar/DayDetailModal";
 import { MonthGrid, MonthGridSkeleton, buildCalendarGrid } from "@/components/enrollments/calendar/MonthGrid";
 import { WeekView, buildWeekGrid } from "@/components/enrollments/calendar/WeekView";
@@ -73,6 +75,7 @@ export function BookingCalendarView({
   const [weekAnchor, setWeekAnchor] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [cancellingBooking, setCancellingBooking] = useState<Booking | null>(null);
+  const [collectingBooking, setCollectingBooking] = useState<Booking | null>(null);
 
   const grid = useMemo(() => buildCalendarGrid(cursor.year, cursor.month), [cursor]);
   const weekDays = useMemo(() => buildWeekGrid(weekAnchor), [weekAnchor]);
@@ -123,6 +126,8 @@ export function BookingCalendarView({
       total: visibleBookings.length,
       confirmed: visibleBookings.filter((b) => b.status === "confirmed").length,
       cancelled: visibleBookings.filter((b) => b.status === "cancelled").length,
+      paymentPending: visibleBookings.filter((b) => b.status === "confirmed" && !b.advancePaid)
+        .length,
       today: (bookingsByDate.get(todayISO) ?? []).length,
     }),
     [visibleBookings, bookingsByDate, todayISO],
@@ -175,7 +180,7 @@ export function BookingCalendarView({
         subtitle="Online service bookings across the schedule."
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard label="Today" value={String(stats.today)} icon={CalendarDays} tone="info" />
         <StatCard label="In View" value={String(stats.total)} icon={CalendarDays} tone="primary" />
         <StatCard
@@ -183,6 +188,12 @@ export function BookingCalendarView({
           value={String(stats.confirmed)}
           icon={CheckCircle2}
           tone="success"
+        />
+        <StatCard
+          label="Payment Pending"
+          value={String(stats.paymentPending)}
+          icon={AlertCircle}
+          tone="warning"
         />
         <StatCard label="Cancelled" value={String(stats.cancelled)} icon={XCircle} tone="danger" />
       </div>
@@ -287,6 +298,9 @@ export function BookingCalendarView({
                 <span className="h-2 w-2 rounded-full bg-info" /> Confirmed
               </span>
               <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-warning" /> Payment Pending
+              </span>
+              <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-danger" /> Cancelled
               </span>
             </div>
@@ -318,6 +332,7 @@ export function BookingCalendarView({
               bookings={visibleBookings}
               isManager={isManager}
               onCancel={setCancellingBooking}
+              onCollectAdvance={setCollectingBooking}
             />
           )}
         </div>
@@ -329,9 +344,11 @@ export function BookingCalendarView({
         isManager={isManager}
         onClose={() => setSelectedDay(null)}
         onCancel={setCancellingBooking}
+        onCollectAdvance={setCollectingBooking}
       />
 
       <CancelBookingModal booking={cancellingBooking} onClose={() => setCancellingBooking(null)} />
+      <CollectAdvanceModal booking={collectingBooking} onClose={() => setCollectingBooking(null)} />
     </div>
   );
 }

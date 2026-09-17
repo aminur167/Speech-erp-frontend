@@ -14,12 +14,14 @@ export function DayDetailModal({
   isManager,
   onClose,
   onCancel,
+  onCollectAdvance,
 }: {
   date: string | null;
   bookings: Booking[];
   isManager: boolean;
   onClose: () => void;
   onCancel: (booking: Booking) => void;
+  onCollectAdvance: (booking: Booking) => void;
 }) {
   const label = date
     ? new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
@@ -55,17 +57,31 @@ export function DayDetailModal({
                     </p>
                   </div>
                 </div>
-                <Badge
-                  tone={booking.status === "cancelled" ? "danger" : "success"}
-                  label={booking.status}
-                />
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {booking.status === "confirmed" && !booking.advancePaid && (
+                    <Badge tone="warning" label="Payment Pending" />
+                  )}
+                  <Badge
+                    tone={booking.status === "cancelled" ? "danger" : "success"}
+                    label={booking.status}
+                  />
+                </div>
               </div>
               <p className="pl-9 text-xs text-text-secondary">
                 {booking.branchName} · Advance {formatCurrency(booking.advanceAmount)} ·{" "}
                 {booking.bookingCode}
               </p>
               {isManager && booking.status === "confirmed" && (
-                <div className="flex justify-end pl-9">
+                <div className="flex justify-end gap-2 pl-9">
+                  {!booking.advancePaid && (
+                    <Button
+                      variant="secondary"
+                      className="px-3 py-1.5 text-xs"
+                      onClick={() => onCollectAdvance(booking)}
+                    >
+                      Collect Payment
+                    </Button>
+                  )}
                   <Button
                     variant="secondary"
                     className="px-3 py-1.5 text-xs"
