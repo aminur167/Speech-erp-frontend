@@ -11,14 +11,21 @@ const TYPE_META: Record<ActivityType, { label: string; tone: Tone }> = {
   invoice: { label: "Invoice", tone: "info" },
   expense: { label: "Expense", tone: "warning" },
   refund: { label: "Refund", tone: "purple" },
+  patient: { label: "New Patient", tone: "success" },
+  enrollment: { label: "Enrollment", tone: "success" },
+  salary: { label: "Salary", tone: "neutral" },
 };
 
-// Spans three different status vocabularies (payment/expense/refund) at
-// once — a plain string keyed lookup with a neutral fallback rather than
-// three separate badge components for what the manager reads as one column.
+// Spans several different status vocabularies (payment/expense/refund plus
+// the non-money patient/enrollment/salary events) at once — a plain string
+// keyed lookup with a neutral fallback rather than a badge component per
+// event type for what the manager reads as one column.
 const STATUS_TONE: Record<string, Tone> = {
   paid: "success",
   approved: "success",
+  registered: "success",
+  enrolled: "success",
+  requested: "warning",
   due: "warning",
   pending: "warning",
   partial: "warning",
@@ -30,9 +37,10 @@ const STATUS_TONE: Record<string, Tone> = {
 };
 
 /**
- * Every invoice, expense and refund in the range, newest first, in one
- * table — what a manager scans instead of flipping between the Invoices,
- * Expenses and Refunds tabs to see everything that happened.
+ * Every invoice, expense, refund, new patient, service enrollment and
+ * salary-payment decision in the range, newest first, in one table — what a
+ * manager scans instead of flipping between half a dozen separate screens
+ * to see everything that happened.
  *
  * `startIndex` numbers rows against the whole range rather than restarting
  * at 1 on every page, so "#42" means the same row no matter which page of
@@ -100,16 +108,22 @@ export function ActivityLedgerTable({
                 <td className="py-2 pr-4">
                   <Badge tone={STATUS_TONE[row.status] ?? "neutral"} label={row.status} />
                 </td>
-                <td
-                  className={
-                    row.direction === "in"
-                      ? "py-2 pr-4 text-right font-medium tabular-nums text-success"
-                      : "py-2 pr-4 text-right font-medium tabular-nums text-danger"
-                  }
-                >
-                  {row.direction === "in" ? "+" : "−"}
-                  {formatCurrency(row.amount)}
-                </td>
+                {row.direction === "neutral" ? (
+                  <td className="py-2 pr-4 text-right tabular-nums text-text-secondary">
+                    {row.amount > 0 ? formatCurrency(row.amount) : "—"}
+                  </td>
+                ) : (
+                  <td
+                    className={
+                      row.direction === "in"
+                        ? "py-2 pr-4 text-right font-medium tabular-nums text-success"
+                        : "py-2 pr-4 text-right font-medium tabular-nums text-danger"
+                    }
+                  >
+                    {row.direction === "in" ? "+" : "−"}
+                    {formatCurrency(row.amount)}
+                  </td>
+                )}
               </tr>
             );
           })}
