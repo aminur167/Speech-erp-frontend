@@ -22,7 +22,6 @@ import { SearchField } from "@/components/ui/SearchField";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState } from "@/components/ui/states";
-import { StatCard } from "@/components/dashboard/StatCard";
 import { ServiceCard } from "@/components/services/ServiceCard";
 import { ServiceForm } from "@/components/services/ServiceForm";
 import { AddPackageModal } from "@/components/services/AddPackageModal";
@@ -52,11 +51,11 @@ import type {
 import type { ServiceInput } from "@/lib/api/services";
 import type { ApiError } from "@/types/api";
 
-const CATEGORY_META: Record<ServiceCategory, { label: string; icon: LucideIcon }> = {
-  daily: { label: "Daily", icon: Clock },
-  monthly: { label: "Monthly", icon: CalendarDays },
-  installment: { label: "Installment", icon: Layers },
-  online: { label: "Online", icon: Globe },
+const CATEGORY_META: Record<ServiceCategory, { label: string; icon: LucideIcon; tone: string }> = {
+  daily: { label: "Daily", icon: Clock, tone: "bg-info/10 text-info" },
+  monthly: { label: "Monthly", icon: CalendarDays, tone: "bg-primary-light text-primary" },
+  installment: { label: "Installment", icon: Layers, tone: "bg-status-refunded/10 text-status-refunded" },
+  online: { label: "Online", icon: Globe, tone: "bg-success/10 text-success" },
 };
 
 const SECTION_LABELS: Record<ServiceCategory, string> = {
@@ -277,20 +276,40 @@ export function ServiceCatalogView({
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {CATEGORY_ORDER.map((category) => (
-          <StatCard
-            key={category}
-            label={`${CATEGORY_META[category].label} Packages`}
-            value={String(categoryCounts[category])}
-            icon={CATEGORY_META[category].icon}
-            selected={categoryFilter === category}
-            onClick={() => setCategoryFilter((prev) => (prev === category ? "" : category))}
-          />
-        ))}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {CATEGORY_ORDER.map((category) => {
+          const meta = CATEGORY_META[category];
+          const Icon = meta.icon;
+          const selected = categoryFilter === category;
+          return (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setCategoryFilter((prev) => (prev === category ? "" : category))}
+              className={clsx(
+                "flex items-center gap-3.5 rounded-xl border bg-surface p-4 text-left transition-all",
+                selected
+                  ? "border-primary/50 bg-primary-light/25 shadow-sm"
+                  : "border-border/60 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:-translate-y-0.5 hover:border-border hover:shadow-md",
+              )}
+            >
+              <span className={clsx("flex h-11 w-11 shrink-0 items-center justify-center rounded-lg", meta.tone)}>
+                <Icon className="h-5 w-5" />
+              </span>
+              <span className="flex flex-col">
+                <span className="text-2xl leading-none font-semibold text-text-primary">
+                  {categoryCounts[category]}
+                </span>
+                <span className="mt-1.5 text-xs font-medium text-text-secondary">
+                  {meta.label} Packages
+                </span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      <Card>
+      <Card padding="sm">
         <div className="flex flex-col gap-4">
           {/* Bottom-aligned: the search carries a title and the toggles and
               buttons beside it do not. */}
@@ -302,17 +321,17 @@ export function ServiceCatalogView({
                 placeholder="Search package name or code…"
               />
             </div>
-            <div className="flex gap-1 rounded-lg border border-border p-1">
+            <div className="flex gap-0.5 rounded-full border border-border bg-background p-1">
               {(["", "active", "inactive"] as const).map((status) => (
                 <button
                   key={status || "all"}
                   type="button"
                   onClick={() => setStatusFilter(status)}
                   className={clsx(
-                    "rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors",
+                    "rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors",
                     statusFilter === status
-                      ? "bg-primary text-white"
-                      : "text-text-secondary hover:bg-background",
+                      ? "bg-surface text-primary shadow-sm"
+                      : "text-text-secondary hover:text-text-primary",
                   )}
                 >
                   {status || "All"}
@@ -332,12 +351,12 @@ export function ServiceCatalogView({
                 Reset
               </button>
             )}
-            <div className="flex rounded-lg border border-border bg-background p-0.5">
+            <div className="flex rounded-full border border-border bg-background p-1">
               <button
                 type="button"
                 onClick={() => setView("table")}
                 className={clsx(
-                  "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors",
                   view === "table"
                     ? "bg-surface text-primary shadow-sm"
                     : "text-text-secondary hover:text-text-primary",
@@ -350,7 +369,7 @@ export function ServiceCatalogView({
                 type="button"
                 onClick={() => setView("card")}
                 className={clsx(
-                  "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors",
                   view === "card"
                     ? "bg-surface text-primary shadow-sm"
                     : "text-text-secondary hover:text-text-primary",
@@ -361,11 +380,11 @@ export function ServiceCatalogView({
               </button>
             </div>
             <div className="ml-auto flex gap-2">
-              <Button variant="secondary" onClick={() => refetch()} disabled={isFetching}>
+              <Button variant="secondary" onClick={() => refetch()} disabled={isFetching} className="!rounded-full">
                 <RefreshCw className={clsx("h-4 w-4", isFetching && "animate-spin")} />
                 Refresh
               </Button>
-              <Button variant="secondary" onClick={handleExport} disabled={filtered.length === 0}>
+              <Button variant="secondary" onClick={handleExport} disabled={filtered.length === 0} className="!rounded-full">
                 <Download className="h-4 w-4" />
                 Export
               </Button>
