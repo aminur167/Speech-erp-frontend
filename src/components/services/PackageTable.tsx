@@ -43,23 +43,27 @@ export function PackageTable({
   const detail = useRowDetail<Service>();
 
   return (
-    <div className="overflow-x-auto">
+    <div className="-mx-5 overflow-x-auto">
       <table className="w-full text-left text-sm">
         <thead>
-          <tr className="border-b border-border text-xs font-medium text-text-secondary">
-            <th className="py-2 pr-3">Package</th>
-            {showBranchColumn && <th className="py-2 pr-3">Branch</th>}
-            <th className="py-2 pr-3">Category</th>
-            <th className="py-2 pr-3">Fee</th>
-            <th className="py-2 pr-3">Status</th>
-            <th className="py-2 pr-3">Enrolled</th>
-            {canManage && <th className="py-2 pr-3">Actions</th>}
+          <tr className="border-y border-border/60 bg-background/50 text-[11px] font-semibold tracking-wide text-text-secondary uppercase">
+            <th className="py-2.5 pr-3 pl-5">Package</th>
+            {showBranchColumn && <th className="py-2.5 pr-3">Branch</th>}
+            <th className="py-2.5 pr-3">Category</th>
+            <th className="py-2.5 pr-3">Fee</th>
+            <th className="py-2.5 pr-3">Status</th>
+            <th className="py-2.5 pr-3">Enrolled</th>
+            {canManage && (
+              <th className="py-2.5 pr-5">
+                <span className="sr-only">Actions</span>
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
           {services.map((service) => (
             <tr key={service.id} {...detail.rowProps(service, "align-top")}>
-              <td className="py-2.5 pr-3">
+              <td className="py-3 pr-3 pl-5">
                 <p className="font-medium text-text-primary">{service.name}</p>
                 <p className="font-mono text-[11px] text-text-secondary">{service.code}</p>
                 {service.reviewStatus === "pending" && service.proposedBy && (
@@ -70,12 +74,12 @@ export function PackageTable({
                 )}
               </td>
               {showBranchColumn && (
-                <td className="py-2.5 pr-3 text-text-secondary">{service.branchName}</td>
+                <td className="py-3 pr-3 text-text-secondary">{service.branchName}</td>
               )}
-              <td className="py-2.5 pr-3 text-text-secondary">
+              <td className="py-3 pr-3 text-text-secondary">
                 {CATEGORY_LABEL[service.category]}
               </td>
-              <td className="py-2.5 pr-3">
+              <td className="py-3 pr-3">
                 <span className="font-medium text-text-primary">
                   {formatCurrency(service.fee)}
                 </span>
@@ -85,7 +89,7 @@ export function PackageTable({
                   </span>
                 )}
               </td>
-              <td className="py-2.5 pr-3">
+              <td className="py-3 pr-3">
                 {service.reviewStatus === "pending" && (
                   <Badge tone="warning" label="Pending Review" />
                 )}
@@ -99,14 +103,14 @@ export function PackageTable({
               </td>
               <td
                 className={clsx(
-                  "py-2.5 pr-3",
+                  "py-3 pr-3",
                   enrollmentCounts?.[service.id] ? "text-text-primary" : "text-text-secondary/60",
                 )}
               >
                 {enrollmentCounts?.[service.id] ?? "—"}
               </td>
               {canManage && (
-                <td className="py-2.5 pr-3">
+                <td className="py-3 pr-5">
                   <PackageActions
                     service={service}
                     canManage={canManage}
