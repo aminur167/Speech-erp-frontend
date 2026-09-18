@@ -23,9 +23,9 @@ export function buildCalendarGrid(year: number, month: number): Date[] {
 
 export function MonthGridSkeleton() {
   return (
-    <div className="grid grid-cols-7 gap-2">
-      {Array.from({ length: 35 }, (_, i) => (
-        <div key={i} className="min-h-[104px] animate-pulse rounded-xl bg-background" />
+    <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-border/60 bg-border/60">
+      {Array.from({ length: 42 }, (_, i) => (
+        <div key={i} className="min-h-[104px] animate-pulse bg-surface" />
       ))}
     </div>
   );
@@ -45,85 +45,81 @@ export function MonthGrid({
   const todayISO = toISODate(new Date());
 
   return (
-    <div className="grid grid-cols-7 gap-2">
-      {WEEKDAY_LABELS.map((label, i) => (
-        <div
-          key={label}
-          className={clsx(
-            "pb-2 text-center text-[11px] font-bold tracking-wider uppercase",
-            i === 0 || i === 6 ? "text-primary/60" : "text-text-secondary",
-          )}
-        >
-          {label}
-        </div>
-      ))}
-      {grid.map((day) => {
-        const iso = toISODate(day);
-        const inMonth = day.getMonth() === month;
-        const isPast = iso < todayISO;
-        const isToday = iso === todayISO;
-        const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-        const dayBookings = (bookingsByDate.get(iso) ?? []).sort((a, b) =>
-          a.time.localeCompare(b.time),
-        );
-        const overflow = dayBookings.length - MAX_VISIBLE_PER_DAY;
-
-        return (
-          <button
-            key={iso}
-            type="button"
-            onClick={() => dayBookings.length > 0 && onSelectDay(iso)}
+    <div className="overflow-hidden rounded-lg border border-border/60">
+      <div className="grid grid-cols-7 border-b border-border/60 bg-background/50">
+        {WEEKDAY_LABELS.map((label, i) => (
+          <div
+            key={label}
             className={clsx(
-              "group flex min-h-[104px] flex-col gap-1.5 rounded-xl border p-2 text-left transition-all duration-150",
-              isToday
-                ? "border-primary bg-gradient-to-br from-primary-light/60 to-primary-light/10 shadow-sm ring-1 ring-primary/30"
-                : "border-border/60 bg-surface",
-              !inMonth && "border-transparent bg-transparent opacity-30",
-              inMonth && isPast && !isToday && "bg-background/40",
-              inMonth && isWeekend && !isToday && "bg-primary-light/10",
-              dayBookings.length > 0 &&
-                "cursor-pointer hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md",
+              "py-2 text-center text-[11px] font-semibold tracking-wide uppercase",
+              i === 0 || i === 6 ? "text-primary/50" : "text-text-secondary",
             )}
           >
-            <span
+            {label}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-px bg-border/60">
+        {grid.map((day) => {
+          const iso = toISODate(day);
+          const inMonth = day.getMonth() === month;
+          const isToday = iso === todayISO;
+          const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+          const dayBookings = (bookingsByDate.get(iso) ?? []).sort((a, b) =>
+            a.time.localeCompare(b.time),
+          );
+          const overflow = dayBookings.length - MAX_VISIBLE_PER_DAY;
+
+          return (
+            <button
+              key={iso}
+              type="button"
+              onClick={() => dayBookings.length > 0 && onSelectDay(iso)}
               className={clsx(
-                "flex h-6 w-6 items-center justify-center rounded-full text-xs transition-colors",
-                isToday
-                  ? "bg-gradient-to-br from-primary to-primary-dark font-bold text-white shadow-sm"
-                  : "font-medium text-text-primary group-hover:bg-primary-light/60",
-                !inMonth && "text-text-secondary/50",
+                "flex min-h-[104px] flex-col gap-1 p-1.5 text-left transition-colors",
+                inMonth ? "bg-surface" : "bg-background/40",
+                inMonth && isWeekend && "bg-primary-light/5",
+                dayBookings.length > 0 && "cursor-pointer hover:bg-primary-light/25",
               )}
             >
-              {day.getDate()}
-            </span>
-            <div className="flex flex-col gap-1">
-              {dayBookings.slice(0, MAX_VISIBLE_PER_DAY).map((booking) => (
-                <div
-                  key={booking.id}
-                  className={clsx(
-                    "flex items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-tight transition-colors",
-                    booking.status === "cancelled"
-                      ? "bg-danger/10 text-text-secondary line-through"
-                      : !booking.advancePaid
-                        ? "bg-warning/15 text-warning"
-                        : "bg-info/15 text-info",
-                  )}
-                >
-                  <StatusDot booking={booking} />
-                  <span className="truncate">
-                    {formatTimeLabel(booking.time)} · {booking.patientName}
+              <span
+                className={clsx(
+                  "flex h-6 w-6 items-center justify-center rounded-full text-xs",
+                  isToday ? "bg-primary font-semibold text-white" : "font-medium text-text-primary",
+                  !inMonth && "text-text-secondary/40",
+                )}
+              >
+                {day.getDate()}
+              </span>
+              <div className="flex flex-col gap-0.5">
+                {dayBookings.slice(0, MAX_VISIBLE_PER_DAY).map((booking) => (
+                  <div
+                    key={booking.id}
+                    className={clsx(
+                      "flex items-center gap-1 truncate rounded px-1 py-0.5 text-[11px] font-medium leading-tight",
+                      booking.status === "cancelled"
+                        ? "text-text-secondary line-through"
+                        : !booking.advancePaid
+                          ? "bg-warning/15 text-warning"
+                          : "bg-info/15 text-info",
+                    )}
+                  >
+                    <StatusDot booking={booking} />
+                    <span className="truncate">
+                      {formatTimeLabel(booking.time)} · {booking.patientName}
+                    </span>
+                  </div>
+                ))}
+                {overflow > 0 && (
+                  <span className="px-1 text-[11px] font-medium text-text-secondary hover:text-primary">
+                    {overflow} more
                   </span>
-                </div>
-              ))}
-              {overflow > 0 && (
-                <span className="rounded-md bg-primary-light/50 px-1.5 py-0.5 text-[11px] font-semibold text-primary-dark">
-                  +{overflow} more
-                </span>
-              )}
-            </div>
-          </button>
-        );
-      })}
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
