@@ -15,6 +15,6 @@ export function useNotifications(enabled = true) {
     enabled,
     refetchInterval: enabled ? LIVE_POLL_INTERVAL_MS : false,
     refetchOnWindowFocus: true,
-    refetchIntervalInBackground: true,
+    refetchIntervalInBackground: false,
   });
 }

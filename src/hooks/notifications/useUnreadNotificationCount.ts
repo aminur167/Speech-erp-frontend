@@ -14,10 +14,11 @@ export function useUnreadNotificationCount() {
     queryFn: getUnreadNotificationCount,
     refetchInterval: LIVE_POLL_INTERVAL_MS,
     refetchOnWindowFocus: true,
-    // Deliberately polls even while the tab is backgrounded. Gating on
-    // visibility saves a request every 10s but makes "is the badge current?"
-    // depend on visibility semantics that vary by browser and embedding --
-    // for a handful of clinic users that trade is not worth it.
-    refetchIntervalInBackground: true,
+    // Hidden tabs stop polling. Every badge in the sidebar polls, and a
+    // clinic PC keeps several tabs open all day, so background polling was a
+    // steady stream of requests queueing in front of the pages someone was
+    // actually using on a single small server. The focus refetch above makes
+    // the badge current the moment the tab is looked at again.
+    refetchIntervalInBackground: false,
   });
 }

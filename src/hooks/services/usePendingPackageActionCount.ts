@@ -12,6 +12,6 @@ export function usePendingPackageActionCount(enabled: boolean) {
     // A Manager's request has to show up here without the Admin reloading.
     refetchInterval: enabled ? LIVE_POLL_INTERVAL_MS : false,
     refetchOnWindowFocus: true,
-    refetchIntervalInBackground: true,
+    refetchIntervalInBackground: false,
   });
 }

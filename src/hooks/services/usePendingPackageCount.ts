@@ -13,6 +13,6 @@ export function usePendingPackageCount(enabled: boolean) {
     // reloading (see LIVE_POLL_INTERVAL_MS).
     refetchInterval: enabled ? LIVE_POLL_INTERVAL_MS : false,
     refetchOnWindowFocus: true,
-    refetchIntervalInBackground: true,
+    refetchIntervalInBackground: false,
   });
 }
