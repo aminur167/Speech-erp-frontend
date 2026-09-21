@@ -9,9 +9,9 @@ import { startConnectivityDetection } from "@/lib/offline/connectivity";
 import { registerServiceWorker } from "@/lib/offline/registerServiceWorker";
 import { registerOfflineMutationDefaults } from "@/lib/offline/mutationDefaults";
 import { toast } from "@/store/toastStore";
+import { useAuthStore } from "@/store/authStore";
+import { CACHE_GC_MS, DEFAULT_STALE_MS } from "@/lib/cacheTiming";
 import type { ApiError } from "@/types/api";
-
-const SEVEN_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
 
 /**
  * Retries a genuine network failure (no response at all -- `status` is
@@ -30,7 +30,38 @@ function shouldRetry(failureCount: number, error: unknown): boolean {
   return failureCount < 1;
 }
 
+/**
+ * Whose data is in the cache, kept beside it in localStorage.
+ *
+ * Two events can happen in either order on page load: the IndexedDB cache
+ * finishing its restore, and a user signing in (or the saved session being
+ * restored). Comparing both against this id means whichever comes second
+ * still wipes another user's data. Storage can be unavailable (private
+ * mode); then nothing is remembered and the cache is simply cleared on login.
+ */
+const CACHE_OWNER_KEY = "speech-erp-cache-owner";
+const cacheOwner = {
+  get(): string | null {
+    try {
+      return window.localStorage.getItem(CACHE_OWNER_KEY);
+    } catch {
+      return null;
+    }
+  },
+  set(id: string | null) {
+    try {
+      if (id) window.localStorage.setItem(CACHE_OWNER_KEY, id);
+      else window.localStorage.removeItem(CACHE_OWNER_KEY);
+    } catch {
+      // ignored -- see above
+    }
+  },
+};
+
 export function QueryProvider({ children }: { children: React.ReactNode }) {
+  // Read once, before anyone can sign in: the owner of whatever the
+  // IndexedDB restore is about to bring back.
+  const [ownerAtLoad] = useState(() => cacheOwner.get());
   const [queryClient] = useState(() => {
     const client = new QueryClient({
       // Every write in the app reports its outcome here, once, instead of
@@ -53,7 +84,11 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       }),
       defaultOptions: {
         queries: {
-          staleTime: 60 * 1000,
+          staleTime: DEFAULT_STALE_MS,
+          // See src/lib/cacheTiming.ts. The default of 5 minutes dropped any
+          // page not visited for 5 minutes, so going back meant a spinner
+          // even though the data was right there in IndexedDB.
+          gcTime: CACHE_GC_MS,
           retry: shouldRetry,
           refetchOnWindowFocus: false,
           // A query attempted offline serves whatever's cached instead of
@@ -95,12 +130,32 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
     });
   }, [queryClient]);
 
+  // Cached data belongs to one user. A clinic PC is shared and data is kept
+  // for days (cacheTiming.ts), so without this the next person to sign in --
+  // a manager of another branch -- would see the previous user's patients
+  // and payments until each page refreshed. See cacheOwner below.
+  useEffect(
+    () =>
+      useAuthStore.subscribe((state, previous) => {
+        if (previous.isAuthenticated && !state.isAuthenticated) {
+          queryClient.removeQueries();
+          cacheOwner.set(null);
+        }
+        if (!previous.isAuthenticated && state.isAuthenticated && state.user) {
+          if (cacheOwner.get() !== state.user.id) queryClient.removeQueries();
+          cacheOwner.set(state.user.id);
+        }
+      }),
+    [queryClient],
+  );
+
   return (
     <PersistQueryClientProvider
       client={queryClient}
       persistOptions={{
         persister: indexedDbPersister,
-        maxAge: SEVEN_DAYS_MS,
+        // Same window as gcTime -- see src/lib/cacheTiming.ts.
+        maxAge: CACHE_GC_MS,
         dehydrateOptions: {
           // Queries only persist once they've actually resolved -- an
           // in-flight or failed fetch has nothing worth restoring.
@@ -112,6 +167,10 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         },
       }}
       onSuccess={() => {
+        // The restore can finish after someone else has already signed in;
+        // what it brought back belongs to whoever owned the cache when the
+        // page loaded.
+        if (ownerAtLoad !== cacheOwner.get()) queryClient.removeQueries();
         // Fires once the persisted cache has finished restoring from
         // IndexedDB -- resume anything that was still queued the last time
         // this device was open, assuming we're online now.
