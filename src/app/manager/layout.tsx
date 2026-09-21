@@ -10,7 +10,7 @@ export default function ManagerLayout({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuthGuard("manager");
 
   if (!isAuthenticated || user?.role !== "manager") {
-    return <LoadingState label="Checking your session…" />;
+    return <LoadingState label="Checking your session…" variant="spinner" />;
   }
 
   return <AppShell navItems={managerNav}>{children}</AppShell>;

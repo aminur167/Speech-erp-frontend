@@ -24,7 +24,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const { branchId, branch } = useBranchViewContext();
 
   if (!isAuthenticated || user?.role !== "admin") {
-    return <LoadingState label="Checking your session…" />;
+    return <LoadingState label="Checking your session…" variant="spinner" />;
   }
 
   const navItems = branchId ? branchNav(branchId) : adminNav;
