@@ -4,11 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { clsx } from "clsx";
 import { isNavGroup, type NavGroup, type NavItem } from "@/config/navigation";
 import { useUiStore } from "@/store/uiStore";
 import { useAuthStore } from "@/store/authStore";
+import { prefetchRoute } from "@/lib/routePrefetch";
 import { useBranches } from "@/hooks/branches/useBranches";
 import { usePendingPackageCount } from "@/hooks/services/usePendingPackageCount";
 import { usePendingPackageActionCount } from "@/hooks/services/usePendingPackageActionCount";
@@ -42,10 +44,19 @@ function NavLinkRow({
   /** A pending-count style badge, e.g. packages awaiting Admin review. Omitted (not zero) when there's nothing to flag. */
   badge?: number;
 }) {
+  const queryClient = useQueryClient();
+  const user = useAuthStore((state) => state.user);
+  // Pointing at a link starts loading that page's data (lib/routePrefetch.ts),
+  // so it is usually ready by the time the click lands.
+  const warm = () => prefetchRoute(queryClient, href, user);
+
   return (
     <Link
       href={href}
       onClick={onNavigate}
+      onMouseEnter={warm}
+      onFocus={warm}
+      onTouchStart={warm}
       title={collapsed ? label : undefined}
       className={clsx(
         "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
