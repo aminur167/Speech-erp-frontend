@@ -115,8 +115,9 @@ export function PatientAttendanceCell({
               ? "Marked present — press again to put it back to absent"
               : "Mark present"
           }
+          // No spinner: the row already shows the new mark (optimistic, see
+          // useMarkPatientAttendance) and goes back if the server refuses.
           onClick={() => send(isPresent ? "absent" : "present")}
-          isLoading={pendingStatus === "present" || pendingStatus === "absent"}
         >
           <Check className="h-3.5 w-3.5" />
           Present
@@ -145,7 +146,6 @@ export function PatientAttendanceCell({
             aria-label="Clear this mark"
             className="px-2 text-text-secondary"
             onClick={() => send("absent")}
-            isLoading={pendingStatus === "absent"}
           >
             <Undo2 className="h-3.5 w-3.5" />
           </Button>
