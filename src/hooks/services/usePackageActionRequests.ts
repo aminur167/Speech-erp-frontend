@@ -19,6 +19,8 @@ export function usePackageActionRequests(params: PackageActionRequestListParams,
     queryKey: queryKeys.packageActionRequests.list(params),
     queryFn: () => listPackageActionRequests(params),
     enabled,
+    // Keep the current page on screen while the next page or filter loads.
+    placeholderData: (previousData) => previousData,
     refetchInterval: enabled ? LIVE_POLL_INTERVAL_MS : false,
     refetchOnWindowFocus: true,
   });
