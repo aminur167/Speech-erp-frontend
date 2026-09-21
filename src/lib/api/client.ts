@@ -2,6 +2,7 @@ import axios from "axios";
 import { useAuthTokenStore } from "@/store/authTokenStore";
 import { normalizeRequestError } from "@/lib/api/errors";
 import { getRefreshToken, setRefreshToken } from "@/lib/api/authTokenPersistence";
+import { takeParked } from "@/lib/api/parkedResponses";
 
 export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api",
@@ -12,6 +13,21 @@ apiClient.interceptors.request.use((config) => {
   const token = useAuthTokenStore.getState().accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  // Already fetched as part of a batch (lib/api/batch.ts): answer from that
+  // instead of the network. Same data, same normalizers downstream.
+  if ((config.method ?? "get").toLowerCase() === "get") {
+    const parked = takeParked(config.url, config.params);
+    if (parked) {
+      config.adapter = async () => ({
+        data: parked.data,
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config,
+      });
+    }
   }
   return config;
 });

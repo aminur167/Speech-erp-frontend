@@ -40,6 +40,9 @@ import { useBranchesOverview } from "@/hooks/branches/useBranchesOverview";
 import { useAuthStore } from "@/store/authStore";
 import { todayDateString } from "@/lib/api/dailyClosings";
 import { formatCurrency } from "@/utils/currency";
+import { useQueryClient } from "@tanstack/react-query";
+import { useBatchPrefetch } from "@/hooks/useBatchPrefetch";
+import { queryKeys } from "@/lib/queryKeys";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -79,7 +82,7 @@ const QUICK_ACTIONS = [
   },
 ];
 
-export default function AdminDashboardPage() {
+function AdminDashboardContent() {
   const user = useAuthStore((state) => state.user);
   const [selectedDate, setSelectedDate] = useState(todayDateString());
   const isToday = selectedDate === todayDateString();
@@ -377,4 +380,34 @@ export default function AdminDashboardPage() {
       </div>
     </div>
   );
+}
+
+/**
+ * The dashboard's ten first reads arrive in one request (lib/api/batch.ts)
+ * instead of ten. Skipped when they are already cached — the page then shows
+ * them at once and refreshes in the background as usual.
+ */
+export default function AdminDashboardPage() {
+  const queryClient = useQueryClient();
+  const [today] = useState(todayDateString);
+  const cached =
+    queryClient.getQueryData(queryKeys.transactions.summary(undefined, today)) !== undefined;
+  const ready = useBatchPrefetch(
+    [
+      { path: "/branches/overview/" },
+      { path: "/daily-closing/today-summary/", params: { date: today } },
+      { path: "/transactions/dashboard-metrics/", params: { date: today } },
+      { path: "/expenses/summary/", params: { date: today } },
+      { path: "/transactions/summary/", params: { date: today } },
+      { path: "/due-payments/summary/", params: { date: today } },
+      { path: "/patients/directory/summary/", params: { date: today } },
+      { path: "/transactions/trend/", params: { days: 7 } },
+      { path: "/transactions/by-method/" },
+      { path: "/transactions/by-category/" },
+    ],
+    cached,
+  );
+
+  if (!ready) return <LoadingState label="Loading dashboard…" rows={8} />;
+  return <AdminDashboardContent />;
 }

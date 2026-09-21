@@ -35,10 +35,13 @@ import { useMonthlyRevenueByMethod } from "@/hooks/transactions/useMonthlyRevenu
 import { useRevenueByCategory } from "@/hooks/transactions/useRevenueByCategory";
 import { todayDateString } from "@/lib/api/dailyClosings";
 import { formatCurrency } from "@/utils/currency";
+import { useQueryClient } from "@tanstack/react-query";
+import { useBatchPrefetch } from "@/hooks/useBatchPrefetch";
+import { queryKeys } from "@/lib/queryKeys";
 
 const CLOSING_STATUS_TONE = { matched: "success", over: "warning", short: "danger" } as const;
 
-export default function ManagerDashboardPage() {
+function ManagerDashboardContent() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const branchId = user?.branchId ?? undefined;
@@ -216,4 +219,36 @@ export default function ManagerDashboardPage() {
       </div>
     </div>
   );
+}
+
+/**
+ * The dashboard's ten first reads arrive in one request (lib/api/batch.ts)
+ * instead of ten. Skipped when they are already cached — the page then shows
+ * them at once and refreshes in the background as usual.
+ */
+export default function ManagerDashboardPage() {
+  const queryClient = useQueryClient();
+  const branchId = useAuthStore((state) => state.user?.branchId ?? undefined);
+  const [today] = useState(todayDateString);
+  const cached =
+    queryClient.getQueryData(queryKeys.transactions.summary(branchId, today)) !== undefined;
+  const branch = { branch: branchId };
+  const ready = useBatchPrefetch(
+    [
+      { path: "/daily-closing/today-summary/", params: { ...branch, date: today } },
+      { path: "/transactions/dashboard-metrics/", params: { ...branch, date: today } },
+      { path: "/expenses/summary/", params: { ...branch, date: today } },
+      { path: "/transactions/summary/", params: { ...branch, date: today } },
+      { path: "/due-payments/summary/", params: { ...branch, date: today } },
+      { path: "/patients/directory/summary/", params: { ...branch, date: today } },
+      { path: "/daily-closing/history/", params: branch },
+      { path: "/transactions/trend/", params: { ...branch, days: 7 } },
+      { path: "/transactions/by-method/", params: branch },
+      { path: "/transactions/by-category/", params: branch },
+    ],
+    cached,
+  );
+
+  if (!ready) return <LoadingState label="Loading dashboard…" rows={8} />;
+  return <ManagerDashboardContent />;
 }

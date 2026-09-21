@@ -10,6 +10,7 @@ import { registerServiceWorker } from "@/lib/offline/registerServiceWorker";
 import { registerOfflineMutationDefaults } from "@/lib/offline/mutationDefaults";
 import { toast } from "@/store/toastStore";
 import { useAuthStore } from "@/store/authStore";
+import { clearParked } from "@/lib/api/parkedResponses";
 import { CACHE_GC_MS, DEFAULT_STALE_MS } from "@/lib/cacheTiming";
 import type { ApiError } from "@/types/api";
 
@@ -139,6 +140,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       useAuthStore.subscribe((state, previous) => {
         if (previous.isAuthenticated && !state.isAuthenticated) {
           queryClient.removeQueries();
+          clearParked();
           cacheOwner.set(null);
         }
         if (!previous.isAuthenticated && state.isAuthenticated && state.user) {
