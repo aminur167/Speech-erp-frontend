@@ -92,6 +92,11 @@ export function PackageTable({
                     {formatCurrency(service.originalFee as number)}
                   </span>
                 )}
+                {service.category === "monthly" && service.admissionFee != null && (
+                  <span className="block text-xs text-text-secondary">
+                    Admit {formatCurrency(service.admissionFee)}
+                  </span>
+                )}
               </td>
               <td className="py-3 pr-3">
                 {service.reviewStatus === "pending" && (

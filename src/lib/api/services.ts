@@ -17,11 +17,13 @@ import type {
 //
 // `fee`/`originalFee` are real DRF DecimalFields, so they cross the wire as
 // JSON strings (COERCE_DECIMAL_TO_STRING) -- normalized here too.
-interface RawService extends Omit<Service, "id" | "fee" | "originalFee"> {
+interface RawService extends Omit<Service, "id" | "fee" | "originalFee" | "admissionFee"> {
   id: number | string;
   fee: number | string;
   // A package with no pre-discount price sends `null`, not an absent key.
   originalFee?: number | string | null;
+  // `null` for every non-monthly package.
+  admissionFee?: number | string | null;
 }
 
 function normalizeService(raw: RawService): Service {
@@ -32,6 +34,7 @@ function normalizeService(raw: RawService): Service {
     // `== null` covers both null and undefined: Number(null) is 0, which
     // would read as a real ৳0 pre-discount price rather than "not set".
     originalFee: raw.originalFee == null ? undefined : Number(raw.originalFee),
+    admissionFee: raw.admissionFee == null ? undefined : Number(raw.admissionFee),
   };
 }
 
@@ -68,6 +71,8 @@ export interface ServiceInput {
   isOnline: boolean;
   description?: string;
   originalFee?: number;
+  /** Required for a monthly package; the server drops it for any other category. */
+  admissionFee?: number;
   durationLabel?: string;
   sessionsLabel?: string;
   expiryLabel?: string;

@@ -20,13 +20,15 @@ const CATEGORY_LABELS: Record<ServiceCategory, string> = {
   online: "Online",
 };
 
-const serviceSchema = z.object({
+const baseServiceSchema = z.object({
   name: z.string().min(2, "Service name is required."),
   category: z.enum(["daily", "monthly", "installment", "online"]),
   fee: z
     .string()
     .min(1, "Fee is required.")
     .refine((value) => Number(value) > 0, "Enter a fee greater than 0."),
+  // Monthly packages only, and required there — checked per category below.
+  admissionFee: z.string().optional(),
   isOnline: z.boolean().optional(),
   description: z.string().optional(),
   originalFee: z
@@ -38,7 +40,32 @@ const serviceSchema = z.object({
   expiryLabel: z.string().optional(),
 });
 
-type ServiceFormValues = z.infer<typeof serviceSchema>;
+type ServiceFormValues = z.infer<typeof baseServiceSchema>;
+
+/**
+ * The category that decides whether an admit fee is required is the locked
+ * one when the form has one (editing, or a category-specific page), else the
+ * picker's — so the schema is built per form rather than once at module load.
+ */
+function buildServiceSchema(lockedCategory?: ServiceCategory) {
+  return baseServiceSchema.superRefine((values, ctx) => {
+    if ((lockedCategory ?? values.category) !== "monthly") return;
+    const admissionFee = values.admissionFee?.trim() ?? "";
+    if (!admissionFee) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["admissionFee"],
+        message: "A monthly package needs an admit fee.",
+      });
+    } else if (!(Number(admissionFee) > 0)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["admissionFee"],
+        message: "Enter an admit fee greater than 0.",
+      });
+    }
+  });
+}
 
 export function ServiceForm({
   initialValues,
@@ -65,14 +92,17 @@ export function ServiceForm({
     register,
     handleSubmit,
     setError,
+    watch,
     formState: { errors },
   } = useForm<ServiceFormValues>({
-    resolver: zodResolver(serviceSchema),
+    resolver: zodResolver(buildServiceSchema(lockedCategory)),
     defaultValues: initialValues
       ? {
           name: initialValues.name,
           category: initialValues.category,
           fee: String(initialValues.fee),
+          admissionFee:
+            initialValues.admissionFee != null ? String(initialValues.admissionFee) : "",
           isOnline: initialValues.isOnline,
           description: initialValues.description ?? "",
           originalFee: initialValues.originalFee ? String(initialValues.originalFee) : "",
@@ -91,11 +121,20 @@ export function ServiceForm({
     }
   }, [apiError, setError]);
 
+  const category = lockedCategory ?? watch("category");
+  const isMonthly = category === "monthly";
+
   const submit = (values: ServiceFormValues) => {
+    const finalCategory = lockedCategory ?? values.category;
     onSubmit({
       name: values.name,
-      category: lockedCategory ?? values.category,
+      category: finalCategory,
       fee: Number(values.fee),
+      // Sent only for a monthly package; the server drops it for any other.
+      admissionFee:
+        finalCategory === "monthly" && values.admissionFee
+          ? Number(values.admissionFee)
+          : undefined,
       isOnline: Boolean(values.isOnline),
       description: values.description || undefined,
       originalFee: values.originalFee ? Number(values.originalFee) : undefined,
@@ -149,6 +188,17 @@ export function ServiceForm({
           <option value="installment">Installment</option>
           <option value="online">Online</option>
         </Select>
+      )}
+      {isMonthly && (
+        <Input
+          label="Admit Fee (BDT)"
+          requiredMark
+          placeholder="e.g. 3000 — charged for the enrollment month"
+          type="number"
+          step="0.01"
+          error={errors.admissionFee?.message}
+          {...register("admissionFee")}
+        />
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input

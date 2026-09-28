@@ -76,6 +76,11 @@ export interface Service {
   description?: string;
   /** "Before discount" price — when set and greater than `fee`, the card shows it struck through. */
   originalFee?: number;
+  /**
+   * Monthly packages only (required there): what the enrollment month costs
+   * instead of `fee`. The monthly fee starts the following month.
+   */
+  admissionFee?: number;
   /** Free-text duration, e.g. "1 Day", "3 Days – 3 Months", "1 Month (auto-renew)". */
   durationLabel?: string;
   /** Free-text session count, e.g. "1 Session", "12 Sessions". */
@@ -225,8 +230,15 @@ export type BillStatus =
 export interface MonthlyBill {
   id: string;
   month: string; // e.g. "2026-08"
-  label: string; // e.g. "August 2026"
+  label: string; // e.g. "August 2026", or "Admission — August 2026"
+  /** "admission": the enrollment month, charged at the package's admit fee. */
+  kind: "admission" | "monthly";
+  /** Admission bills: `amount` is the admit fee less `discountAmount`. */
   amount: number;
+  /** Admission bills only: the admit fee before any discount. */
+  grossAmount?: number;
+  discountAmount: number;
+  discountReason?: string;
   /** How much of `amount` has actually been settled — less than `amount` after a partial refund. */
   amountPaid: number;
   /** `amount - amountPaid` — what's still owed. Zero for `written_off`, since nobody owes that. */

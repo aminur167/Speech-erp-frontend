@@ -107,6 +107,15 @@ export function ServiceCard({
           / {service.durationLabel ?? (service.isOnline ? "Online" : "In-clinic")}
         </span>
       </div>
+      {service.category === "monthly" && service.admissionFee != null && (
+        <p className="-mt-1 text-xs text-text-secondary">
+          Admit fee{" "}
+          <span className="font-medium text-text-primary">
+            {formatCurrency(service.admissionFee)}
+          </span>{" "}
+          for the first month
+        </p>
+      )}
 
       {meta.length > 0 && (
         <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 rounded-lg border border-border bg-background px-3 py-3">

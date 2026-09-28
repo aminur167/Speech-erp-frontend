@@ -10,11 +10,17 @@ import type { MonthlyEnrollment, MonthlyBill, Payment } from "@/types/domain";
 // `amount`/`amountPaid`/`outstanding` are real DRF DecimalFields, which cross
 // the wire as JSON strings (COERCE_DECIMAL_TO_STRING) -- normalized to
 // numbers here too, the same as the id fields.
-interface RawBill extends Omit<MonthlyBill, "id" | "amount" | "amountPaid" | "outstanding"> {
+interface RawBill
+  extends Omit<
+    MonthlyBill,
+    "id" | "amount" | "amountPaid" | "outstanding" | "grossAmount" | "discountAmount"
+  > {
   id: number | string;
   amount: number | string;
   amountPaid: number | string;
   outstanding: number | string;
+  grossAmount?: number | string | null;
+  discountAmount?: number | string;
 }
 interface RawEnrollment extends Omit<MonthlyEnrollment, "id" | "bills"> {
   id: number | string;
@@ -28,6 +34,9 @@ function normalizeBill(bill: RawBill): MonthlyBill {
     amount: Number(bill.amount),
     amountPaid: Number(bill.amountPaid),
     outstanding: Number(bill.outstanding),
+    kind: bill.kind ?? "monthly",
+    grossAmount: bill.grossAmount == null ? undefined : Number(bill.grossAmount),
+    discountAmount: Number(bill.discountAmount ?? 0),
   };
 }
 
@@ -47,21 +56,46 @@ export async function listMonthlyEnrollments(): Promise<MonthlyEnrollment[]> {
   return data.results.map(normalizeEnrollment);
 }
 
-export interface CreateMonthlyEnrollmentInput {
+export interface EnrollMonthlyInput {
   patientId: string;
   serviceId: string;
+  method: string;
+  /** Taken off the admit fee. Any discount needs `discountReason`. */
+  discount?: number;
+  discountReason?: string;
+  idempotencyKey?: string;
 }
 
-export async function createMonthlyEnrollment(
-  input: CreateMonthlyEnrollmentInput,
-): Promise<MonthlyEnrollment> {
-  // No branchId/fee: the backend derives the branch from the authenticated
-  // manager and the fee from the service's own price, never from the body.
-  const { data } = await apiClient.post<RawEnrollment>("/enrollments/monthly/", {
-    patient: input.patientId,
-    service: input.serviceId,
-  });
-  return normalizeEnrollment(data);
+export interface EnrollMonthlyResult {
+  enrollment: MonthlyEnrollment;
+  /** Null when the discount covered the whole admit fee — nothing was charged. */
+  payment: Payment | null;
+}
+
+/**
+ * Enroll and pay the admit fee in one atomic call. There is no enroll-only
+ * request any more: an enrollment made first and paid later is how an
+ * abandoned screen left an unpaid first month behind.
+ *
+ * No amount: the server prices the admission from the package's own admit
+ * fee and checks the discount against it.
+ */
+export async function enrollMonthly(input: EnrollMonthlyInput): Promise<EnrollMonthlyResult> {
+  const { data } = await apiClient.post<{ enrollment: RawEnrollment; payment: RawPayment | null }>(
+    "/enrollments/monthly/",
+    {
+      patient: input.patientId,
+      service: input.serviceId,
+      method: input.method,
+      discount: input.discount ?? 0,
+      discountReason: input.discountReason ?? "",
+      idempotencyKey: input.idempotencyKey,
+    },
+  );
+  return {
+    enrollment: normalizeEnrollment(data.enrollment),
+    payment: data.payment ? normalizePayment(data.payment) : null,
+  };
 }
 
 export interface PayMonthlyBillResult {
