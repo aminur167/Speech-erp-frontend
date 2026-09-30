@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, CheckCheck } from "lucide-react";
 import { clsx } from "clsx";
@@ -26,6 +26,30 @@ export function NotificationBell() {
   const { data, isLoading } = useNotifications(open);
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close on any press outside the bell and its panel, or on Escape.
+  //
+  // Listened for on the document rather than with a full-screen overlay: the
+  // Topbar uses backdrop-blur, and a backdrop-filter makes the header the
+  // containing block for `position: fixed` children — so an "inset-0"
+  // overlay inside it only ever covered the 64px header, and clicks on the
+  // page below never reached it.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
 
   const handleClick = (notification: AppNotification) => {
     if (!notification.isRead) markRead.mutate(notification.id);
@@ -34,7 +58,7 @@ export function NotificationBell() {
   };
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -51,7 +75,6 @@ export function NotificationBell() {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full z-20 mt-2 w-80 rounded-xl border border-border bg-surface shadow-xl">
             <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
               <p className="text-sm font-semibold text-text-primary">Notifications</p>
