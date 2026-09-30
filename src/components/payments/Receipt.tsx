@@ -123,6 +123,22 @@ function ReceiptCard({ payment, patientName, serviceName, branchName }: ReceiptP
           </span>
         </div>
 
+        {/* Installment receipts only: what the plan still owed once this
+            payment landed — fixed when it was taken, so a reprint matches. */}
+        {payment.category === "installment" && payment.dueAfter != null && (
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-sm text-text-secondary">Remaining Due (this plan)</span>
+            <span
+              className={clsx(
+                "text-sm font-semibold",
+                payment.dueAfter > 0 ? "text-danger" : "text-success",
+              )}
+            >
+              {payment.dueAfter > 0 ? formatCurrency(payment.dueAfter) : "Fully paid"}
+            </span>
+          </div>
+        )}
+
         <div className="mt-6 flex flex-col items-center gap-1 border-t border-dashed border-border pt-4 text-center">
           <p className="text-xs font-medium text-text-primary">
             Thank you for choosing Speech Therapy Lab

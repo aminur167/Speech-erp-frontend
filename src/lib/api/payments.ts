@@ -10,13 +10,21 @@ import type { Payment, PaymentCategory, PaymentMethod } from "@/types/domain";
 // `amount` is a real DRF DecimalField, so it crosses the wire as a JSON
 // string (COERCE_DECIMAL_TO_STRING) -- normalized to a number here too, the
 // same as the id field, so formatCurrency() always receives a real number.
-export interface RawPayment extends Omit<Payment, "id" | "amount"> {
+export interface RawPayment extends Omit<Payment, "id" | "amount" | "dueAfter"> {
   id: number | string;
   amount: number | string;
+  dueAfter?: number | string | null;
 }
 
 export function normalizePayment(raw: RawPayment): Payment {
-  return { ...raw, id: String(raw.id), amount: Number(raw.amount) };
+  return {
+    ...raw,
+    id: String(raw.id),
+    amount: Number(raw.amount),
+    // `== null`: Number(null) is 0, which would print "Remaining due ৳0" on
+    // receipts that simply have no figure.
+    dueAfter: raw.dueAfter == null ? null : Number(raw.dueAfter),
+  };
 }
 
 export interface CreatePaymentInput {

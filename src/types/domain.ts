@@ -141,6 +141,12 @@ export interface Payment {
   /** Which service category (or material sale) this payment was collected for — powers revenue reporting. */
   category?: PaymentCategory;
   createdAt: string;
+  /**
+   * Installment payments only: what that plan still owed right after this
+   * payment, fixed at the moment it was taken so a reprint reads the same.
+   * Null for every other category and for older installment payments.
+   */
+  dueAfter?: number | null;
 }
 
 export type RefundRequestStatus = "pending" | "approved" | "rejected";

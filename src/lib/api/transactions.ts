@@ -20,12 +20,18 @@ export interface TransactionItem extends Payment {
 // PaymentSerializer's `amount` is a real DRF DecimalField, so it crosses the
 // wire as a JSON string (COERCE_DECIMAL_TO_STRING) -- normalized here too,
 // same as the id field.
-interface RawTransactionItem extends Omit<TransactionItem, "id" | "amount"> {
+interface RawTransactionItem extends Omit<TransactionItem, "id" | "amount" | "dueAfter"> {
   id: number | string;
   amount: number | string;
+  dueAfter?: number | string | null;
 }
 function normalizeItem(raw: RawTransactionItem): TransactionItem {
-  return { ...raw, id: String(raw.id), amount: Number(raw.amount) };
+  return {
+    ...raw,
+    id: String(raw.id),
+    amount: Number(raw.amount),
+    dueAfter: raw.dueAfter == null ? null : Number(raw.dueAfter),
+  };
 }
 
 export type SummaryPeriod = "today" | "month" | "";

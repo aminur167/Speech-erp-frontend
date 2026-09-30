@@ -11,11 +11,13 @@ import {
   ArrowUpRight,
   ChevronLeft,
   ChevronRight,
+  X,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
+import { Input } from "@/components/ui/Input";
 import { Pagination } from "@/components/ui/Pagination";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -71,12 +73,18 @@ export function TransactionHistoryView({
   const [search, setSearch] = useState("");
   const [method, setMethod] = useState<PaymentMethod | "">("");
   const [monthKey, setMonthKey] = useState(toMonthKey());
+  // One exact day ("YYYY-MM-DD"), or "" for the whole month. A picked day
+  // narrows everything the month drives — the list, the expenses beside it
+  // and the export — to that day alone.
+  const [pickedDate, setPickedDate] = useState("");
   const [tab, setTab] = useState<FeedTab>("all");
   const [page, setPage] = useState(1);
   const [voidingTransaction, setVoidingTransaction] = useState<TransactionItem | null>(null);
   const [refundingTransaction, setRefundingTransaction] = useState<TransactionItem | null>(null);
 
-  const { dateFrom, dateTo } = monthBounds(monthKey);
+  const { dateFrom, dateTo } = pickedDate
+    ? { dateFrom: pickedDate, dateTo: pickedDate }
+    : monthBounds(monthKey);
   const { data, isLoading, isFetching, isError, refetch } = useTransactions({
     search,
     method: method || undefined,
@@ -112,6 +120,17 @@ export function TransactionHistoryView({
 
   const changeMonth = (by: number) => {
     setMonthKey((current) => shiftMonthKey(current, by));
+    // Stepping months means "show me that month": a day picked earlier would
+    // otherwise pin the list to a date outside the month on screen.
+    setPickedDate("");
+    setPage(1);
+  };
+
+  const pickDate = (value: string) => {
+    setPickedDate(value);
+    // Keep the month header on the picked day's month, so the two never
+    // disagree about what is being shown.
+    if (value) setMonthKey(value.slice(0, 7));
     setPage(1);
   };
 
@@ -196,7 +215,13 @@ export function TransactionHistoryView({
           <ChevronLeft className="h-4 w-4" />
         </button>
         <span className="min-w-[9rem] text-center text-sm font-semibold text-text-primary">
-          {monthKeyLabel(monthKey)}
+          {pickedDate
+            ? new Date(`${pickedDate}T00:00:00`).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })
+            : monthKeyLabel(monthKey)}
         </span>
         <button
           type="button"
@@ -237,6 +262,29 @@ export function TransactionHistoryView({
             }}
             placeholder="Search patient, receipt or transaction ID…"
           />
+        }
+        dateSlot={
+          <div className="flex items-end gap-1">
+            <Input
+              label="Date"
+              type="date"
+              value={pickedDate}
+              max={toLocalDateString()}
+              onChange={(event) => pickDate(event.target.value)}
+              containerClassName={FILTER_FIELD_WIDTH}
+            />
+            {pickedDate && (
+              <button
+                type="button"
+                onClick={() => pickDate("")}
+                aria-label="Clear date — show the whole month"
+                title="Clear date — show the whole month"
+                className="mb-1 rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-primary-light hover:text-text-primary"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         }
         actions={
           <>
