@@ -1,8 +1,12 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Badge } from "@/components/ui/Badge";
-import { PackageActions, type ManagerPackageRequests } from "@/components/services/PackageActions";
+import {
+  PackageActions,
+  type DeleteDecision,
+  type ManagerPackageRequests,
+} from "@/components/services/PackageActions";
+import { DeleteRequestNote, PackageStatusBadge } from "@/components/services/PackageStatusBadge";
 import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { formatCurrency } from "@/utils/currency";
 import type { Service, ServiceCategory } from "@/types/domain";
@@ -27,6 +31,7 @@ export function PackageTable({
   approvingId,
   togglingId,
   managerRequests,
+  onDecideDelete,
 }: {
   services: Service[];
   canManage: boolean;
@@ -42,6 +47,8 @@ export function PackageTable({
   togglingId?: string;
   /** The Manager's catalog: each change is requested from Admin first. */
   managerRequests?: ManagerPackageRequests;
+  /** Admin: approve or reject a Manager's request to delete the package. */
+  onDecideDelete?: DeleteDecision;
 }) {
   const detail = useRowDetail<Service>();
   const showActions = canManage || Boolean(managerRequests);
@@ -76,6 +83,7 @@ export function PackageTable({
                 {service.reviewStatus === "rejected" && service.reviewNote && (
                   <p className="mt-0.5 text-[11px] text-danger">Rejected: {service.reviewNote}</p>
                 )}
+                <DeleteRequestNote service={service} />
               </td>
               {showBranchColumn && (
                 <td className="py-3 pr-3 text-text-secondary">{service.branchName}</td>
@@ -99,16 +107,7 @@ export function PackageTable({
                 )}
               </td>
               <td className="py-3 pr-3">
-                {service.reviewStatus === "pending" && (
-                  <Badge tone="warning" label="Pending Review" />
-                )}
-                {service.reviewStatus === "rejected" && <Badge tone="danger" label="Rejected" />}
-                {service.reviewStatus === "approved" &&
-                  (service.isActive ? (
-                    <Badge tone="success" label="Available" />
-                  ) : (
-                    <Badge tone="neutral" label="Inactive" />
-                  ))}
+                <PackageStatusBadge service={service} />
               </td>
               <td
                 className={clsx(
@@ -131,6 +130,7 @@ export function PackageTable({
                     isApproving={approvingId === service.id}
                     isToggling={togglingId === service.id}
                     managerRequests={managerRequests}
+                    onDecideDelete={onDecideDelete}
                     compact
                   />
                 </td>

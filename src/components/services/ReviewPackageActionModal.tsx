@@ -10,6 +10,16 @@ import type { PackageActionRequest } from "@/types/domain";
 const VERB = { edit: "edit", delete: "delete", deactivate: "deactivate", activate: "activate" } as const;
 
 /**
+ * What the modal needs to know about a request — satisfied by a full
+ * request from the Package Requests page, or by the delete request carried
+ * on a package's own row in the Services catalog.
+ */
+export type ReviewableRequest = Pick<
+  PackageActionRequest,
+  "id" | "action" | "branchName" | "serviceName" | "serviceCode" | "reason" | "requestedBy"
+>;
+
+/**
  * Admin approves or rejects a Manager's request to change a package.
  * Rejecting needs a reason; the Manager is told either way.
  */
@@ -18,7 +28,7 @@ export function ReviewPackageActionModal({
   mode,
   onClose,
 }: {
-  request: PackageActionRequest | null;
+  request: ReviewableRequest | null;
   mode: "approve" | "reject" | null;
   onClose: () => void;
 }) {

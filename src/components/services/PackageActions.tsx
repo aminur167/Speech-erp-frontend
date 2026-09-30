@@ -12,6 +12,9 @@ import {
 import { ActionMenu, type ActionMenuItem } from "@/components/ui/ActionMenu";
 import type { PackageAction, PackageActionRequest, Service } from "@/types/domain";
 
+/** Admin approving or rejecting a Manager's request to delete a package. */
+export type DeleteDecision = (service: Service, mode: "approve" | "reject") => void;
+
 /** What the Manager's menu needs to know about requests to Admin. */
 export interface ManagerPackageRequests {
   /** Open requests keyed `${serviceId}:${action}` — pending, or approved and unspent. */
@@ -43,6 +46,7 @@ export function PackageActions({
   isApproving,
   isToggling,
   managerRequests,
+  onDecideDelete,
 }: {
   service: Service;
   canManage: boolean;
@@ -57,6 +61,8 @@ export function PackageActions({
   compact?: boolean;
   /** Set on the Manager's catalog: changes are requested from Admin first. */
   managerRequests?: ManagerPackageRequests;
+  /** Admin's catalog: decide a Manager's request to delete this package. */
+  onDecideDelete?: DeleteDecision;
 }) {
   if (!canManage) {
     // A Manager can only change a live package; their own proposals are
@@ -85,7 +91,27 @@ export function PackageActions({
 
   let items: ActionMenuItem[];
 
-  if (service.reviewStatus === "pending") {
+  if (service.deleteRequest?.status === "pending" && onDecideDelete) {
+    // A Manager is waiting to hear whether they may delete this package: the
+    // decision is the only thing to do with it until it is made.
+    items = [
+      {
+        key: "approve-delete",
+        label: "Approve delete",
+        icon: Check,
+        hint: "The Manager may then delete it, once",
+        onSelect: () => onDecideDelete(service, "approve"),
+      },
+      {
+        key: "reject-delete",
+        label: "Reject delete",
+        icon: XIcon,
+        tone: "danger",
+        hint: "Keeps the package available",
+        onSelect: () => onDecideDelete(service, "reject"),
+      },
+    ];
+  } else if (service.reviewStatus === "pending") {
     items = [
       {
         key: "approve",

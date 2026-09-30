@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { clsx } from "clsx";
 import { Clock, CalendarDays, Layers, Globe, Users, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { PackageStatusBadge } from "@/components/services/PackageStatusBadge";
 import { formatCurrency } from "@/utils/currency";
 import type { Service, ServiceCategory } from "@/types/domain";
 
@@ -68,16 +69,19 @@ export function ServiceCard({
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <Badge tone="info" label={CATEGORY_LABEL[service.category]} />
-          {service.reviewStatus === "pending" && <Badge tone="warning" label="Pending Review" />}
-          {service.reviewStatus === "rejected" && <Badge tone="danger" label="Rejected" />}
-          {service.reviewStatus === "approved" &&
-            (service.isActive ? (
-              <Badge tone="success" label="Available" />
-            ) : (
-              <Badge tone="neutral" label="Inactive" />
-            ))}
+          <PackageStatusBadge service={service} />
         </div>
       </div>
+
+      {service.deleteRequest && (
+        <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
+          {service.deleteRequest.status === "pending"
+            ? "Delete requested"
+            : "Delete approved — the Manager may delete it"}
+          {service.deleteRequest.requestedBy ? ` by ${service.deleteRequest.requestedBy}` : ""}
+          {service.deleteRequest.reason ? `: ${service.deleteRequest.reason}` : ""}
+        </p>
+      )}
 
       {service.reviewStatus === "pending" && service.proposedBy && (
         <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">

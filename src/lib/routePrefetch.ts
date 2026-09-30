@@ -105,7 +105,12 @@ const BY_SECTION: Record<string, Prefetch> = {
     });
   },
   "package-requests": (client) => {
-    const params = { status: "pending" as const, page: 1, pageSize: 10 };
+    const params = {
+      status: "pending" as const,
+      excludeAction: "delete" as const,
+      page: 1,
+      pageSize: 10,
+    };
     void client.prefetchQuery({
       queryKey: queryKeys.packageActionRequests.list(params),
       queryFn: () => listPackageActionRequests(params),

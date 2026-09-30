@@ -59,8 +59,11 @@ function when(value?: string | null) {
 }
 
 /**
- * Admin's queue of Managers asking to change a package — edit, delete,
- * deactivate or activate — each with the Manager's reason.
+ * Admin's queue of Managers asking to change a package — edit, deactivate
+ * or activate — each with the Manager's reason.
+ *
+ * Delete requests are not here: they are shown as the package's own status
+ * on the Services page and approved or rejected from its row there.
  */
 export function PackageRequestsView() {
   const [status, setStatus] = useState<PackageActionRequestStatus | "">("pending");
@@ -74,6 +77,7 @@ export function PackageRequestsView() {
   const { data, isLoading, isError, refetch } = usePackageActionRequests({
     status: status || undefined,
     branchId: branchId || undefined,
+    excludeAction: "delete",
     page,
     pageSize: PAGE_SIZE,
   });

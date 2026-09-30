@@ -38,6 +38,8 @@ export function useRequestPackageAction() {
     mutationFn: requestPackageAction,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.packageActionRequests.all });
+      // A delete request changes the package's status in the catalog.
+      queryClient.invalidateQueries({ queryKey: queryKeys.services.all });
     },
   });
 }
@@ -54,6 +56,10 @@ export function useReviewPackageAction() {
     mutationFn: reviewPackageAction,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.packageActionRequests.all });
+      // A delete request shows on the package's own row and in the Services
+      // badge, so both change with the decision.
+      queryClient.invalidateQueries({ queryKey: queryKeys.services.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pendingPackages.count });
     },
   });
 }

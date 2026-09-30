@@ -95,6 +95,23 @@ export interface Service {
   reviewNote?: string;
   reviewedBy?: string;
   reviewedAt?: string;
+  /**
+   * A Manager's request to delete this package while it is still in play —
+   * waiting for Admin, or approved and not yet used. Shown as the package's
+   * status, and decided by Admin from the package's own row.
+   */
+  deleteRequest?: PackageDeleteRequest | null;
+}
+
+export interface PackageDeleteRequest {
+  id: string;
+  status: "pending" | "approved";
+  reason: string;
+  requestedBy: string;
+  requestedById: string;
+  requestedAt: string;
+  /** Approved requests: when the Manager's one-time permission lapses. */
+  expiresAt: string | null;
 }
 
 export interface AppNotification {

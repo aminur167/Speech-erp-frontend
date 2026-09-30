@@ -157,6 +157,8 @@ export interface PackageActionRequestListParams {
   branchId?: string;
   /** Only what is still in play: waiting for Admin, or approved and unspent. */
   open?: boolean;
+  /** Leave one kind out — the Package Requests page drops "delete", which is decided on the Services page. */
+  excludeAction?: PackageAction;
   page?: number;
   pageSize?: number;
 }
@@ -171,6 +173,7 @@ export async function listPackageActionRequests(
         status: params.status || undefined,
         branch: params.branchId || undefined,
         open: params.open || undefined,
+        excludeAction: params.excludeAction || undefined,
         page: params.page,
         pageSize: params.pageSize,
       },
