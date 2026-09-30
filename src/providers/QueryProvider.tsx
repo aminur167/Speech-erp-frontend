@@ -11,6 +11,7 @@ import { registerOfflineMutationDefaults } from "@/lib/offline/mutationDefaults"
 import { toast } from "@/store/toastStore";
 import { useAuthStore } from "@/store/authStore";
 import { clearParked } from "@/lib/api/parkedResponses";
+import { resetWarmRoutes } from "@/lib/routePrefetch";
 import { CACHE_GC_MS, DEFAULT_STALE_MS } from "@/lib/cacheTiming";
 import type { ApiError } from "@/types/api";
 
@@ -141,6 +142,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         if (previous.isAuthenticated && !state.isAuthenticated) {
           queryClient.removeQueries();
           clearParked();
+          resetWarmRoutes();
           cacheOwner.set(null);
         }
         if (!previous.isAuthenticated && state.isAuthenticated && state.user) {

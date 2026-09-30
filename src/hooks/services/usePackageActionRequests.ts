@@ -6,13 +6,14 @@ import {
   reviewPackageAction,
   type PackageActionRequestListParams,
 } from "@/lib/api/services";
-import { LIVE_POLL_INTERVAL_MS } from "@/lib/livePolling";
 import type { ApiError } from "@/types/api";
 import type { PackageAction, PackageActionRequest } from "@/types/domain";
 
 /**
- * Requests to change packages. Polls, so an Admin's decision reaches the
- * Manager's menu — and a Manager's new request reaches Admin — without a reload.
+ * Requests to change packages. An Admin's decision reaches the Manager's
+ * menu — and a Manager's new request reaches Admin — within seconds, without
+ * a reload: the approval pulse (hooks/useApprovalPulse.ts) refetches this
+ * whenever a queue changes, so it needs no timer of its own.
  */
 export function usePackageActionRequests(params: PackageActionRequestListParams, enabled = true) {
   return useQuery({
@@ -21,7 +22,6 @@ export function usePackageActionRequests(params: PackageActionRequestListParams,
     enabled,
     // Keep the current page on screen while the next page or filter loads.
     placeholderData: (previousData) => previousData,
-    refetchInterval: enabled ? LIVE_POLL_INTERVAL_MS : false,
     refetchOnWindowFocus: true,
   });
 }

@@ -7,7 +7,10 @@ import { getTransactionsSummary } from "@/lib/api/transactions";
 import { getExpenseSummary, listExpenses } from "@/lib/api/expenses";
 import { getStaffSummary, listStaff } from "@/lib/api/staff";
 import { getMaterialsSummary, listMaterials } from "@/lib/api/materials";
-import { listServices } from "@/lib/api/services";
+import { listPackageActionRequests, listServices } from "@/lib/api/services";
+import { listRefundRequests } from "@/lib/api/refunds";
+import { listSalaryPayments } from "@/lib/api/salaryPayments";
+import { isNavGroup, type NavItem } from "@/config/navigation";
 import { toMonthKey } from "@/utils/months";
 import type { AuthUser } from "@/types/domain";
 
@@ -85,6 +88,29 @@ const BY_SECTION: Record<string, Prefetch> = {
       queryFn: () => getStaffSummary(branchId),
     });
   },
+  // The Admin approval queues — each opens on its pending requests, first
+  // page, all branches.
+  "refund-approvals": (client) => {
+    const params = { status: "pending" as const, page: 1, pageSize: 10 };
+    void client.prefetchQuery({
+      queryKey: queryKeys.refundRequests.list(params),
+      queryFn: () => listRefundRequests(params),
+    });
+  },
+  "salary-approvals": (client) => {
+    const params = { status: "pending_approval" as const, page: 1, pageSize: 10 };
+    void client.prefetchQuery({
+      queryKey: queryKeys.salaryPayments.list(params),
+      queryFn: () => listSalaryPayments(params),
+    });
+  },
+  "package-requests": (client) => {
+    const params = { status: "pending" as const, page: 1, pageSize: 10 };
+    void client.prefetchQuery({
+      queryKey: queryKeys.packageActionRequests.list(params),
+      queryFn: () => listPackageActionRequests(params),
+    });
+  },
   // MaterialListView
   materials: (client, branchId) => {
     void client.prefetchQuery({
@@ -127,4 +153,52 @@ export function prefetchRoute(client: QueryClient, href: string, user: AuthUser 
     return;
   }
   BY_SECTION[section]?.(client, branchId);
+}
+
+/** Pause between warmed pages, so the warm-up never competes with the page in use. */
+const WARM_STEP_MS = 400;
+let warmedForUser: string | null = null;
+
+/**
+ * Load every sidebar page's first data once, in the background, soon after
+ * sign-in — so the *first* click on any page is instant too, not only the
+ * ones that were hovered first (a touch screen never hovers at all).
+ *
+ * One page at a time, each only when the browser is idle, a short pause
+ * apart: the page in front of the user always goes first, and the server —
+ * a small one — sees a trickle, not a burst. Once per signed-in user per
+ * load; data still fresh in the cache is not fetched again anyway.
+ */
+export function warmRoutes(client: QueryClient, items: NavItem[], user: AuthUser | null): void {
+  if (!user || typeof window === "undefined" || warmedForUser === user.id) return;
+  warmedForUser = user.id;
+
+  const queue = items.flatMap((item) =>
+    isNavGroup(item) ? item.children.map((child) => child.href) : [item.href],
+  );
+
+  const next = () => {
+    // Signed out (or someone else signed in) mid-warm-up: stop.
+    if (warmedForUser !== user.id) return;
+    const href = queue.shift();
+    if (!href) return;
+    prefetchRoute(client, href, user);
+    setTimeout(whenIdle(next), WARM_STEP_MS);
+  };
+  setTimeout(whenIdle(next), WARM_STEP_MS);
+}
+
+/** Forget the warm-up, so the next user to sign in gets their own. */
+export function resetWarmRoutes(): void {
+  warmedForUser = null;
+}
+
+function whenIdle(fn: () => void): () => void {
+  return () => {
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(() => fn(), { timeout: 2_000 });
+    } else {
+      fn();
+    }
+  };
 }

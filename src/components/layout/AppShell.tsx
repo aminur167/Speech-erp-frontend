@@ -1,10 +1,14 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { clsx } from "clsx";
+import { useQueryClient } from "@tanstack/react-query";
 import type { NavItem } from "@/config/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import { useApprovalPulse } from "@/hooks/useApprovalPulse";
+import { warmRoutes } from "@/lib/routePrefetch";
+import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
 
 export function AppShell({
@@ -21,6 +25,17 @@ export function AppShell({
   children: ReactNode;
 }) {
   const isCollapsed = useUiStore((state) => state.isSidebarCollapsed);
+  const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
+
+  // Approval queues and badges follow the server within seconds.
+  useApprovalPulse();
+
+  // Every sidebar page's first data, loaded quietly in the background after
+  // sign-in, so the first click on any of them is instant.
+  useEffect(() => {
+    warmRoutes(queryClient, navItems, user);
+  }, [queryClient, navItems, user]);
 
   return (
     <div className="h-screen overflow-hidden bg-background">
