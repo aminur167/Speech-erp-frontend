@@ -27,7 +27,6 @@ import { LoadingState, EmptyState } from "@/components/ui/states";
 import { RevenueTrendChart } from "@/components/dashboard/RevenueTrendChart";
 import { RevenueByMethodChart } from "@/components/dashboard/RevenueByMethodChart";
 import { ServiceCategoryChart } from "@/components/dashboard/ServiceCategoryChart";
-import { useTodaySystemCollection } from "@/hooks/dailyClosing/useTodaySystemCollection";
 import { useExpenseSummary } from "@/hooks/expenses/useExpenseSummary";
 import { useTransactionsSummary } from "@/hooks/transactions/useTransactionsSummary";
 import { useDuePaymentsSummary } from "@/hooks/duePayments/useDuePaymentsSummary";
@@ -38,7 +37,7 @@ import { useMonthlyRevenueByMethod } from "@/hooks/transactions/useMonthlyRevenu
 import { useRevenueByCategory } from "@/hooks/transactions/useRevenueByCategory";
 import { useBranchesOverview } from "@/hooks/branches/useBranchesOverview";
 import { useAuthStore } from "@/store/authStore";
-import { todayDateString } from "@/lib/api/dailyClosings";
+import { toLocalDateString } from "@/utils/time";
 import { formatCurrency } from "@/utils/currency";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBatchPrefetch } from "@/hooks/useBatchPrefetch";
@@ -84,11 +83,10 @@ const QUICK_ACTIONS = [
 
 function AdminDashboardContent() {
   const user = useAuthStore((state) => state.user);
-  const [selectedDate, setSelectedDate] = useState(todayDateString());
-  const isToday = selectedDate === todayDateString();
+  const [selectedDate, setSelectedDate] = useState(() => toLocalDateString());
+  const isToday = selectedDate === toLocalDateString();
 
   const { data: overview, isLoading: branchesLoading } = useBranchesOverview();
-  const { data: todayCollection } = useTodaySystemCollection(undefined, selectedDate);
   const { data: metrics } = useBranchDashboardMetrics(undefined, selectedDate);
   const { data: expenses } = useExpenseSummary(undefined, selectedDate);
   const { data: transactions } = useTransactionsSummary(undefined, selectedDate);
@@ -193,7 +191,7 @@ function AdminDashboardContent() {
         />
         <StatCard
           label={isToday ? "Today's Revenue" : "Revenue"}
-          value={formatCurrency(todayCollection?.total ?? 0)}
+          value={formatCurrency(transactions?.todayCollected ?? 0)}
           icon={Wallet}
           tone="success"
           chart={
@@ -389,13 +387,12 @@ function AdminDashboardContent() {
  */
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
-  const [today] = useState(todayDateString);
+  const [today] = useState(() => toLocalDateString());
   const cached =
     queryClient.getQueryData(queryKeys.transactions.summary(undefined, today)) !== undefined;
   const ready = useBatchPrefetch(
     [
       { path: "/branches/overview/" },
-      { path: "/daily-closing/today-summary/", params: { date: today } },
       { path: "/transactions/dashboard-metrics/", params: { date: today } },
       { path: "/expenses/summary/", params: { date: today } },
       { path: "/transactions/summary/", params: { date: today } },

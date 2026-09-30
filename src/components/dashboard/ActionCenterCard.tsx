@@ -26,7 +26,14 @@ export interface ActionItem {
 export function ActionCenterCard({ items }: { items: ActionItem[] }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_2px_rgba(15,23,42,0.04),0_1px_6px_rgba(15,23,42,0.04)]">
-      <div className="divide-y divide-border sm:grid sm:grid-cols-2 sm:divide-y-0 sm:divide-x">
+      {/* Two across when there are two or more; a single item takes the full
+          width instead of leaving an empty half beside it. */}
+      <div
+        className={clsx(
+          "divide-y divide-border sm:grid sm:divide-y-0 sm:divide-x",
+          items.length > 1 ? "sm:grid-cols-2" : "sm:grid-cols-1",
+        )}
+      >
         {items.map((item) => (
           <button
             key={item.key}

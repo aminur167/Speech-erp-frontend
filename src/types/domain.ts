@@ -333,31 +333,6 @@ export interface Booking {
   status: "confirmed" | "cancelled";
 }
 
-export type DailyClosingStatus = "matched" | "over" | "short";
-
-export interface DailyClosingAmendment {
-  id: string;
-  previousActualTotal: number;
-  correctedActualTotal: number;
-  reason: string;
-  amendedBy: string;
-  amendedAt: string;
-}
-
-export interface DailyClosing {
-  id: string;
-  branchId: string;
-  date: string; // e.g. "2026-08-27"
-  systemTotal: number;
-  actualTotal: number;
-  difference: number;
-  status: DailyClosingStatus;
-  submittedBy: string;
-  submittedAt: string;
-  isAmended: boolean;
-  amendments: DailyClosingAmendment[];
-}
-
 export type MaterialUnit = "piece" | "box" | "packet" | "set" | "bottle" | "other";
 
 export interface Material {

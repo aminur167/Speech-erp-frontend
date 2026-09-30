@@ -9,7 +9,6 @@ import {
   Receipt,
   TrendingUp,
   UserPlus,
-  ClipboardCheck,
   ClipboardList,
   Coins,
 } from "lucide-react";
@@ -23,8 +22,6 @@ import { RevenueTrendChart } from "@/components/dashboard/RevenueTrendChart";
 import { RevenueByMethodChart } from "@/components/dashboard/RevenueByMethodChart";
 import { ServiceCategoryChart } from "@/components/dashboard/ServiceCategoryChart";
 import { useAuthStore } from "@/store/authStore";
-import { useTodaySystemCollection } from "@/hooks/dailyClosing/useTodaySystemCollection";
-import { useDailyClosingHistory } from "@/hooks/dailyClosing/useDailyClosingHistory";
 import { useExpenseSummary } from "@/hooks/expenses/useExpenseSummary";
 import { useTransactionsSummary } from "@/hooks/transactions/useTransactionsSummary";
 import { useDuePaymentsSummary } from "@/hooks/duePayments/useDuePaymentsSummary";
@@ -33,37 +30,35 @@ import { useBranchDashboardMetrics } from "@/hooks/transactions/useBranchDashboa
 import { useRevenueTrend } from "@/hooks/transactions/useRevenueTrend";
 import { useMonthlyRevenueByMethod } from "@/hooks/transactions/useMonthlyRevenueByMethod";
 import { useRevenueByCategory } from "@/hooks/transactions/useRevenueByCategory";
-import { todayDateString } from "@/lib/api/dailyClosings";
+import { toLocalDateString } from "@/utils/time";
 import { formatCurrency } from "@/utils/currency";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBatchPrefetch } from "@/hooks/useBatchPrefetch";
 import { queryKeys } from "@/lib/queryKeys";
-
-const CLOSING_STATUS_TONE = { matched: "success", over: "warning", short: "danger" } as const;
 
 function ManagerDashboardContent() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const branchId = user?.branchId ?? undefined;
 
-  const [selectedDate, setSelectedDate] = useState(todayDateString());
-  const isToday = selectedDate === todayDateString();
+  const [selectedDate, setSelectedDate] = useState(() => toLocalDateString());
+  const isToday = selectedDate === toLocalDateString();
 
-  const { data: todayCollection } = useTodaySystemCollection(branchId, selectedDate);
   const { data: metrics } = useBranchDashboardMetrics(branchId, selectedDate);
   const { data: expenses } = useExpenseSummary(branchId, selectedDate);
   const { data: transactions } = useTransactionsSummary(branchId, selectedDate);
   const { data: dues } = useDuePaymentsSummary(branchId, selectedDate);
   const { data: patients } = usePatientDirectorySummary(branchId, selectedDate);
-  const { data: closings } = useDailyClosingHistory(branchId);
 
   const { data: trend, isLoading: trendLoading } = useRevenueTrend(branchId, 7);
   const { data: byMethod, isLoading: byMethodLoading } = useMonthlyRevenueByMethod(branchId);
   const { data: byCategory, isLoading: byCategoryLoading } = useRevenueByCategory(branchId);
 
-  const todaysClosing = closings?.find((closing) => closing.date === todayDateString());
   const pendingApprovals = expenses?.pendingCount ?? 0;
-  const todayRevenue = (todayCollection?.total ?? 0) - (expenses?.todayTotal ?? 0);
+  // The selected day's collection, counted the same way as Monthly Revenue
+  // below, so the day and the month always agree.
+  const dayCollected = transactions?.todayCollected ?? 0;
+  const todayRevenue = dayCollected - (expenses?.todayTotal ?? 0);
 
   const selectedDateObj = new Date(selectedDate);
   const dayLabel = isToday
@@ -74,17 +69,6 @@ function ManagerDashboardContent() {
     : selectedDateObj.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   const actionItems: ActionItem[] = [
-    {
-      key: "daily-closing",
-      label: "Daily Closing",
-      value: todaysClosing ? "Submitted" : "Not submitted",
-      hint: todaysClosing
-        ? `Status: ${todaysClosing.status.toUpperCase()}`
-        : "Tap to submit today's closing",
-      icon: ClipboardCheck,
-      tone: todaysClosing ? CLOSING_STATUS_TONE[todaysClosing.status] : "warning",
-      onClick: () => router.push("/manager/daily-closing"),
-    },
     {
       key: "pending-approvals",
       label: "Pending Expense Approvals",
@@ -110,7 +94,7 @@ function ManagerDashboardContent() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Today's Collection"
-            value={formatCurrency(todayCollection?.total ?? 0)}
+            value={formatCurrency(dayCollected)}
             icon={Wallet}
             tone="success"
           />
@@ -222,26 +206,24 @@ function ManagerDashboardContent() {
 }
 
 /**
- * The dashboard's ten first reads arrive in one request (lib/api/batch.ts)
- * instead of ten. Skipped when they are already cached — the page then shows
- * them at once and refreshes in the background as usual.
+ * The dashboard's first reads arrive in one request (lib/api/batch.ts)
+ * instead of one each. Skipped when they are already cached — the page then
+ * shows them at once and refreshes in the background as usual.
  */
 export default function ManagerDashboardPage() {
   const queryClient = useQueryClient();
   const branchId = useAuthStore((state) => state.user?.branchId ?? undefined);
-  const [today] = useState(todayDateString);
+  const [today] = useState(() => toLocalDateString());
   const cached =
     queryClient.getQueryData(queryKeys.transactions.summary(branchId, today)) !== undefined;
   const branch = { branch: branchId };
   const ready = useBatchPrefetch(
     [
-      { path: "/daily-closing/today-summary/", params: { ...branch, date: today } },
       { path: "/transactions/dashboard-metrics/", params: { ...branch, date: today } },
       { path: "/expenses/summary/", params: { ...branch, date: today } },
       { path: "/transactions/summary/", params: { ...branch, date: today } },
       { path: "/due-payments/summary/", params: { ...branch, date: today } },
       { path: "/patients/directory/summary/", params: { ...branch, date: today } },
-      { path: "/daily-closing/history/", params: branch },
       { path: "/transactions/trend/", params: { ...branch, days: 7 } },
       { path: "/transactions/by-method/", params: branch },
       { path: "/transactions/by-category/", params: branch },

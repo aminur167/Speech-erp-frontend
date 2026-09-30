@@ -22,7 +22,6 @@ export function useEnrollMonthly() {
       queryClient.invalidateQueries({ queryKey: queryKeys.payments.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.patients.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.duePayments.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.dailyClosing.all });
     },
   });
 }

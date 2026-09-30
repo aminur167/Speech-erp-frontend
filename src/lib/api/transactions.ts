@@ -342,10 +342,6 @@ export interface DailyLedgerRow {
   expenseCount: number;
   expenses: number;
   netRevenue: number;
-  closingsSubmitted: number;
-  /** "", "matched" or "mismatched" — empty when the day was never closed. */
-  closingStatus: string;
-  closingDifference: number;
 }
 
 /**
@@ -382,8 +378,5 @@ export async function getBranchDailyLedger(params: {
     expenseCount: Number(row.expenseCount ?? 0),
     expenses: Number(row.expenses ?? 0),
     netRevenue: Number(row.netRevenue ?? 0),
-    closingsSubmitted: Number(row.closingsSubmitted ?? 0),
-    closingStatus: String(row.closingStatus ?? ""),
-    closingDifference: Number(row.closingDifference ?? 0),
   }));
 }

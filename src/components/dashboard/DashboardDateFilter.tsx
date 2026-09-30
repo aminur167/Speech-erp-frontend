@@ -4,7 +4,7 @@ import { useId } from "react";
 import { CalendarDays } from "lucide-react";
 import { FieldLabel } from "@/components/ui/FieldLabel";
 import { Input } from "@/components/ui/Input";
-import { todayDateString } from "@/lib/api/dailyClosings";
+import { toLocalDateString } from "@/utils/time";
 
 /** Lets Admin/Manager pick any date to view that day's (and that month's) dashboard state instead of today's. */
 export function DashboardDateFilter({
@@ -14,7 +14,7 @@ export function DashboardDateFilter({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const isToday = value === todayDateString();
+  const isToday = value === toLocalDateString();
   const inputId = useId();
 
   return (
@@ -29,8 +29,8 @@ export function DashboardDateFilter({
             id={inputId}
             type="date"
             value={value}
-            max={todayDateString()}
-            onChange={(event) => onChange(event.target.value || todayDateString())}
+            max={toLocalDateString()}
+            onChange={(event) => onChange(event.target.value || toLocalDateString())}
             containerClassName="w-auto"
             className="w-44 pl-9"
           />
@@ -39,7 +39,7 @@ export function DashboardDateFilter({
       {!isToday && (
         <button
           type="button"
-          onClick={() => onChange(todayDateString())}
+          onClick={() => onChange(toLocalDateString())}
           className="shrink-0 pb-2 text-sm font-medium text-primary hover:underline"
         >
           Today

@@ -69,8 +69,8 @@ export const managerNav: NavItem[] = [
 /**
  * Sidebar shown while Admin is drilled into a single branch (/admin/branches/[id]/...).
  * Mirrors managerNav's structure so it feels like "browsing that branch's own space", but
- * deliberately omits the money-moving action flows (Sell, Enroll Service, Daily Closing
- * submission) — Admin can view everything, not perform branch-manager-only transactions.
+ * deliberately omits the money-moving action flows (Sell, Enroll Service) — Admin can
+ * view everything, not perform branch-manager-only transactions.
  *
  * Staff is an exception and belongs here: hiring, salary and attendance are
  * that branch's operations, not a transaction against a patient, and Admin

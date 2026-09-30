@@ -16,7 +16,6 @@ import { TransactionTable } from "@/components/transactions/TransactionTable";
 import { BranchForm } from "@/components/branches/BranchForm";
 import { useBranchOverview } from "@/hooks/branches/useBranchOverview";
 import { useUpdateBranch } from "@/hooks/branches/useUpdateBranch";
-import { useTodaySystemCollection } from "@/hooks/dailyClosing/useTodaySystemCollection";
 import { useBranchDashboardMetrics } from "@/hooks/transactions/useBranchDashboardMetrics";
 import { useExpenseSummary } from "@/hooks/expenses/useExpenseSummary";
 import { useTransactionsSummary } from "@/hooks/transactions/useTransactionsSummary";
@@ -48,7 +47,6 @@ export function BranchDetailView({ branchId }: { branchId: string }) {
   const deleteBranch = useDeleteBranch();
   const router = useRouter();
 
-  const { data: todayCollection } = useTodaySystemCollection(branchId);
   const { data: metrics } = useBranchDashboardMetrics(branchId);
   const { data: expenses } = useExpenseSummary(branchId);
   const { data: transactions } = useTransactionsSummary(branchId);
@@ -189,7 +187,7 @@ export function BranchDetailView({ branchId }: { branchId: string }) {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Today's Collection"
-            value={formatCurrency(todayCollection?.total ?? 0)}
+            value={formatCurrency(transactions?.todayCollected ?? 0)}
             icon={Wallet}
             tone="success"
           />

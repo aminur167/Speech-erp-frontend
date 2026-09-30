@@ -12,7 +12,6 @@ export function useCreatePayment() {
     mutationFn: createPayment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.dailyClosing.all });
     },
   });
 }

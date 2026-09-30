@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/Badge";
 import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { SortHeader, useTableSort } from "@/components/ui/SortableTable";
 import { formatCurrency } from "@/utils/currency";
@@ -63,9 +62,6 @@ export function DailyLedgerTable({
             <SortHeader<DailyLedgerRow>
               label="Net" columnKey="netRevenue" sort={sort} onSort={toggle} sticky align="right"
             />
-            <th scope="col" className="sticky top-0 z-10 bg-surface py-2 pr-4 font-medium">
-              Closing
-            </th>
           </tr>
         </thead>
         <tbody>
@@ -108,18 +104,6 @@ export function DailyLedgerTable({
                   {formatCurrency(row.netRevenue)}
                 </span>
               </td>
-              <td className="py-2 pr-4">
-                {row.closingStatus === "matched" && <Badge tone="success" label="Matched" />}
-                {row.closingStatus === "mismatched" && (
-                  <Badge
-                    tone="danger"
-                    label={`Off by ${formatCurrency(Math.abs(row.closingDifference))}`}
-                  />
-                )}
-                {row.closingStatus === "" && (
-                  <span className="text-xs text-text-secondary">Not closed</span>
-                )}
-              </td>
             </tr>
           ))}
         </tbody>
@@ -153,7 +137,6 @@ export function DailyLedgerTable({
             >
               {formatCurrency(totalNet)}
             </td>
-            <td className="py-2 pr-4" />
           </tr>
         </tfoot>
       </table>

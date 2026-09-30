@@ -12,6 +12,18 @@ const nextConfig: NextConfig = {
         destination: "/admin/services",
         permanent: false,
       },
+      // Daily Closing was removed. A bookmark or an old link lands on the
+      // dashboard, which shows the day's collection, instead of a 404.
+      {
+        source: "/manager/daily-closing",
+        destination: "/manager/dashboard",
+        permanent: false,
+      },
+      {
+        source: "/admin/branches/:id/daily-closing",
+        destination: "/admin/branches/:id",
+        permanent: false,
+      },
     ];
   },
 };

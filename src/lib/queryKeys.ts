@@ -77,13 +77,6 @@ export const queryKeys = {
     totalForDate: (branchId: string | undefined, date: string) =>
       ["expenses", "total-for-date", branchId, date] as const,
   },
-  dailyClosing: {
-    all: ["daily-closing"] as const,
-    todaySummary: (branchId?: string, date?: string) =>
-      ["daily-closing", "today-summary", branchId, date] as const,
-    history: (branchId?: string) => ["daily-closing", "history", branchId] as const,
-    list: (params?: object) => ["daily-closing", "list", params] as const,
-  },
   materials: {
     all: ["materials"] as const,
     list: (branchId?: string) => ["materials", "list", branchId] as const,

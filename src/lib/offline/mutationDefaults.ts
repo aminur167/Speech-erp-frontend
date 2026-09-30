@@ -121,7 +121,6 @@ export function registerOfflineMutationDefaults(queryClient: QueryClient): void 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.duePayments.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.dailyClosing.all });
     },
   });
 }

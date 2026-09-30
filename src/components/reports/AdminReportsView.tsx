@@ -18,10 +18,8 @@ import { useExpenseSummary } from "@/hooks/expenses/useExpenseSummary";
 import { useExpenseTotalForDate } from "@/hooks/expenses/useExpenseTotalForDate";
 import { useDuePaymentsSummary } from "@/hooks/duePayments/useDuePaymentsSummary";
 import { usePatientDirectorySummary } from "@/hooks/patients/usePatientDirectorySummary";
-import { useDailyClosingHistory } from "@/hooks/dailyClosing/useDailyClosingHistory";
 import { useRefundsAndVoids } from "@/hooks/transactions/useRefundsAndVoids";
 import { TransactionTable } from "@/components/transactions/TransactionTable";
-import { RowDetailDrawer, useRowDetail } from "@/components/ui/RowDetailDrawer";
 import { toLocalDateString } from "@/utils/time";
 import { formatCurrency } from "@/utils/currency";
 import type { SummaryPeriod } from "@/lib/api/transactions";
@@ -44,7 +42,6 @@ export function AdminReportsView() {
   const { data: dateExpenses } = useExpenseTotalForDate(scopedBranchId, date);
   const { data: dues } = useDuePaymentsSummary(scopedBranchId);
   const { data: patients } = usePatientDirectorySummary(scopedBranchId);
-  const { data: closings, isLoading: closingsLoading } = useDailyClosingHistory(scopedBranchId);
   const { data: refundsAndVoids, isLoading: refundsLoading } = useRefundsAndVoids(scopedBranchId);
 
   const periodLabel = date
@@ -66,9 +63,7 @@ export function AdminReportsView() {
         ? (expenses?.monthTotal ?? 0)
         : (expenses?.total ?? 0);
   const netRevenue = totalCollected - totalExpenses;
-  const mismatches = closings?.filter((closing) => closing.status !== "matched") ?? [];
   const maxMethodAmount = transactions?.byMethod[0]?.amount ?? 0;
-  const mismatchDetail = useRowDetail<(typeof mismatches)[number]>();
 
   return (
     <div className="flex flex-col gap-6">
@@ -178,57 +173,6 @@ export function AdminReportsView() {
 
       <Card>
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-text-secondary">
-            Daily Closing Mismatches
-          </h2>
-          <Badge
-            tone={mismatches.length > 0 ? "danger" : "success"}
-            label={`${mismatches.length} found`}
-          />
-        </div>
-        <div className="mt-3">
-          {closingsLoading && <LoadingState label="Loading closings…" />}
-          {!closingsLoading && mismatches.length === 0 && (
-            <EmptyState label="No mismatches — every closing has matched so far." />
-          )}
-          {!closingsLoading && mismatches.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border text-text-secondary">
-                    <th className="py-2 pr-4 font-medium">Date</th>
-                    <th className="py-2 pr-4 font-medium">Branch</th>
-                    <th className="py-2 pr-4 font-medium">System Total</th>
-                    <th className="py-2 pr-4 font-medium">Actual Total</th>
-                    <th className="py-2 pr-4 font-medium">Difference</th>
-                    <th className="py-2 pr-4 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mismatches.map((closing) => (
-                    <tr key={closing.id} {...mismatchDetail.rowProps(closing)}>
-                      <td className="py-2 pr-4">{closing.date}</td>
-                      <td className="py-2 pr-4">{closing.branchId}</td>
-                      <td className="py-2 pr-4">{formatCurrency(closing.systemTotal)}</td>
-                      <td className="py-2 pr-4">{formatCurrency(closing.actualTotal)}</td>
-                      <td className="py-2 pr-4">{formatCurrency(closing.difference)}</td>
-                      <td className="py-2 pr-4">
-                        <Badge
-                          tone={closing.status === "over" ? "warning" : "danger"}
-                          label={closing.status.toUpperCase()}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </Card>
-
-      <Card>
-        <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium text-text-secondary">Refunds &amp; Voids</h2>
           <Badge
             tone={(refundsAndVoids?.length ?? 0) > 0 ? "warning" : "success"}
@@ -262,15 +206,6 @@ export function AdminReportsView() {
           </div>
         </div>
       </Card>
-
-      <RowDetailDrawer
-        open={mismatchDetail.isOpen}
-        onClose={mismatchDetail.close}
-        title={mismatchDetail.selected ? `Closing · ${mismatchDetail.selected.date}` : ""}
-        subtitle={mismatchDetail.selected?.status.toUpperCase()}
-        data={mismatchDetail.selected}
-        hiddenFields={["amendments"]}
-      />
     </div>
   );
 }

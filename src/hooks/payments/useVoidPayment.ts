@@ -12,7 +12,6 @@ export function useVoidPayment() {
     mutationFn: ({ paymentId, reason }) => voidPayment(paymentId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.dailyClosing.all });
     },
   });
 }

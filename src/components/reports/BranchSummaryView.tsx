@@ -15,17 +15,14 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { DuePaymentTable } from "@/components/duePayments/DuePaymentTable";
 import { ActivityLedgerTable } from "@/components/reports/summary/ActivityLedgerTable";
 import { DailyLedgerTable } from "@/components/reports/summary/DailyLedgerTable";
-import { ClosingLedgerTable } from "@/components/reports/summary/ClosingLedgerTable";
 import { BreakdownTable } from "@/components/reports/summary/BreakdownTable";
 import { useBranchSummary } from "@/hooks/reports/useBranchSummary";
 import { useBranchActivity } from "@/hooks/reports/useBranchActivity";
 import { useBranchDailyLedger } from "@/hooks/reports/useBranchDailyLedger";
-import { useDailyClosings } from "@/hooks/dailyClosing/useDailyClosings";
 import { useDuePayments } from "@/hooks/duePayments/useDuePayments";
 import { exportToCsv } from "@/utils/exportCsv";
 import { formatCurrency } from "@/utils/currency";
 import { toLocalDateString } from "@/utils/time";
-import type { DailyClosingStatus } from "@/types/domain";
 import type { DuePaymentType } from "@/lib/api/duePayments";
 
 const PAGE_SIZE = 10;
@@ -70,8 +67,7 @@ function presetRange(preset: Exclude<Preset, "custom">): [string, string] {
  */
 const TABS = [
   { key: "activity", label: "Activity", ranged: true, columns: 6 },
-  { key: "daily", label: "Daily Ledger", ranged: true, columns: 8 },
-  { key: "closings", label: "Daily Closing", ranged: true, columns: 6 },
+  { key: "daily", label: "Daily Ledger", ranged: true, columns: 7 },
   { key: "dues", label: "Outstanding Dues", ranged: false, columns: 6 },
   { key: "methods", label: "By Payment Method", ranged: true, columns: 3 },
   { key: "services", label: "By Service Type", ranged: true, columns: 3 },
@@ -100,7 +96,6 @@ export function BranchSummaryView({
 
   // Each tab keeps its own filters, so switching away and back doesn't lose
   // what you had narrowed to.
-  const [closingStatus, setClosingStatus] = useState<DailyClosingStatus | "">("");
   const [dueSearch, setDueSearch] = useState("");
   const [dueType, setDueType] = useState<DuePaymentType | "">("");
 
@@ -147,10 +142,6 @@ export function BranchSummaryView({
     { branchId, ...range },
     { enabled: rangeIsValid && (tab === "methods" || tab === "services") },
   );
-  const closings = useDailyClosings(
-    { branchId, ...range, page, pageSize: PAGE_SIZE, status: closingStatus || undefined },
-    on("closings"),
-  );
   const dues = useDuePayments(
     {
       branchId, page, pageSize: PAGE_SIZE,
@@ -174,7 +165,6 @@ export function BranchSummaryView({
   const query = {
     activity,
     daily: ledger,
-    closings,
     dues,
     methods: summary,
     services: summary,
@@ -183,7 +173,6 @@ export function BranchSummaryView({
   const count = {
     activity: activityRows.length,
     daily: ledgerRows.length,
-    closings: closings.data?.count ?? 0,
     dues: dues.data?.count ?? 0,
     methods: methodRows.length,
     services: categoryRows.length,
@@ -227,21 +216,6 @@ export function BranchSummaryView({
           Refunds: row.refunded,
           Expenses: row.expenses,
           Net: row.netRevenue,
-          Closing: row.closingStatus || "not closed",
-        })),
-      );
-      return;
-    }
-    if (tab === "closings") {
-      exportToCsv(
-        filename,
-        (closings.data?.results ?? []).map((row) => ({
-          Date: row.date,
-          "System Total": row.systemTotal,
-          Counted: row.actualTotal,
-          Difference: row.difference,
-          Status: row.status,
-          "Submitted By": row.submittedBy,
         })),
       );
       return;
@@ -321,22 +295,6 @@ export function BranchSummaryView({
           </div>
         }
       >
-        {tab === "closings" && (
-          <Select
-            label="Closing Status"
-            value={closingStatus}
-            onChange={(event) =>
-              filtering(setClosingStatus)(event.target.value as DailyClosingStatus | "")
-            }
-            containerClassName={FILTER_FIELD_WIDTH}
-          >
-            <option value="">All statuses</option>
-            <option value="matched">Matched</option>
-            <option value="over">Over</option>
-            <option value="short">Short</option>
-          </Select>
-        )}
-
         {tab === "dues" && (
           <>
             <Input
@@ -459,9 +417,6 @@ export function BranchSummaryView({
                 )}
                 {tab === "daily" && (
                   <DailyLedgerTable rows={ledgerPage} totalsFor={ledgerRows} />
-                )}
-                {tab === "closings" && (
-                  <ClosingLedgerTable closings={closings.data?.results ?? []} />
                 )}
                 {tab === "dues" && (
                   <>

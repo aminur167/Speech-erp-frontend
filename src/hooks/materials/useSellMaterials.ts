@@ -17,7 +17,6 @@ export function useSellMaterials() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.materials.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.dailyClosing.all });
     },
   });
 }
