@@ -29,7 +29,7 @@ import { RejectPackageModal } from "@/components/services/RejectPackageModal";
 import { RequestPackageActionModal } from "@/components/services/RequestPackageActionModal";
 import {
   PackageActions,
-  type DeleteDecision,
+  type RequestDecision,
   type ManagerPackageRequests,
 } from "@/components/services/PackageActions";
 import {
@@ -50,6 +50,7 @@ import { exportToCsv } from "@/utils/exportCsv";
 import type {
   PackageAction,
   PackageActionRequest,
+  PackageChangeRequest,
   Service,
   ServiceCategory,
 } from "@/types/domain";
@@ -159,27 +160,27 @@ export function ServiceCatalogView({
   );
   const [rejectingService, setRejectingService] = useState<Service | null>(null);
 
-  // Admin deciding a Manager's request to delete a package, from that
-  // package's own row. The row carries the request, so it is reviewed
-  // through the same modal the Package Requests page uses.
-  const [decidingDelete, setDecidingDelete] = useState<{
+  // Admin deciding a Manager's request to change a package, from that
+  // package's own row — there is no separate requests page. The row carries
+  // the request, so it goes through the shared review modal.
+  const [deciding, setDeciding] = useState<{
     service: Service;
+    request: PackageChangeRequest;
     mode: "approve" | "reject";
   } | null>(null);
-  const decidingDeleteRequest: ReviewableRequest | null =
-    decidingDelete?.service.deleteRequest
-      ? {
-          id: decidingDelete.service.deleteRequest.id,
-          action: "delete",
-          branchName: decidingDelete.service.branchName,
-          serviceName: decidingDelete.service.name,
-          serviceCode: decidingDelete.service.code,
-          reason: decidingDelete.service.deleteRequest.reason,
-          requestedBy: decidingDelete.service.deleteRequest.requestedBy,
-        }
-      : null;
-  const onDecideDelete: DeleteDecision | undefined = canManage
-    ? (service, mode) => setDecidingDelete({ service, mode })
+  const decidingRequest: ReviewableRequest | null = deciding
+    ? {
+        id: deciding.request.id,
+        action: deciding.request.action,
+        branchName: deciding.service.branchName,
+        serviceName: deciding.service.name,
+        serviceCode: deciding.service.code,
+        reason: deciding.request.reason,
+        requestedBy: deciding.request.requestedBy,
+      }
+    : null;
+  const onDecideRequest: RequestDecision | undefined = canManage
+    ? (service, request, mode) => setDeciding({ service, request, mode })
     : undefined;
 
   const categoryCounts = useMemo(() => {
@@ -438,7 +439,7 @@ export function ServiceCatalogView({
               approvingId={reviewService.isPending ? reviewService.variables?.id : undefined}
               togglingId={toggleServiceActive.isPending ? toggleServiceActive.variables?.id : undefined}
               managerRequests={managerRequests}
-              onDecideDelete={onDecideDelete}
+              onDecideRequest={onDecideRequest}
             />
           )}
         </div>
@@ -479,7 +480,7 @@ export function ServiceCatalogView({
                             toggleServiceActive.variables?.id === service.id
                           }
                           managerRequests={managerRequests}
-                          onDecideDelete={onDecideDelete}
+                          onDecideRequest={onDecideRequest}
                         />
                       ) : undefined
                     }
@@ -563,9 +564,9 @@ export function ServiceCatalogView({
       )}
       {canManage && (
         <ReviewPackageActionModal
-          request={decidingDeleteRequest}
-          mode={decidingDelete?.mode ?? null}
-          onClose={() => setDecidingDelete(null)}
+          request={decidingRequest}
+          mode={deciding?.mode ?? null}
+          onClose={() => setDeciding(null)}
         />
       )}
       {!canManage && (

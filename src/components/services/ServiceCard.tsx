@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { clsx } from "clsx";
 import { Clock, CalendarDays, Layers, Globe, Users, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { PackageStatusBadge } from "@/components/services/PackageStatusBadge";
+import { ChangeRequestNotes, PackageStatusBadge } from "@/components/services/PackageStatusBadge";
 import { formatCurrency } from "@/utils/currency";
 import type { Service, ServiceCategory } from "@/types/domain";
 
@@ -73,15 +73,10 @@ export function ServiceCard({
         </div>
       </div>
 
-      {service.deleteRequest && (
-        <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
-          {service.deleteRequest.status === "pending"
-            ? "Delete requested"
-            : "Delete approved — the Manager may delete it"}
-          {service.deleteRequest.requestedBy ? ` by ${service.deleteRequest.requestedBy}` : ""}
-          {service.deleteRequest.reason ? `: ${service.deleteRequest.reason}` : ""}
-        </p>
-      )}
+      <ChangeRequestNotes
+        service={service}
+        className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning"
+      />
 
       {service.reviewStatus === "pending" && service.proposedBy && (
         <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">

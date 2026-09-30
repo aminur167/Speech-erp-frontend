@@ -194,9 +194,3 @@ export async function reviewPackageAction(input: {
   );
   return normalizeActionRequest(data);
 }
-
-/** Admin-only — powers the sidebar badge on Package Requests. */
-export async function getPendingPackageActionCount(): Promise<number> {
-  const { data } = await apiClient.get<{ count: number }>("/services/action-requests/pending-count/");
-  return data.count;
-}

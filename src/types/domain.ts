@@ -96,15 +96,17 @@ export interface Service {
   reviewedBy?: string;
   reviewedAt?: string;
   /**
-   * A Manager's request to delete this package while it is still in play —
-   * waiting for Admin, or approved and not yet used. Shown as the package's
-   * status, and decided by Admin from the package's own row.
+   * Managers' requests to change this package — edit, delete, deactivate,
+   * activate — while still in play: waiting for Admin, or approved and not
+   * yet used. Newest first. Shown as the package's status, and decided by
+   * Admin from the package's own row (there is no separate requests page).
    */
-  deleteRequest?: PackageDeleteRequest | null;
+  changeRequests?: PackageChangeRequest[];
 }
 
-export interface PackageDeleteRequest {
+export interface PackageChangeRequest {
   id: string;
+  action: PackageAction;
   status: "pending" | "approved";
   reason: string;
   requestedBy: string;

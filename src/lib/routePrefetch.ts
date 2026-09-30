@@ -7,7 +7,7 @@ import { getTransactionsSummary } from "@/lib/api/transactions";
 import { getExpenseSummary, listExpenses } from "@/lib/api/expenses";
 import { getStaffSummary, listStaff } from "@/lib/api/staff";
 import { getMaterialsSummary, listMaterials } from "@/lib/api/materials";
-import { listPackageActionRequests, listServices } from "@/lib/api/services";
+import { listServices } from "@/lib/api/services";
 import { listRefundRequests } from "@/lib/api/refunds";
 import { listSalaryPayments } from "@/lib/api/salaryPayments";
 import { isNavGroup, type NavItem } from "@/config/navigation";
@@ -102,18 +102,6 @@ const BY_SECTION: Record<string, Prefetch> = {
     void client.prefetchQuery({
       queryKey: queryKeys.salaryPayments.list(params),
       queryFn: () => listSalaryPayments(params),
-    });
-  },
-  "package-requests": (client) => {
-    const params = {
-      status: "pending" as const,
-      excludeAction: "delete" as const,
-      page: 1,
-      pageSize: 10,
-    };
-    void client.prefetchQuery({
-      queryKey: queryKeys.packageActionRequests.list(params),
-      queryFn: () => listPackageActionRequests(params),
     });
   },
   // MaterialListView

@@ -2,7 +2,18 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async redirects() {
+    return [
+      // The Package Requests page was folded into Services, where each
+      // request is decided from its package's own row. Notifications sent
+      // before that still link here, so send them to where the request is.
+      {
+        source: "/admin/package-requests",
+        destination: "/admin/services",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default withSentryConfig(nextConfig, {

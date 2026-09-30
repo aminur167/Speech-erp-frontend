@@ -13,7 +13,6 @@ import { useAuthStore } from "@/store/authStore";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { useBranches } from "@/hooks/branches/useBranches";
 import { usePendingPackageCount } from "@/hooks/services/usePendingPackageCount";
-import { usePendingPackageActionCount } from "@/hooks/services/usePendingPackageActionCount";
 import { usePendingSalaryPaymentCount } from "@/hooks/salaryPayments/usePendingSalaryPaymentCount";
 
 function collectHrefs(items: NavItem[]): string[] {
@@ -176,14 +175,13 @@ export function Sidebar({
 
   // Packages and salary payments awaiting Admin review, each shown as a
   // notification-style badge on their own nav item — independent of
-  // whatever page is currently open.
+  // whatever page is currently open. The Services count covers proposed
+  // packages and every Manager request to change one, all decided there.
   const { data: pendingPackageCount } = usePendingPackageCount(user?.role === "admin");
   const { data: pendingSalaryPaymentCount } = usePendingSalaryPaymentCount(user?.role === "admin");
-  const { data: pendingPackageActionCount } = usePendingPackageActionCount(user?.role === "admin");
   const badges: Record<string, number> = {
     ...(pendingPackageCount ? { "/admin/services": pendingPackageCount } : {}),
     ...(pendingSalaryPaymentCount ? { "/admin/salary-approvals": pendingSalaryPaymentCount } : {}),
-    ...(pendingPackageActionCount ? { "/admin/package-requests": pendingPackageActionCount } : {}),
   };
 
   return (

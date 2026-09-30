@@ -10,10 +10,20 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ActionMenu, type ActionMenuItem } from "@/components/ui/ActionMenu";
-import type { PackageAction, PackageActionRequest, Service } from "@/types/domain";
+import { CHANGE_ACTION_LABEL } from "@/components/services/PackageStatusBadge";
+import type {
+  PackageAction,
+  PackageActionRequest,
+  PackageChangeRequest,
+  Service,
+} from "@/types/domain";
 
-/** Admin approving or rejecting a Manager's request to delete a package. */
-export type DeleteDecision = (service: Service, mode: "approve" | "reject") => void;
+/** Admin approving or rejecting one of a Manager's requests to change a package. */
+export type RequestDecision = (
+  service: Service,
+  request: PackageChangeRequest,
+  mode: "approve" | "reject",
+) => void;
 
 /** What the Manager's menu needs to know about requests to Admin. */
 export interface ManagerPackageRequests {
@@ -28,7 +38,9 @@ export interface ManagerPackageRequests {
  * the table row — written once so the two layouts can't drift apart.
  *
  * - **Admin** acts directly: pending gets Approve/Reject, rejected gets a
- *   cleanup Remove, a live package gets Edit / (de)activate / Delete.
+ *   cleanup Remove, a live package gets Edit / (de)activate / Delete. A
+ *   package a Manager has asked to change offers only Approve/Reject for
+ *   that request until it is decided.
  * - **Manager** gets the same Edit / (de)activate / Delete on their branch's
  *   live packages, but each one goes through Admin first. Every item shows
  *   where that stands: *Request to edit…* when nothing has been asked,
@@ -46,7 +58,7 @@ export function PackageActions({
   isApproving,
   isToggling,
   managerRequests,
-  onDecideDelete,
+  onDecideRequest,
 }: {
   service: Service;
   canManage: boolean;
@@ -61,8 +73,8 @@ export function PackageActions({
   compact?: boolean;
   /** Set on the Manager's catalog: changes are requested from Admin first. */
   managerRequests?: ManagerPackageRequests;
-  /** Admin's catalog: decide a Manager's request to delete this package. */
-  onDecideDelete?: DeleteDecision;
+  /** Admin's catalog: decide a Manager's request to change this package. */
+  onDecideRequest?: RequestDecision;
 }) {
   if (!canManage) {
     // A Manager can only change a live package; their own proposals are
@@ -91,26 +103,34 @@ export function PackageActions({
 
   let items: ActionMenuItem[];
 
-  if (service.deleteRequest?.status === "pending" && onDecideDelete) {
-    // A Manager is waiting to hear whether they may delete this package: the
-    // decision is the only thing to do with it until it is made.
-    items = [
-      {
-        key: "approve-delete",
-        label: "Approve delete",
-        icon: Check,
-        hint: "The Manager may then delete it, once",
-        onSelect: () => onDecideDelete(service, "approve"),
-      },
-      {
-        key: "reject-delete",
-        label: "Reject delete",
-        icon: XIcon,
-        tone: "danger",
-        hint: "Keeps the package available",
-        onSelect: () => onDecideDelete(service, "reject"),
-      },
-    ];
+  const pendingRequests = (service.changeRequests ?? []).filter(
+    (request) => request.status === "pending",
+  );
+
+  if (pendingRequests.length > 0 && onDecideRequest) {
+    // A Manager is waiting to hear whether they may change this package: the
+    // decision is the only thing to do with it until it is made. One
+    // Approve/Reject pair per request, newest first.
+    items = pendingRequests.flatMap((request) => {
+      const verb = CHANGE_ACTION_LABEL[request.action].toLowerCase();
+      return [
+        {
+          key: `approve-${request.id}`,
+          label: `Approve ${verb}`,
+          icon: Check,
+          hint: `The Manager may then ${verb} it, once`,
+          onSelect: () => onDecideRequest(service, request, "approve"),
+        },
+        {
+          key: `reject-${request.id}`,
+          label: `Reject ${verb}`,
+          icon: XIcon,
+          tone: "danger" as const,
+          hint: "Nothing changes; the package stays as it is",
+          onSelect: () => onDecideRequest(service, request, "reject"),
+        },
+      ];
+    });
   } else if (service.reviewStatus === "pending") {
     items = [
       {

@@ -18,7 +18,6 @@ import {
   Undo2,
   Users,
   Banknote,
-  ShieldCheck,
 } from "lucide-react";
 
 export interface NavLink {
@@ -100,7 +99,6 @@ export const adminNav: NavItem[] = [
   { label: "Branches", href: "/admin/branches", icon: Building2 },
   { label: "Patients", href: "/admin/patients", icon: UserPlus },
   { label: "Services", href: "/admin/services", icon: ClipboardList },
-  { label: "Package Requests", href: "/admin/package-requests", icon: ShieldCheck },
   { label: "Appointments", href: "/admin/appointments", icon: CalendarClock },
   { label: "Expenses", href: "/admin/expenses", icon: Receipt },
   { label: "Transactions", href: "/admin/transactions", icon: History },
