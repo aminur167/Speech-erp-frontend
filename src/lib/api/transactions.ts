@@ -236,8 +236,6 @@ export interface BranchSummary {
   totalPatients: number;
   expenseCount: number;
   refundCount: number;
-  closingsSubmitted: number;
-  closingsMismatched: number;
   byMethod: BranchSummaryRow[];
   byCategory: BranchSummaryRow[];
 }
@@ -287,8 +285,6 @@ export async function getBranchSummary(params: {
     totalPatients: Number(data.totalPatients ?? 0),
     expenseCount: Number(data.expenseCount ?? 0),
     refundCount: Number(data.refundCount ?? 0),
-    closingsSubmitted: Number(data.closingsSubmitted ?? 0),
-    closingsMismatched: Number(data.closingsMismatched ?? 0),
     byMethod: rows(data.byMethod, "method"),
     byCategory: rows(data.byCategory, "category"),
   };
