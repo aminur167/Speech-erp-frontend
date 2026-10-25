@@ -53,6 +53,14 @@ export interface Patient {
   nationalId?: string;
   notes?: string;
   status: PatientStatus;
+  /**
+   * Created at the Sell Materials counter from a name and phone alone, so the
+   * sale and its receipt carry a name without putting the full registration
+   * form in front of the manager. The registration fields are genuinely empty
+   * on these, not filled with placeholders. Clears itself once someone
+   * completes the details (docs/02).
+   */
+  isWalkIn: boolean;
   branchId: string;
   createdAt: string;
   /** Derived, never stored — "overdue" when any active enrollment/plan has an unpaid bill past its due date (docs/05). */

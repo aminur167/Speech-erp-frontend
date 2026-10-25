@@ -172,7 +172,10 @@ export function SellMaterialsView() {
       return;
     }
     createPatient.mutate(
-      { name, phone, idempotencyKey: generateIdempotencyKey() },
+      // isWalkIn is what makes name+phone sufficient -- without it the
+      // server demands date of birth, gender and address, and the sale
+      // cannot be completed at the counter at all.
+      { name, phone, isWalkIn: true, idempotencyKey: generateIdempotencyKey() },
       {
         onSuccess: (patient) => {
           setSelectedPatient(patient);

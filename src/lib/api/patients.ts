@@ -48,6 +48,13 @@ export interface CreatePatientInput {
   chiefComplaint?: string;
   nationalId?: string;
   notes?: string;
+  /**
+   * Opt into the counter's reduced rules: name and phone are enough, and the
+   * record is marked as a walk-in. Without this the server applies the full
+   * registration requirements, which is what the Sell Materials checkout used
+   * to trip over.
+   */
+  isWalkIn?: boolean;
   /** Offline-queue replay support (docs/00) — generated once, when the manager submits. */
   idempotencyKey?: string;
 }
