@@ -43,6 +43,12 @@ export function useDraftAutosave<T extends FieldValues>(
         window.localStorage.removeItem(storageKey);
         return;
       }
+      // Reading localStorage can only happen after mount: a lazy useState
+      // initializer would run during SSR, where `window` does not exist, and
+      // produce a hydration mismatch when it did. So this is the documented
+      // exception to the rule rather than a cascading-render bug -- it runs
+      // once, and only when a valid draft is actually found.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAvailableDraft(parsed);
     } catch {
       window.localStorage.removeItem(storageKey);
