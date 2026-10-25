@@ -6,6 +6,7 @@ import {
   Check,
   Minus,
   Plus,
+  History,
   ShoppingCart,
   Trash2,
   PackageSearch,
@@ -19,11 +20,13 @@ import { Input } from "@/components/ui/Input";
 import { SearchField } from "@/components/ui/SearchField";
 import { Badge } from "@/components/ui/Badge";
 import { Drawer } from "@/components/ui/Drawer";
+import { Modal } from "@/components/ui/Modal";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { MaterialThumb } from "@/components/materials/MaterialThumb";
 import { PatientSearchInput } from "@/components/patients/PatientSearchInput";
 import { PaymentMethodSelector } from "@/components/payments/PaymentMethodSelector";
 import { Receipt } from "@/components/payments/Receipt";
+import { SellHistoryTable } from "@/components/sales/SellHistoryTable";
 import { useMaterials } from "@/hooks/materials/useMaterials";
 import { usePatients } from "@/hooks/patients/usePatients";
 import { useCreatePatient } from "@/hooks/patients/useCreatePatient";
@@ -75,6 +78,7 @@ export function SellMaterialsView() {
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [payment, setPayment] = useState<Payment | null>(null);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isWalkInMode, setIsWalkInMode] = useState(false);
   const [walkInName, setWalkInName] = useState("");
   const [walkInPhone, setWalkInPhone] = useState("");
@@ -227,6 +231,15 @@ export function SellMaterialsView() {
       <PageHeader
         title="Sell Materials"
         action={
+          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsHistoryOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text-primary shadow-sm transition-colors hover:border-primary/40 hover:bg-primary-light/60"
+          >
+            <History className="h-4 w-4" />
+            Sell History
+          </button>
           <button
             type="button"
             onClick={() => setIsCartOpen(true)}
@@ -240,6 +253,7 @@ export function SellMaterialsView() {
               </span>
             )}
           </button>
+          </div>
         }
       />
 
@@ -635,6 +649,20 @@ export function SellMaterialsView() {
           />
         )}
       </Drawer>
+
+      {/* Wider than the default modal: this one holds a table, and the
+          product column needs room before it starts wrapping every line. */}
+      <Modal
+        open={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        title="Sell History"
+        description="Everything sold at this counter, newest first."
+        className="max-w-5xl"
+      >
+        <div className="mt-5">
+          <SellHistoryTable />
+        </div>
+      </Modal>
     </div>
   );
 }

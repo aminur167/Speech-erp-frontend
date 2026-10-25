@@ -102,6 +102,7 @@ export const adminNav: NavItem[] = [
   { label: "Appointments", href: "/admin/appointments", icon: CalendarClock },
   { label: "Expenses", href: "/admin/expenses", icon: Receipt },
   { label: "Transactions", href: "/admin/transactions", icon: History },
+  { label: "Sell History", href: "/admin/sell-history", icon: ShoppingCart },
   { label: "Refund Approvals", href: "/admin/refund-approvals", icon: Undo2 },
   { label: "Salary Approvals", href: "/admin/salary-approvals", icon: Banknote },
   { label: "Reports", href: "/admin/reports", icon: BarChart3 },
