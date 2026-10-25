@@ -70,6 +70,39 @@ export interface Patient {
   overdueSince: string | null;
 }
 
+export interface MaterialSaleLine {
+  material: number;
+  name: string;
+  quantity: number;
+  unitPrice: string;
+  lineTotal: string;
+}
+
+/**
+ * One row of Sell History — a completed counter sale, with its buyer and its
+ * product lines denormalised onto it by the server.
+ *
+ * `isWalkIn` decides whether the row offers Edit: a counter buyer's name and
+ * phone can be corrected here, a registered patient's belong to their own
+ * profile and the server refuses to change them from this screen.
+ */
+export interface MaterialSale {
+  id: string;
+  receiptNumber: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  isWalkIn: boolean;
+  branchId: string;
+  branchName: string;
+  method: PaymentMethod;
+  /** Decimal string from the server — never parsed into a float for display. */
+  total: string;
+  soldBy: string;
+  soldAt: string;
+  items: MaterialSaleLine[];
+}
+
 export type ServiceCategory = "daily" | "monthly" | "installment" | "online";
 
 export interface Service {
