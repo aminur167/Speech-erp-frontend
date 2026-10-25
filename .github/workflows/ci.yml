@@ -1,0 +1,48 @@
+name: CI
+
+# The frontend's counterpart to the backend's suite. There are no unit tests
+# here yet, so these three are what stands between a broken change and a
+# Vercel deploy: the types, the lint rules, and whether it builds at all.
+# Vercel builds on push too, but a failure there has already reached the
+# clinic's site -- this fails on the pull request instead.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Matches the Node 24 the app is developed against.
+          node-version: "24"
+          cache: "npm"
+
+      # `npm ci` rather than `npm install`: it installs exactly what
+      # package-lock.json pins and fails if the two have drifted, so CI tests
+      # the dependency tree a deploy will actually get.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      # Last, because it is the slowest and the one most likely to be made
+      # redundant by a failure above.
+      - name: Build
+        # The build reads NEXT_PUBLIC_API_BASE_URL at compile time. Nothing
+        # here talks to a real backend -- pages are only prerendered -- so a
+        # placeholder keeps the step honest without wiring a secret to it.
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api
+        run: npm run build
