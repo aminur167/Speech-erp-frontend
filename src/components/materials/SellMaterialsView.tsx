@@ -66,7 +66,11 @@ export function SellMaterialsView() {
 
   const { data: materials, isLoading } = useMaterials(branchId);
   const sellMaterials = useSellMaterials();
-  const createPatient = useCreatePatient();
+  // Not "Patient registered." -- a walk-in buyer is not taken onto the
+  // clinic's books, and saying so would contradict the record being created.
+  const createPatient = useCreatePatient({
+    successMessage: "Walk-in customer added.",
+  });
 
   const [catalogSearch, setCatalogSearch] = useState("");
   const [unitFilter, setUnitFilter] = useState<MaterialUnit | "all">("all");
