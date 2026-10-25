@@ -31,6 +31,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # `LayoutProps`, `PageProps` and friends are types Next generates
+      # into .next/types from the route files; they do not exist in a
+      # fresh checkout. Without this, tsc fails on app/layout.tsx alone
+      # while passing on any machine that has run the app once.
+      - name: Generate route types
+        run: npx next typegen
+
       - name: Type check
         run: npx tsc --noEmit
 
