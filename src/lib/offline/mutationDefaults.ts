@@ -130,6 +130,8 @@ export function registerOfflineMutationDefaults(queryClient: QueryClient): void 
   });
 
   queryClient.setMutationDefaults(["collectDuePayment"], {
+    // `collectDuePayment` takes the whole input object, so a discount given
+    // while offline is already carried in `variables` and replays with it.
     mutationFn: collectDuePayment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.duePayments.all });

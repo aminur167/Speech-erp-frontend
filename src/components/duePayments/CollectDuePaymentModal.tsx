@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
 import { PaymentMethodSelector } from "@/components/payments/PaymentMethodSelector";
 import { Receipt } from "@/components/payments/Receipt";
 import { useCollectDuePayment } from "@/hooks/duePayments/useCollectDuePayment";
@@ -32,10 +33,15 @@ export function CollectDuePaymentModal({
   const branchName = useCurrentBranchName();
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [amount, setAmount] = useState("");
+  const [discountText, setDiscountText] = useState("");
+  const [discountReason, setDiscountReason] = useState("");
   // A list, not one: an advance mints one payment per month so each keeps
   // its own receipt, and collapsing them into a single synthetic receipt
   // would throw away the thing that makes an advance auditable.
   const [payments, setPayments] = useState<Payment[]>([]);
+  // A bill discounted to nothing is collected but produces no payment, so
+  // `payments` stays empty and something else has to say the work is done.
+  const [settled, setSettled] = useState(false);
   // Closed until the manager reaches for it, so the default behaviour is
   // exactly what it was: collect this month and nothing else.
   const [takingAdvance, setTakingAdvance] = useState(false);
@@ -64,6 +70,28 @@ export function CollectDuePaymentModal({
         : [...current, month],
     );
 
+  // Monthly bills only, and not while an advance is being taken: an advance
+  // mints one payment per month and a single discount box could not say
+  // which month it came off (confirmed 2026-10-26).
+  const canDiscount = isMonthly && !takingAdvance;
+  const discount = discountText.trim() === "" ? 0 : Number(discountText);
+  const validDiscount = canDiscount && Number.isFinite(discount) ? discount : 0;
+  const payable = Math.max(0, (item?.amount ?? 0) - validDiscount);
+
+  const discountError = (() => {
+    if (!canDiscount || discountText.trim() === "") return "";
+    if (!Number.isFinite(discount) || discount < 0) return "Enter a discount of 0 or more.";
+    if (item && discount > item.amount) {
+      return `The discount cannot be more than the amount due (${formatCurrency(item.amount)}).`;
+    }
+    return "";
+  })();
+
+  const discountReasonError =
+    validDiscount > 0 && !discountReason.trim()
+      ? "Say why the discount is being given."
+      : "";
+
   const amountError = (() => {
     if (amount.trim() === "") return "";
     const value = Number(amount);
@@ -73,15 +101,18 @@ export function CollectDuePaymentModal({
 
   const handleClose = () => {
     setPayments([]);
+    setSettled(false);
     setMethod("cash");
     setAmount("");
+    setDiscountText("");
+    setDiscountReason("");
     setTakingAdvance(false);
     setSelectedMonths([]);
     onClose();
   };
 
   const handleConfirm = () => {
-    if (!user || !item || amountError) return;
+    if (!user || !item || amountError || discountError || discountReasonError) return;
 
     if (isAdvance) {
       collectAdvance.mutate(
@@ -106,8 +137,15 @@ export function CollectDuePaymentModal({
         // Blank means the full scheduled amount, which the server defaults to.
         amount:
           item.type === "installment" && amount.trim() !== "" ? Number(amount) : undefined,
+        discount: validDiscount,
+        discountReason: validDiscount > 0 ? discountReason.trim() : "",
       },
-      { onSuccess: (createdPayment) => setPayments([createdPayment]) },
+      {
+        // Null when the discount covered the whole bill — settled, with
+        // nothing to receipt. `settled` then stands in for the receipt.
+        onSuccess: (createdPayment) =>
+          createdPayment ? setPayments([createdPayment]) : setSettled(true),
+      },
     );
   };
 
@@ -115,12 +153,14 @@ export function CollectDuePaymentModal({
     <Modal
       open={Boolean(item)}
       onClose={handleClose}
-      title={payments.length > 0 ? "Payment Collected" : "Collect Payment"}
+      title={payments.length > 0 || settled ? "Payment Collected" : "Collect Payment"}
       description={
-        item && payments.length === 0 ? `${item.patientName} — ${item.label}` : undefined
+        item && payments.length === 0 && !settled
+          ? `${item.patientName} — ${item.label}`
+          : undefined
       }
     >
-      {item && payments.length === 0 && (
+      {item && payments.length === 0 && !settled && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2 rounded-lg border border-border bg-background p-4 text-sm">
             <div className="flex justify-between">
@@ -152,11 +192,69 @@ export function CollectDuePaymentModal({
             )}
             <div className="flex justify-between border-t border-border pt-2">
               <span className="text-text-secondary">Amount Due</span>
-              <span className="text-lg font-semibold text-primary-dark">
+              <span
+                className={
+                  validDiscount > 0 && !discountError
+                    ? "text-text-primary tabular-nums"
+                    : "text-lg font-semibold text-primary-dark"
+                }
+              >
                 {formatCurrency(item.amount)}
               </span>
             </div>
+            {canDiscount && validDiscount > 0 && !discountError && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Discount</span>
+                  <span className="tabular-nums text-text-primary">
+                    − {formatCurrency(validDiscount)}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-border pt-2">
+                  <span className="font-medium text-text-primary">Paying now</span>
+                  <span className="text-lg font-semibold tabular-nums text-primary-dark">
+                    {formatCurrency(payable)}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
+
+          {/* Monthly only, and hidden while an advance is being taken — see
+              `canDiscount`. */}
+          {canDiscount && (
+            <div className="flex flex-col gap-3">
+              <Input
+                label="Discount (৳)"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                max={item.amount}
+                step="0.01"
+                placeholder="0"
+                value={discountText}
+                onChange={(event) => setDiscountText(event.target.value)}
+                error={discountError}
+              />
+              {validDiscount > 0 && (
+                <Textarea
+                  label="Reason for discount"
+                  requiredMark
+                  rows={2}
+                  placeholder="e.g. Attended only half the month"
+                  value={discountReason}
+                  onChange={(event) => setDiscountReason(event.target.value)}
+                  error={discountReasonError}
+                />
+              )}
+              {!discountError && validDiscount > 0 && payable === 0 && (
+                <p className="text-xs text-text-secondary">
+                  The whole month is discounted — the bill is settled with no
+                  payment and no receipt.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Installments only: a monthly bill is due in full by the 5th, so
               there's no partial figure to take there. */}
@@ -243,7 +341,9 @@ export function CollectDuePaymentModal({
             </div>
           )}
 
-          <PaymentMethodSelector value={method} onChange={setMethod} />
+          {/* Nothing changes hands when the discount covers the bill, so
+              there is no method to pick. */}
+          {payable > 0 && <PaymentMethodSelector value={method} onChange={setMethod} />}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={handleClose}>
               Cancel
@@ -252,15 +352,27 @@ export function CollectDuePaymentModal({
               onClick={handleConfirm}
               isLoading={collectPayment.isPending || collectAdvance.isPending}
               disabled={
-                Boolean(amountError) ||
+                Boolean(amountError || discountError || discountReasonError) ||
                 (takingAdvance && (blockedByArrears || selectedMonths.length === 0))
               }
             >
               {isAdvance && advancePreview
                 ? `Collect ${formatCurrency(advancePreview.total)}`
-                : "Confirm Payment"}
+                : payable === 0 && validDiscount > 0
+                  ? "Settle with no payment"
+                  : "Confirm Payment"}
             </Button>
           </div>
+        </div>
+      )}
+
+      {item && settled && payments.length === 0 && (
+        <div className="flex flex-col gap-4">
+          <p className="rounded-lg border border-border bg-background p-4 text-sm text-text-primary">
+            {item.label} is settled for {item.patientName}. The whole amount was
+            discounted, so no payment was taken and there is no receipt.
+          </p>
+          <Button onClick={handleClose}>Done</Button>
         </div>
       )}
 

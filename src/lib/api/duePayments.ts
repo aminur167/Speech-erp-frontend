@@ -143,6 +143,17 @@ export interface CollectDuePaymentInput {
    * nothing (the confirmed rule is full payment by the 5th).
    */
   amount?: number;
+  /**
+   * Monthly bills only — a discount given at the desk as the bill is
+   * collected, the same thing the enrollment wizard's First Month step
+   * does. Any discount needs a reason.
+   *
+   * Deliberately not offered on installments: those already have the
+   * partial `amount` above, which carries the shortfall into the later
+   * installments rather than forgiving it, and the two tools would fight.
+   */
+  discount?: number;
+  discountReason?: string;
 }
 
 /**
@@ -151,18 +162,20 @@ export interface CollectDuePaymentInput {
  * collecting the first payment of a fresh enrollment go through identical,
  * already-tested backend logic.
  */
-export async function collectDuePayment(input: CollectDuePaymentInput): Promise<Payment> {
+export async function collectDuePayment(
+  input: CollectDuePaymentInput,
+): Promise<Payment | null> {
   if (input.item.type === "monthly") {
     const { payment } = await payMonthlyBill(
-      input.item.refId, input.item.itemId, input.method, input.idempotencyKey,
+      input.item.refId,
+      input.item.itemId,
+      input.method,
+      input.idempotencyKey,
+      input.discount,
+      input.discountReason,
     );
-    // pay-bill returns no payment only when a discount covers the whole
-    // bill, and this screen gives no discount -- it collects what is owed.
-    // Guarded rather than cast: if that ever stops being true, this says so
-    // instead of handing the caller an undefined receipt to render.
-    if (!payment) {
-      throw new Error("The bill was settled without a payment to receipt.");
-    }
+    // Null when a discount covered the whole bill: it is settled with no
+    // money and so no receipt. The caller shows that rather than a receipt.
     return payment;
   }
   const { payment } = await payInstallment(
