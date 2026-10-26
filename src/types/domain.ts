@@ -297,11 +297,15 @@ export interface MonthlyBill {
   id: string;
   month: string; // e.g. "2026-08"
   label: string; // e.g. "August 2026", or "Admission — August 2026"
-  /** "admission": the enrollment month, charged at the package's admit fee. */
+  /**
+   * "admission" is the one-time joining charge. The enrollment month carries
+   * one of each: the admission, and that month's own "monthly" fee, billed
+   * separately and collected separately.
+   */
   kind: "admission" | "monthly";
-  /** Admission bills: `amount` is the admit fee less `discountAmount`. */
+  /** Already net of `discountAmount` — what is actually owed. */
   amount: number;
-  /** Admission bills only: the admit fee before any discount. */
+  /** The charge before any discount, when one was given. */
   grossAmount?: number;
   discountAmount: number;
   discountReason?: string;

@@ -63,6 +63,14 @@ export interface EnrollMonthlyInput {
   /** Taken off the admit fee. Any discount needs `discountReason`. */
   discount?: number;
   discountReason?: string;
+  /**
+   * Taken off the enrollment month's own fee, which is billed separately
+   * from the admit fee. Its own reason is required if it is non-zero — the
+   * two discounts are independent and the server checks each against the
+   * charge it comes off.
+   */
+  monthDiscount?: number;
+  monthDiscountReason?: string;
   idempotencyKey?: string;
 }
 
@@ -72,13 +80,22 @@ export interface EnrollMonthlyResult {
   payment: Payment | null;
 }
 
+/** The enrollment month's own fee — the bill left `due` for the next step. */
+export function firstMonthBill(enrollment: MonthlyEnrollment) {
+  return enrollment.bills.find((bill) => bill.kind === "monthly") ?? null;
+}
+
 /**
- * Enroll and pay the admit fee in one atomic call. There is no enroll-only
- * request any more: an enrollment made first and paid later is how an
- * abandoned screen left an unpaid first month behind.
+ * Enroll and pay **the admit fee** in one atomic call. There is no
+ * enroll-only request: an enrollment made first and paid later is how an
+ * abandoned screen left an unpaid admission behind.
  *
- * No amount: the server prices the admission from the package's own admit
- * fee and checks the discount against it.
+ * The enrollment month's own fee is billed here as a second, separate bill
+ * but deliberately **not** collected — the caller settles it next through
+ * `payMonthlyBill`, or skips it and it appears on Due Payments.
+ *
+ * No amounts: the server prices both charges from the package itself and
+ * checks each discount against the charge it comes off.
  */
 export async function enrollMonthly(input: EnrollMonthlyInput): Promise<EnrollMonthlyResult> {
   const { data } = await apiClient.post<{ enrollment: RawEnrollment; payment: RawPayment | null }>(
@@ -89,6 +106,8 @@ export async function enrollMonthly(input: EnrollMonthlyInput): Promise<EnrollMo
       method: input.method,
       discount: input.discount ?? 0,
       discountReason: input.discountReason ?? "",
+      monthDiscount: input.monthDiscount ?? 0,
+      monthDiscountReason: input.monthDiscountReason ?? "",
       idempotencyKey: input.idempotencyKey,
     },
   );
@@ -99,7 +118,8 @@ export async function enrollMonthly(input: EnrollMonthlyInput): Promise<EnrollMo
 }
 
 export interface PayMonthlyBillResult {
-  payment: Payment;
+  /** Null when a discount covered the whole bill. */
+  payment: Payment | null;
   enrollment: MonthlyEnrollment;
 }
 
@@ -113,13 +133,23 @@ export async function payMonthlyBill(
   billId: string,
   method: string,
   idempotencyKey?: string,
+  /** Given at the desk as the bill is collected. Any discount needs a reason. */
+  discount?: number,
+  discountReason?: string,
 ): Promise<PayMonthlyBillResult> {
-  const { data } = await apiClient.post<{ payment: RawPayment; enrollment: RawEnrollment }>(
-    `/enrollments/monthly/${enrollmentId}/bills/${billId}/pay/`,
-    { method, idempotencyKey },
-  );
+  const { data } = await apiClient.post<{
+    payment: RawPayment | null;
+    enrollment: RawEnrollment;
+  }>(`/enrollments/monthly/${enrollmentId}/bills/${billId}/pay/`, {
+    method,
+    idempotencyKey,
+    discount: discount ?? 0,
+    discountReason: discountReason ?? "",
+  });
   return {
-    payment: normalizePayment(data.payment),
+    // Null when a discount covered the whole bill — settled with no money
+    // and no receipt, the same as a fully discounted admission.
+    payment: data.payment ? normalizePayment(data.payment) : null,
     enrollment: normalizeEnrollment(data.enrollment),
   };
 }
