@@ -661,7 +661,7 @@ export function SellMaterialsView() {
         onClose={() => setIsHistoryOpen(false)}
         title="Sell History"
         description="Everything sold at this counter, newest first."
-        className="max-w-5xl"
+        size="xl"
       >
         <div className="mt-5">
           <SellHistoryTable />

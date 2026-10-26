@@ -94,8 +94,12 @@ export function SellHistoryTable({ showBranch = false }: { showBranch?: boolean 
         />
       ) : (
         <>
+          {/* The floor is what keeps the columns from crushing on a narrow
+              screen, not a target width -- measured at 685px for the five
+              Manager columns, so 640 leaves headroom without forcing a
+              scrollbar on a tablet that could have fitted the table. */}
           <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="border-b border-border bg-background/60 text-left">
                 <tr className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
                   <th scope="col" className="px-4 py-3">Customer</th>

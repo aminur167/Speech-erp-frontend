@@ -4,6 +4,23 @@ import { useEffect, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { clsx } from "clsx";
 
+/**
+ * How wide the dialog may grow.
+ *
+ * A prop rather than a `max-w-*` passed through `className`, because that
+ * silently did not work: `clsx` concatenates, it does not resolve Tailwind
+ * conflicts, so the default below and the caller's class both landed on the
+ * element and the winner came down to which one Tailwind happened to emit
+ * last. `max-w-xl` beat the default; `max-w-2xl` and `max-w-5xl` lost to it,
+ * leaving those dialogs stuck at the default width with no sign anything was
+ * wrong. One class, chosen here, removes the coin toss.
+ */
+const SIZE_CLASSES = {
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+  xl: "max-w-5xl",
+} as const;
+
 export function Modal({
   open,
   onClose,
@@ -11,6 +28,7 @@ export function Modal({
   description,
   children,
   className,
+  size = "md",
   dismissible = true,
 }: {
   open: boolean;
@@ -19,6 +37,8 @@ export function Modal({
   description?: string;
   children: ReactNode;
   className?: string;
+  /** `md` (default) for a form, `xl` for a dialog holding a table. */
+  size?: keyof typeof SIZE_CLASSES;
   /** Set false for a modal guarding data the user shouldn't lose to a stray click — closable only via the X button or an explicit action inside it. */
   dismissible?: boolean;
 }) {
@@ -40,7 +60,8 @@ export function Modal({
     >
       <div
         className={clsx(
-          "w-full max-w-lg rounded-xl border border-border bg-surface p-6 shadow-xl",
+          "w-full rounded-xl border border-border bg-surface p-6 shadow-xl",
+          SIZE_CLASSES[size],
           className,
         )}
         onClick={(event) => event.stopPropagation()}
