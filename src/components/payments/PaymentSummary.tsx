@@ -15,15 +15,16 @@ export function PaymentSummary({ patient, service }: { patient: Patient; service
         <span className="font-medium text-text-primary">{service.name}</span>
       </div>
       {service.category === "monthly" ? (
-        // A monthly package's enrollment month is its admit fee; the monthly
-        // fee only starts the month after.
+        // Joining a monthly package costs the admit fee once, on top of the
+        // enrollment month's own fee — the two are billed and collected
+        // separately (2026-10-26; the admit fee used to replace that month).
         <>
           <div className="flex justify-between">
-            <span className="text-text-secondary">Monthly fee (from next month)</span>
+            <span className="text-text-secondary">Monthly fee (every month, including this one)</span>
             <span className="font-medium text-text-primary">{formatCurrency(service.fee)}</span>
           </div>
           <div className="flex justify-between border-t border-border pt-2">
-            <span className="text-text-secondary">Admit Fee (this month)</span>
+            <span className="text-text-secondary">Admit fee (once, to join)</span>
             <span className="text-lg font-semibold text-primary-dark">
               {formatCurrency(service.admissionFee ?? service.fee)}
             </span>

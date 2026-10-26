@@ -19,6 +19,8 @@ import { Receipt } from "@/components/payments/Receipt";
 import { useServices } from "@/hooks/services/useServices";
 import { usePatients } from "@/hooks/patients/usePatients";
 import { useEnrollMonthly } from "@/hooks/enrollments/useCreateMonthlyEnrollment";
+import { usePayMonthlyBill } from "@/hooks/enrollments/usePayMonthlyBill";
+import { firstMonthBill } from "@/lib/api/monthlyEnrollments";
 import {
   useAdvanceOptions,
   useAdvancePreview,
@@ -40,6 +42,7 @@ type Step =
   | "enroll"
   | "bills"
   | "payment"
+  | "firstMonth"
   | "advance"
   | "receipt";
 
@@ -49,6 +52,7 @@ const STEP_ORDER: Step[] = [
   "enroll",
   "bills",
   "payment",
+  "firstMonth",
   "advance",
   "receipt",
 ];
@@ -56,8 +60,9 @@ const STEP_LABELS: Record<Step, string> = {
   service: "Select Service",
   patient: "Search Patient",
   enroll: "Create Enrollment",
-  bills: "View Current Bill",
-  payment: "Current Month Payment",
+  bills: "View Current Bills",
+  payment: "Admit Fee",
+  firstMonth: "First Month",
   advance: "Advance Payment",
   receipt: "Receipt",
 };
@@ -77,6 +82,12 @@ export function MonthlyServiceEnrollment() {
   // not rewritten under the manager's cursor; parsed where it is used.
   const [discountText, setDiscountText] = useState("");
   const [discountReason, setDiscountReason] = useState("");
+  // The enrollment month's own discount. Collected on the same screen as the
+  // admit fee's, because the server bills both months in the one enrolling
+  // request -- only the collection of the month happens later.
+  const [monthDiscountText, setMonthDiscountText] = useState("");
+  const [monthDiscountReason, setMonthDiscountReason] = useState("");
+  const [firstMonthPayment, setFirstMonthPayment] = useState<Payment | null>(null);
   // One key per enrollment attempt, kept across retries: a retry after a
   // timeout replays the same request, so the server returns the enrollment
   // it already made instead of enrolling and charging twice.
@@ -90,6 +101,7 @@ export function MonthlyServiceEnrollment() {
     pageSize: 5,
   });
   const enrollAndPay = useEnrollMonthly();
+  const payFirstMonth = usePayMonthlyBill();
   const collectAdvance = useCollectMonthlyAdvance();
 
   // Read as soon as a patient is chosen, so the block is explained on the
@@ -112,11 +124,18 @@ export function MonthlyServiceEnrollment() {
   // the package itself. The server prices the real bill from the same
   // package and checks the discount against it; these figures only explain.
   const currentMonth = toMonthKey();
-  const admissionLabel = `Admission — ${monthKeyLabel(currentMonth)}`;
+  const currentMonthLabel = monthKeyLabel(currentMonth);
+  const admissionLabel = `Admission — ${currentMonthLabel}`;
   const admissionFee = selectedService?.admissionFee ?? selectedService?.fee ?? 0;
   const discount = discountText.trim() === "" ? 0 : Number(discountText);
   const validDiscount = Number.isFinite(discount) ? discount : 0;
   const finalAmount = Math.max(0, admissionFee - validDiscount);
+
+  const monthlyFee = selectedService?.fee ?? 0;
+  const monthDiscount =
+    monthDiscountText.trim() === "" ? 0 : Number(monthDiscountText);
+  const validMonthDiscount = Number.isFinite(monthDiscount) ? monthDiscount : 0;
+  const firstMonthAmount = Math.max(0, monthlyFee - validMonthDiscount);
 
   let discountError: string | undefined;
   if (!Number.isFinite(discount) || discount < 0) {
@@ -124,13 +143,35 @@ export function MonthlyServiceEnrollment() {
   } else if (discount > admissionFee) {
     discountError = `The discount cannot be more than the admit fee (${formatCurrency(admissionFee)}).`;
   }
+
+  let monthDiscountError: string | undefined;
+  if (!Number.isFinite(monthDiscount) || monthDiscount < 0) {
+    monthDiscountError = "Enter a discount of 0 or more.";
+  } else if (monthDiscount > monthlyFee) {
+    monthDiscountError = `The discount cannot be more than the monthly fee (${formatCurrency(monthlyFee)}).`;
+  }
+
+  const monthReasonError =
+    validMonthDiscount > 0 && !monthDiscountReason.trim()
+      ? "Say why the discount is being given."
+      : undefined;
   const reasonError =
     validDiscount > 0 && !discountReason.trim()
       ? "Say why the discount is being given."
       : undefined;
 
   const handleEnrollAndPay = () => {
-    if (!selectedService || !selectedPatient || !user || discountError || reasonError) return;
+    if (
+      !selectedService ||
+      !selectedPatient ||
+      !user ||
+      discountError ||
+      reasonError ||
+      monthDiscountError ||
+      monthReasonError
+    ) {
+      return;
+    }
     const idempotencyKey = enrollKey ?? generateIdempotencyKey();
     setEnrollKey(idempotencyKey);
     enrollAndPay.mutate(
@@ -140,14 +181,37 @@ export function MonthlyServiceEnrollment() {
         method,
         discount: validDiscount,
         discountReason: validDiscount > 0 ? discountReason.trim() : "",
+        monthDiscount: validMonthDiscount,
+        monthDiscountReason:
+          validMonthDiscount > 0 ? monthDiscountReason.trim() : "",
         idempotencyKey,
       },
       {
         onSuccess: ({ enrollment: created, payment: createdPayment }) => {
           setEnrollment(created);
           setPayment(createdPayment);
-          // Straight on to the advance step: the enrollment month is settled,
-          // so months ahead are now allowed. Skipping it is one click.
+          // The admit fee is settled; the month is billed and waiting. It is
+          // its own step because the manager may take it now or leave it.
+          setStep("firstMonth");
+        },
+      },
+    );
+  };
+
+  const handleCollectFirstMonth = () => {
+    const bill = enrollment ? firstMonthBill(enrollment) : null;
+    if (!enrollment || !bill) return;
+    payFirstMonth.mutate(
+      {
+        enrollmentId: enrollment.id,
+        billId: bill.id,
+        method,
+        idempotencyKey: generateIdempotencyKey(),
+      },
+      {
+        onSuccess: ({ payment: collected, enrollment: updated }) => {
+          setFirstMonthPayment(collected);
+          setEnrollment(updated);
           setStep("advance");
         },
       },
@@ -189,6 +253,9 @@ export function MonthlyServiceEnrollment() {
     setPayment(null);
     setDiscountText("");
     setDiscountReason("");
+    setMonthDiscountText("");
+    setMonthDiscountReason("");
+    setFirstMonthPayment(null);
     setEnrollKey(null);
     setAdvanceMonths([]);
     setAdvancePayments([]);
@@ -196,7 +263,7 @@ export function MonthlyServiceEnrollment() {
 
   // Every receipt this enrollment produced. The admit fee has none when it
   // was discounted to nothing.
-  const receipts = [payment, ...advancePayments].filter(
+  const receipts = [payment, firstMonthPayment, ...advancePayments].filter(
     (one): one is Payment => one !== null,
   );
 
@@ -265,7 +332,8 @@ export function MonthlyServiceEnrollment() {
             )}
             <p className="text-sm text-text-secondary">
               The enrollment is created when the admit fee is collected, on the
-              payment step.
+              next step. The first month is billed at the same time and
+              collected after it — or left for later.
             </p>
             <div className="flex gap-2">
               <Button variant="secondary" onClick={() => setStep("patient")}>
@@ -281,17 +349,29 @@ export function MonthlyServiceEnrollment() {
         {step === "bills" && selectedService && (
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-medium text-text-secondary">
-              {selectedService.name} — Admit Fee: {formatCurrency(admissionFee)} · Monthly
-              Fee from next month: {formatCurrency(selectedService.fee)}
+              {selectedService.name} — Admit Fee: {formatCurrency(admissionFee)} ·
+              Monthly Fee: {formatCurrency(selectedService.fee)}
             </h2>
+            <p className="text-sm text-text-secondary">
+              Joining charges the admit fee once, and this month is billed on
+              top of it. Both are collected separately.
+            </p>
             <ScheduleList
               items={[
                 {
-                  key: currentMonth,
+                  key: `${currentMonth}-admission`,
                   label: admissionLabel,
                   amount: admissionFee,
                   amountPaid: 0,
                   outstanding: admissionFee,
+                  status: "due",
+                },
+                {
+                  key: `${currentMonth}-monthly`,
+                  label: currentMonthLabel,
+                  amount: selectedService.fee,
+                  amountPaid: 0,
+                  outstanding: selectedService.fee,
                   status: "due",
                 },
               ]}
@@ -308,7 +388,7 @@ export function MonthlyServiceEnrollment() {
         {step === "payment" && selectedPatient && selectedService && (
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-medium text-text-secondary">
-              Collect payment — {admissionLabel}
+              Collect the admit fee — {admissionLabel}
             </h2>
             <div className="flex flex-col gap-2 rounded-lg border border-border bg-background p-4 text-sm">
               <div className="flex justify-between">
@@ -324,9 +404,18 @@ export function MonthlyServiceEnrollment() {
                 </span>
               </div>
               <div className="flex justify-between border-t border-border pt-2">
-                <span className="font-medium text-text-primary">Final Payment</span>
+                <span className="font-medium text-text-primary">Paying now</span>
                 <span className="text-lg font-semibold tabular-nums text-primary-dark">
                   {formatCurrency(discountError ? admissionFee : finalAmount)}
+                </span>
+              </div>
+              {/* Billed in the same request, collected on the next step. Shown
+                  here so the desk can quote the full joining cost before
+                  taking any money. */}
+              <div className="flex justify-between border-t border-border pt-2 text-text-secondary">
+                <span>{currentMonthLabel} — billed next</span>
+                <span className="tabular-nums">
+                  {formatCurrency(monthDiscountError ? monthlyFee : firstMonthAmount)}
                 </span>
               </div>
             </div>
@@ -361,6 +450,30 @@ export function MonthlyServiceEnrollment() {
               </p>
             )}
 
+            <Input
+              label={`Discount on ${currentMonthLabel} (৳)`}
+              type="number"
+              inputMode="decimal"
+              min={0}
+              max={monthlyFee}
+              step="0.01"
+              placeholder="0"
+              value={monthDiscountText}
+              onChange={(event) => setMonthDiscountText(event.target.value)}
+              error={monthDiscountError}
+            />
+            {validMonthDiscount > 0 && (
+              <Textarea
+                label={`Reason for the ${currentMonthLabel} discount`}
+                requiredMark
+                rows={2}
+                placeholder="e.g. Joined mid-month"
+                value={monthDiscountReason}
+                onChange={(event) => setMonthDiscountReason(event.target.value)}
+                error={monthReasonError}
+              />
+            )}
+
             {finalAmount > 0 && <PaymentMethodSelector value={method} onChange={setMethod} />}
             <div className="flex gap-2">
               <Button variant="secondary" onClick={() => setStep("bills")}>
@@ -369,11 +482,71 @@ export function MonthlyServiceEnrollment() {
               <Button
                 onClick={handleEnrollAndPay}
                 isLoading={enrollAndPay.isPending}
-                disabled={Boolean(discountError || reasonError)}
+                disabled={Boolean(
+                  discountError || reasonError || monthDiscountError || monthReasonError,
+                )}
               >
                 {finalAmount > 0 ? "Confirm Payment & Enroll" : "Confirm & Enroll"}
               </Button>
             </div>
+          </div>
+        )}
+
+        {step === "firstMonth" && enrollment && selectedService && (
+          <div className="flex flex-col gap-4">
+            <h2 className="text-sm font-medium text-text-secondary">
+              Collect {currentMonthLabel} — optional
+            </h2>
+            <p className="text-sm text-text-primary">
+              The admit fee is settled and the patient is enrolled. This month
+              is billed and still owed.
+            </p>
+
+            <div className="flex flex-col gap-2 rounded-lg border border-border bg-background p-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-text-secondary">{currentMonthLabel}</span>
+                <span className="tabular-nums text-text-primary">
+                  {formatCurrency(monthlyFee)}
+                </span>
+              </div>
+              {validMonthDiscount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Discount</span>
+                  <span className="tabular-nums text-text-primary">
+                    − {formatCurrency(validMonthDiscount)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-border pt-2">
+                <span className="font-medium text-text-primary">Amount owed</span>
+                <span className="text-lg font-semibold tabular-nums text-primary-dark">
+                  {formatCurrency(firstMonthBill(enrollment)?.outstanding ?? firstMonthAmount)}
+                </span>
+              </div>
+            </div>
+
+            <PaymentMethodSelector value={method} onChange={setMethod} />
+
+            <div className="flex gap-2">
+              {/* Skipping is simply not collecting it — there is no second
+                  request. The month stays owed and shows up on Due Payments,
+                  which also means the advance step stays shut: arrears block
+                  future months. */}
+              <Button variant="secondary" onClick={() => setStep("receipt")}>
+                Collect later
+              </Button>
+              <Button
+                onClick={handleCollectFirstMonth}
+                isLoading={payFirstMonth.isPending}
+              >
+                Collect {formatCurrency(firstMonthBill(enrollment)?.outstanding ?? firstMonthAmount)}
+              </Button>
+            </div>
+            <p className="text-xs text-text-secondary">
+              Left uncollected, {currentMonthLabel} moves to Due Payment
+              Collection, and advance months cannot be taken until it is
+              cleared.
+            </p>
           </div>
         )}
 
@@ -383,9 +556,9 @@ export function MonthlyServiceEnrollment() {
               Advance Payment — optional
             </h2>
             <p className="text-sm text-text-primary">
-              The enrollment month is settled. Pick any months the patient is paying
-              for now, at the monthly fee. Months left unticked are simply not
-              billed until they arrive.
+              Everything owed so far is settled. Pick any months the patient is
+              paying for now, at the monthly fee. Months left unticked are
+              simply not billed until they arrive.
             </p>
 
             <AdvanceMonthPicker

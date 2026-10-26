@@ -108,11 +108,14 @@ export function ServiceCard({
       </div>
       {service.category === "monthly" && service.admissionFee != null && (
         <p className="-mt-1 text-xs text-text-secondary">
+          {/* "for the first month" until 2026-10-26, when the admit fee
+              stopped replacing that month's fee and became a charge on top
+              of it. */}
           Admit fee{" "}
           <span className="font-medium text-text-primary">
             {formatCurrency(service.admissionFee)}
           </span>{" "}
-          for the first month
+          to join, once
         </p>
       )}
 
