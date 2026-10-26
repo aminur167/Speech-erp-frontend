@@ -14,7 +14,15 @@ import type { StaffMember } from "@/types/domain";
 
 const staffSchema = z.object({
   name: z.string().min(2, "Name is required."),
-  designation: z.enum(["therapist", "receptionist", "accountant", "support_staff", "cleaner", "other"]),
+  designation: z.enum([
+    "therapist",
+    "play_teacher",
+    "receptionist",
+    "accountant",
+    "support_staff",
+    "cleaner",
+    "other",
+  ]),
   phone: z.string().min(6, "Phone number is required."),
   email: z.union([z.string().email("Enter a valid email."), z.literal("")]),
   joinedAt: z.string().min(1, "Join date is required."),
@@ -86,6 +94,7 @@ export function StaffForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Select label="Designation" placeholder="Select a designation" {...register("designation")}>
           <option value="therapist">Therapist</option>
+          <option value="play_teacher">Play Teacher</option>
           <option value="receptionist">Receptionist</option>
           <option value="accountant">Accountant</option>
           <option value="support_staff">Support Staff</option>
