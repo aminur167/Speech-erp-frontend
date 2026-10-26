@@ -7,7 +7,9 @@ import type { Payment } from "@/types/domain";
 export function useCollectDuePayment() {
   const queryClient = useQueryClient();
 
-  return useMutation<Payment, ApiError, CollectDuePaymentInput>({
+  // `Payment | null`: a discount can cover the whole bill, settling it with
+  // no money and no receipt.
+  return useMutation<Payment | null, ApiError, CollectDuePaymentInput>({
     meta: { successMessage: "Payment collected." },
     mutationKey: ["collectDuePayment"],
     mutationFn: collectDuePayment,
