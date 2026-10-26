@@ -407,6 +407,7 @@ export interface MaterialMovement {
 
 export type StaffDesignation =
   | "therapist"
+  | "play_teacher"
   | "receptionist"
   | "accountant"
   | "support_staff"
