@@ -6,11 +6,32 @@ export function usePayMonthlyBill() {
   return useMutation<
     PayMonthlyBillResult,
     ApiError,
-    { enrollmentId: string; billId: string; method: string; idempotencyKey?: string }
+    {
+      enrollmentId: string;
+      billId: string;
+      method: string;
+      idempotencyKey?: string;
+      discount?: number;
+      discountReason?: string;
+    }
   >({
     meta: { successMessage: "Monthly payment collected." },
     mutationKey: ["payMonthlyBill"],
-    mutationFn: ({ enrollmentId, billId, method, idempotencyKey }) =>
-      payMonthlyBill(enrollmentId, billId, method, idempotencyKey),
+    mutationFn: ({
+      enrollmentId,
+      billId,
+      method,
+      idempotencyKey,
+      discount,
+      discountReason,
+    }) =>
+      payMonthlyBill(
+        enrollmentId,
+        billId,
+        method,
+        idempotencyKey,
+        discount,
+        discountReason,
+      ),
   });
 }

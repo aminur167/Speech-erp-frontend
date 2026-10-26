@@ -118,7 +118,8 @@ export async function enrollMonthly(input: EnrollMonthlyInput): Promise<EnrollMo
 }
 
 export interface PayMonthlyBillResult {
-  payment: Payment;
+  /** Null when a discount covered the whole bill. */
+  payment: Payment | null;
   enrollment: MonthlyEnrollment;
 }
 
@@ -132,13 +133,23 @@ export async function payMonthlyBill(
   billId: string,
   method: string,
   idempotencyKey?: string,
+  /** Given at the desk as the bill is collected. Any discount needs a reason. */
+  discount?: number,
+  discountReason?: string,
 ): Promise<PayMonthlyBillResult> {
-  const { data } = await apiClient.post<{ payment: RawPayment; enrollment: RawEnrollment }>(
-    `/enrollments/monthly/${enrollmentId}/bills/${billId}/pay/`,
-    { method, idempotencyKey },
-  );
+  const { data } = await apiClient.post<{
+    payment: RawPayment | null;
+    enrollment: RawEnrollment;
+  }>(`/enrollments/monthly/${enrollmentId}/bills/${billId}/pay/`, {
+    method,
+    idempotencyKey,
+    discount: discount ?? 0,
+    discountReason: discountReason ?? "",
+  });
   return {
-    payment: normalizePayment(data.payment),
+    // Null when a discount covered the whole bill — settled with no money
+    // and no receipt, the same as a fully discounted admission.
+    payment: data.payment ? normalizePayment(data.payment) : null,
     enrollment: normalizeEnrollment(data.enrollment),
   };
 }

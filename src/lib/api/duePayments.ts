@@ -156,6 +156,13 @@ export async function collectDuePayment(input: CollectDuePaymentInput): Promise<
     const { payment } = await payMonthlyBill(
       input.item.refId, input.item.itemId, input.method, input.idempotencyKey,
     );
+    // pay-bill returns no payment only when a discount covers the whole
+    // bill, and this screen gives no discount -- it collects what is owed.
+    // Guarded rather than cast: if that ever stops being true, this says so
+    // instead of handing the caller an undefined receipt to render.
+    if (!payment) {
+      throw new Error("The bill was settled without a payment to receipt.");
+    }
     return payment;
   }
   const { payment } = await payInstallment(

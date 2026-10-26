@@ -50,7 +50,20 @@ export function registerOfflineMutationDefaults(queryClient: QueryClient): void 
       billId: string;
       method: string;
       idempotencyKey?: string;
-    }) => payMonthlyBill(vars.enrollmentId, vars.billId, vars.method, vars.idempotencyKey),
+      // Carried through for the same reason the installment amount is: a
+      // discount given at the desk while offline has to replay with the
+      // collection, or the bill syncs at its undiscounted figure.
+      discount?: number;
+      discountReason?: string;
+    }) =>
+      payMonthlyBill(
+        vars.enrollmentId,
+        vars.billId,
+        vars.method,
+        vars.idempotencyKey,
+        vars.discount,
+        vars.discountReason,
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.duePayments.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });

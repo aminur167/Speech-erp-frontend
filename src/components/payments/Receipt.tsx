@@ -9,11 +9,37 @@ import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/utils/currency";
 import type { Payment } from "@/types/domain";
 
+/**
+ * One charge on a receipt that covers several.
+ *
+ * `months` is for the advance line, which is one line standing for several
+ * payments — the months it bought are listed under it so the patient can see
+ * what they paid ahead for.
+ */
+export interface ReceiptLine {
+  label: string;
+  amount: number;
+  months?: string[];
+  /** The receipt number of the payment this line came from, if there is one. */
+  receiptNumber?: string;
+}
+
 interface ReceiptProps {
   payment: Payment;
   patientName: string;
   serviceName: string;
   branchName: string;
+  /**
+   * Several charges on one receipt — an enrollment that took the admit fee,
+   * the first month and an advance is one visit and one piece of paper, not
+   * three. Each line keeps its own receipt number, because each really is a
+   * separate Payment in the ledger and a reprint has to be reconcilable
+   * against it.
+   *
+   * Omitted (every other receipt in the app) keeps the single-payment body
+   * below untouched.
+   */
+  lines?: ReceiptLine[];
 }
 
 function MetaField({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
@@ -30,11 +56,20 @@ function MetaField({ label, value, mono }: { label: string; value: string; mono?
 }
 
 /** The receipt itself — rendered twice by <Receipt>: once in place for the screen, once portaled to <body> for print. */
-function ReceiptCard({ payment, patientName, serviceName, branchName }: ReceiptProps) {
+function ReceiptCard({
+  payment,
+  patientName,
+  serviceName,
+  branchName,
+  lines,
+}: ReceiptProps) {
   const isRefunded = payment.status === "refunded";
   const isVoid = payment.status === "void";
   // A material sale can carry several comma-joined "Item × qty" segments — render each as its own line.
   const lineItems = serviceName.split(", ").filter(Boolean);
+  const total = lines
+    ? lines.reduce((sum, line) => sum + line.amount, 0)
+    : payment.amount;
 
   return (
     <Card className="receipt-card relative mx-auto w-full max-w-md overflow-hidden">
@@ -99,27 +134,48 @@ function ReceiptCard({ payment, patientName, serviceName, branchName }: ReceiptP
 
         <div className="mt-5 border-t border-border pt-3">
           <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
-            <span>Description</span>
-            {lineItems.length === 1 && <span>Amount</span>}
+            <span>{lines ? serviceName : "Description"}</span>
+            {(lines || lineItems.length === 1) && <span>Amount</span>}
           </div>
-          <div className="mt-2 flex flex-col gap-1.5 border-t border-border pt-2">
-            {lineItems.map((item, index) => (
-              <div key={index} className="flex items-start justify-between gap-4 text-sm">
-                <span className="text-text-primary">{item}</span>
-                {lineItems.length === 1 && (
-                  <span className="shrink-0 font-medium text-text-primary">
-                    {formatCurrency(payment.amount)}
-                  </span>
-                )}
-              </div>
-            ))}
+          <div className="mt-2 flex flex-col gap-2 border-t border-border pt-2">
+            {lines
+              ? lines.map((line) => (
+                  <div key={line.label} className="text-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="text-text-primary">{line.label}</span>
+                      <span className="shrink-0 font-medium text-text-primary">
+                        {formatCurrency(line.amount)}
+                      </span>
+                    </div>
+                    {line.months && line.months.length > 0 && (
+                      <p className="mt-0.5 text-xs text-text-secondary">
+                        {line.months.join(", ")}
+                      </p>
+                    )}
+                    {line.receiptNumber && (
+                      <p className="font-mono text-[10px] text-text-secondary">
+                        {line.receiptNumber}
+                      </p>
+                    )}
+                  </div>
+                ))
+              : lineItems.map((item, index) => (
+                  <div key={index} className="flex items-start justify-between gap-4 text-sm">
+                    <span className="text-text-primary">{item}</span>
+                    {lineItems.length === 1 && (
+                      <span className="shrink-0 font-medium text-text-primary">
+                        {formatCurrency(payment.amount)}
+                      </span>
+                    )}
+                  </div>
+                ))}
           </div>
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t-2 border-primary/15 pt-3">
           <span className="text-sm font-semibold text-text-primary">Total Paid</span>
           <span className="text-xl font-bold text-primary-dark">
-            {formatCurrency(payment.amount)}
+            {formatCurrency(total)}
           </span>
         </div>
 
