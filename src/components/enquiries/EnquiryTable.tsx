@@ -4,9 +4,8 @@ import { useState } from "react";
 import { Pencil, Trash2, UserPlus } from "lucide-react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Badge } from "@/components/ui/Badge";
-import { BranchFilterSelect } from "@/components/ui/BranchFilterSelect";
 import { Button } from "@/components/ui/Button";
-import { FilterBar, FILTER_FIELD_WIDTH } from "@/components/ui/FilterBar";
+import { FilterBar } from "@/components/ui/FilterBar";
 import { Input } from "@/components/ui/Input";
 import { Pagination } from "@/components/ui/Pagination";
 import { SearchField } from "@/components/ui/SearchField";
@@ -14,6 +13,7 @@ import { Select } from "@/components/ui/Select";
 import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { EnquiryFormModal } from "@/components/enquiries/EnquiryFormModal";
 import { ConvertEnquiryModal } from "@/components/enquiries/ConvertEnquiryModal";
 import {
@@ -22,12 +22,36 @@ import {
   STATUS_LABELS,
   statusTone,
 } from "@/components/enquiries/options";
-import { useDeleteEnquiry, useEnquiries, useEnquirySummary } from "@/hooks/enquiries/useEnquiries";
+import { useBranches } from "@/hooks/branches/useBranches";
+import {
+  useDeleteEnquiry,
+  useEnquiries,
+  useEnquirySummary,
+} from "@/hooks/enquiries/useEnquiries";
 import { useAuthStore } from "@/store/authStore";
 import { toLocalDateString } from "@/utils/time";
 import type { Enquiry } from "@/types/domain";
 
 const PAGE_SIZE = 10;
+
+/**
+ * Narrower than the shared `FILTER_FIELD_WIDTH` (w-40): this page puts seven
+ * controls on one row, and the default width pushes the dates onto a second
+ * line on anything but a very wide screen.
+ *
+ * Measured rather than guessed — at these widths the row holds together from
+ * about 1360px up, which covers the 1366 and 1920 screens the clinic uses.
+ * Narrower than that it wraps to a second line, which is the right thing for
+ * a laptop and is why the widths are capped rather than fixed.
+ */
+const FIELD = "w-full sm:w-28 shrink-0";
+const DATE_FIELD = "w-full sm:w-32 shrink-0";
+
+const RANGE_PRESETS: { value: string; label: string; days: number }[] = [
+  { value: "today", label: "Today", days: 0 },
+  { value: "week", label: "This week", days: 6 },
+  { value: "month", label: "This month", days: 29 },
+];
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -38,12 +62,17 @@ function formatDate(value: string | null): string {
 }
 
 /**
- * Enquiries — the same table for both screens.
+ * Enquiries — the same screen for both roles.
  *
  * The Manager works it as their call list; Admin gets a Branch column and a
  * branch filter. `showBranch` is the only difference, because the server
  * already decides what each role may see — the column is presentation, not
  * access.
+ *
+ * It renders its own `PageHeader`, unlike the Sell History pair: the heading
+ * carries the live counts, and those belong to the filter state that lives
+ * here. Lifting the filters out just to keep a wrapper component would move
+ * every one of them a level away from the table they narrow.
  */
 export function EnquiryTable({ showBranch = false }: { showBranch?: boolean }) {
   // Recording a call and registering the caller are branch-desk actions, and
@@ -57,14 +86,40 @@ export function EnquiryTable({ showBranch = false }: { showBranch?: boolean }) {
   const [source, setSource] = useState("");
   const [followUp, setFollowUp] = useState("");
   const [branchId, setBranchId] = useState("");
+  const [range, setRange] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
+
+  const branches = useBranches(showBranch);
 
   // Every filter change returns to page 1 — staying on page 4 of a narrower
   // result set shows an empty table and reads as "no results".
   const change = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
+    setPage(1);
+  };
+
+  const applyRange = (value: string) => {
+    setRange(value);
+    setPage(1);
+    const preset = RANGE_PRESETS.find((one) => one.value === value);
+    if (!preset) {
+      setDateFrom("");
+      setDateTo("");
+      return;
+    }
+    const today = new Date();
+    const from = new Date(today);
+    from.setDate(today.getDate() - preset.days);
+    setDateFrom(toLocalDateString(from));
+    setDateTo(toLocalDateString(today));
+  };
+
+  // Typing a date by hand means the preset no longer describes the range.
+  const setDateManually = (setter: (value: string) => void) => (value: string) => {
+    setter(value);
+    setRange("");
     setPage(1);
   };
 
@@ -84,7 +139,7 @@ export function EnquiryTable({ showBranch = false }: { showBranch?: boolean }) {
     branchId: showBranch ? branchId : undefined,
   };
   const enquiries = useEnquiries({ ...filters, page, pageSize: PAGE_SIZE });
-  // Deliberately the same filters: the header must describe the rows below
+  // Deliberately the same filters: the heading must describe the rows below
   // it, not the whole table.
   const summary = useEnquirySummary(filters);
 
@@ -94,99 +149,65 @@ export function EnquiryTable({ showBranch = false }: { showBranch?: boolean }) {
     search || status || source || followUp || dateFrom || dateTo || branchId,
   );
 
-  const quickRange = (days: number) => {
-    const today = new Date();
-    const from = new Date(today);
-    from.setDate(today.getDate() - days);
-    change(setDateFrom)(toLocalDateString(days === 0 ? today : from));
-    setDateTo(toLocalDateString(today));
-  };
-
   const stats = summary.data;
 
   return (
-    <div className="flex flex-col gap-4">
-      {stats && (
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm shadow-sm">
-          <span className="text-text-primary">
-            <span className="text-lg font-semibold">{stats.total}</span>{" "}
-            <span className="text-text-secondary">
-              {stats.total === 1 ? "enquiry" : "enquiries"}
-            </span>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title={
+          <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            Enquiries
+            {stats && (
+              <span className="text-sm font-normal text-text-secondary">
+                [
+                <span className="font-medium text-text-primary">{stats.total}</span>{" "}
+                {stats.total === 1 ? "enquiry" : "enquiries"}
+                {" · "}
+                <span className="font-medium text-success">{stats.converted}</span> enrolled
+                {stats.dueToday > 0 && (
+                  <>
+                    {" · "}
+                    <span className="font-medium text-text-primary">{stats.dueToday}</span>{" "}
+                    due today
+                  </>
+                )}
+                {stats.overdue > 0 && (
+                  <>
+                    {" · "}
+                    <span className="font-medium text-danger">{stats.overdue}</span> overdue
+                  </>
+                )}
+                {stats.topSource && (
+                  <>
+                    {" · most from "}
+                    <span className="font-medium text-text-primary">
+                      {SOURCE_LABELS[stats.topSource]}
+                    </span>{" "}
+                    ({stats.topSourceCount})
+                  </>
+                )}
+                ]
+              </span>
+            )}
           </span>
-          <span className="text-text-secondary">
-            <span className="font-semibold text-success">{stats.converted}</span> enrolled
-          </span>
-          {stats.dueToday > 0 && (
-            <span className="text-text-secondary">
-              <span className="font-semibold text-text-primary">{stats.dueToday}</span> due
-              today
-            </span>
-          )}
-          {stats.overdue > 0 && (
-            <span className="text-danger">
-              <span className="font-semibold">{stats.overdue}</span> overdue
-            </span>
-          )}
-          {stats.topSource && (
-            <span className="text-text-secondary">
-              Most from{" "}
-              <span className="font-medium text-text-primary">
-                {SOURCE_LABELS[stats.topSource]}
-              </span>{" "}
-              ({stats.topSourceCount})
-            </span>
-          )}
-        </div>
-      )}
+        }
+        action={
+          canRecord ? <Button onClick={() => setAdding(true)}>Add Enquiry</Button> : undefined
+        }
+      />
 
       <FilterBar
         search={
           <SearchField
-            placeholder="Caller, phone, child's name, concern…"
+            placeholder="Caller, phone, patient's name, concern…"
             value={search}
             onChange={(event) => change(setSearch)(event.target.value)}
           />
         }
-        dateSlot={
-          <div className="flex flex-col gap-1.5">
-            <div className="flex flex-wrap items-end gap-2">
-              <Input
-                label="Called from"
-                type="date"
-                containerClassName={FILTER_FIELD_WIDTH}
-                value={dateFrom}
-                onChange={(event) => change(setDateFrom)(event.target.value)}
-              />
-              <Input
-                label="to"
-                type="date"
-                containerClassName={FILTER_FIELD_WIDTH}
-                min={dateFrom || undefined}
-                value={dateTo}
-                onChange={(event) => change(setDateTo)(event.target.value)}
-              />
-            </div>
-            <div className="flex gap-1.5">
-              <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => quickRange(0)}>
-                Today
-              </Button>
-              <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => quickRange(6)}>
-                This week
-              </Button>
-              <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => quickRange(29)}>
-                This month
-              </Button>
-            </div>
-          </div>
-        }
-        actions={
-          canRecord ? <Button onClick={() => setAdding(true)}>Add Enquiry</Button> : undefined
-        }
       >
         <Select
           label="Status"
-          containerClassName={FILTER_FIELD_WIDTH}
+          containerClassName={FIELD}
           value={status}
           onChange={(event) => change(setStatus)(event.target.value)}
         >
@@ -199,7 +220,7 @@ export function EnquiryTable({ showBranch = false }: { showBranch?: boolean }) {
         </Select>
         <Select
           label="Source"
-          containerClassName={FILTER_FIELD_WIDTH}
+          containerClassName={FIELD}
           value={source}
           onChange={(event) => change(setSource)(event.target.value)}
         >
@@ -212,7 +233,7 @@ export function EnquiryTable({ showBranch = false }: { showBranch?: boolean }) {
         </Select>
         <Select
           label="Follow-up"
-          containerClassName={FILTER_FIELD_WIDTH}
+          containerClassName={FIELD}
           value={followUp}
           onChange={(event) => change(setFollowUp)(event.target.value)}
         >
@@ -224,8 +245,48 @@ export function EnquiryTable({ showBranch = false }: { showBranch?: boolean }) {
           ))}
         </Select>
         {showBranch && (
-          <BranchFilterSelect value={branchId} onChange={change(setBranchId)} />
+          <Select
+            label="Branch"
+            containerClassName={FIELD}
+            value={branchId}
+            onChange={(event) => change(setBranchId)(event.target.value)}
+          >
+            <option value="">All branches</option>
+            {(branches.data ?? []).map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name}
+              </option>
+            ))}
+          </Select>
         )}
+        <Select
+          label="Period"
+          containerClassName={FIELD}
+          value={range}
+          onChange={(event) => applyRange(event.target.value)}
+        >
+          <option value="">Any time</option>
+          {RANGE_PRESETS.map((preset) => (
+            <option key={preset.value} value={preset.value}>
+              {preset.label}
+            </option>
+          ))}
+        </Select>
+        <Input
+          label="Called from"
+          type="date"
+          containerClassName={DATE_FIELD}
+          value={dateFrom}
+          onChange={(event) => setDateManually(setDateFrom)(event.target.value)}
+        />
+        <Input
+          label="to"
+          type="date"
+          containerClassName={DATE_FIELD}
+          min={dateFrom || undefined}
+          value={dateTo}
+          onChange={(event) => setDateManually(setDateTo)(event.target.value)}
+        />
       </FilterBar>
 
       {enquiries.isError ? (
@@ -366,11 +427,7 @@ export function EnquiryTable({ showBranch = false }: { showBranch?: boolean }) {
         </>
       )}
 
-      <EnquiryFormModal
-        open={adding}
-        enquiry={null}
-        onClose={() => setAdding(false)}
-      />
+      <EnquiryFormModal open={adding} enquiry={null} onClose={() => setAdding(false)} />
       <EnquiryFormModal
         open={Boolean(editing)}
         enquiry={editing}

@@ -134,7 +134,7 @@ function EnquiryForm({
             onChange={(event) => setCallerPhone(event.target.value)}
           />
           <Select
-            label="They are the patient's…"
+            label="Caller is the patient's…"
             value={callerRelation}
             onChange={(event) => setCallerRelation(event.target.value as Enquiry["callerRelation"])}
           >
@@ -145,14 +145,14 @@ function EnquiryForm({
             ))}
           </Select>
           <Input
-            label="Who is it for? (optional)"
+            label="Patient's name (optional)"
             autoComplete="off"
-            placeholder="Leave blank if it's the caller"
+            placeholder="Leave blank if the caller is the patient"
             value={patientName}
             onChange={(event) => setPatientName(event.target.value)}
           />
           <Input
-            label="Their age (optional)"
+            label="Patient's age (optional)"
             inputMode="numeric"
             placeholder="e.g. 4"
             value={patientAge}
@@ -168,16 +168,16 @@ function EnquiryForm({
         </div>
 
         <Textarea
-          label="What's the concern? (optional)"
+          label="Patient's concern (optional)"
           rows={2}
-          placeholder="e.g. 4-year-old not speaking clearly"
+          placeholder="e.g. not speaking clearly"
           value={concern}
           onChange={(event) => setConcern(event.target.value)}
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Select
-            label="Where did they hear about us?"
+            label="Where did the caller hear about us?"
             requiredMark
             placeholder="Select a source"
             value={source}

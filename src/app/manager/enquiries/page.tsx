@@ -1,5 +1,5 @@
-import { EnquiriesView } from "@/components/enquiries/EnquiriesView";
+import { EnquiryTable } from "@/components/enquiries/EnquiryTable";
 
 export default function ManagerEnquiriesPage() {
-  return <EnquiriesView />;
+  return <EnquiryTable />;
 }
