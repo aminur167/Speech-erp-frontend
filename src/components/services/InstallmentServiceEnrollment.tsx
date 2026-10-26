@@ -7,6 +7,7 @@ import { LayoutDashboard } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
 import { Stepper } from "@/components/ui/Stepper";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { ServiceCard } from "@/components/services/ServiceCard";
@@ -51,6 +52,8 @@ export function InstallmentServiceEnrollment() {
   const [search, setSearch] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [numberOfInstallments, setNumberOfInstallments] = useState(3);
+  const [discountText, setDiscountText] = useState("");
+  const [discountReason, setDiscountReason] = useState("");
   // Defaults to a window that already works — today through 3 months out —
   // so the common case is one click, not two date pickers.
   const [startsOn, setStartsOn] = useState(() => toLocalDateString());
@@ -113,8 +116,41 @@ export function InstallmentServiceEnrollment() {
     return "";
   })();
 
+  // The discount comes off the package fee first; the installments are split
+  // from what is left, so this figure is the plan's price and not a credit
+  // applied to it later.
+  const packageFee = selectedService?.fee ?? 0;
+  const discount = discountText.trim() === "" ? 0 : Number(discountText);
+  const validDiscount = Number.isFinite(discount) ? discount : 0;
+  const finalPrice = Math.max(0, packageFee - validDiscount);
+
+  const discountError = (() => {
+    if (discountText.trim() === "") return "";
+    if (!Number.isFinite(discount) || discount < 0) return "Enter a discount of 0 or more.";
+    if (discount >= packageFee) {
+      // Not an arbitrary cap: every installment must be at least ৳0.01, so a
+      // plan worth nothing cannot exist. The server refuses it too.
+      return `The discount must be less than the package fee (${formatCurrency(packageFee)}).`;
+    }
+    return "";
+  })();
+
+  const discountReasonError =
+    validDiscount > 0 && !discountReason.trim()
+      ? "Say why the discount is being given."
+      : "";
+
   const handleCreatePlan = () => {
-    if (!selectedService || !selectedPatient || !user || rangeError) return;
+    if (
+      !selectedService ||
+      !selectedPatient ||
+      !user ||
+      rangeError ||
+      discountError ||
+      discountReasonError
+    ) {
+      return;
+    }
     createPlan.mutate(
       {
         patientId: selectedPatient.id,
@@ -122,6 +158,8 @@ export function InstallmentServiceEnrollment() {
         numberOfInstallments,
         startsOn,
         endsOn,
+        discount: validDiscount,
+        discountReason: validDiscount > 0 ? discountReason.trim() : "",
       },
       {
         onSuccess: (created) => {
@@ -163,6 +201,8 @@ export function InstallmentServiceEnrollment() {
     setSearch("");
     setSelectedPatient(null);
     setNumberOfInstallments(3);
+    setDiscountText("");
+    setDiscountReason("");
     setPlan(null);
     setPayingIndex(null);
     setMethod("cash");
@@ -226,7 +266,20 @@ export function InstallmentServiceEnrollment() {
         {step === "plan" && selectedPatient && selectedService && (
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-medium text-text-secondary">
-              {selectedService.name} — Total: {formatCurrency(selectedService.fee)}
+              {selectedService.name} —{" "}
+              {validDiscount > 0 && !discountError ? (
+                <>
+                  Total:{" "}
+                  <span className="text-text-secondary line-through">
+                    {formatCurrency(packageFee)}
+                  </span>{" "}
+                  <span className="font-semibold text-primary-dark">
+                    {formatCurrency(finalPrice)}
+                  </span>
+                </>
+              ) : (
+                <>Total: {formatCurrency(packageFee)}</>
+              )}
             </h2>
             <div className="flex gap-2">
               {PLAN_OPTIONS.map((count) => (
@@ -247,8 +300,43 @@ export function InstallmentServiceEnrollment() {
             </div>
             <p className="text-xs text-text-secondary">
               {numberOfInstallments} installments of approximately{" "}
-              {formatCurrency(Math.floor(selectedService.fee / numberOfInstallments))} each.
+              {formatCurrency(
+                Math.floor((discountError ? packageFee : finalPrice) / numberOfInstallments),
+              )}{" "}
+              each.
             </p>
+
+            <div className="flex flex-col gap-3">
+              <Input
+                label="Discount on the package (৳)"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                max={packageFee}
+                step="0.01"
+                placeholder="0"
+                value={discountText}
+                onChange={(event) => setDiscountText(event.target.value)}
+                error={discountError}
+              />
+              {validDiscount > 0 && (
+                <Textarea
+                  label="Reason for discount"
+                  requiredMark
+                  rows={2}
+                  placeholder="e.g. Long-standing family"
+                  value={discountReason}
+                  onChange={(event) => setDiscountReason(event.target.value)}
+                  error={discountReasonError}
+                />
+              )}
+              {validDiscount > 0 && !discountError && (
+                <p className="text-xs text-text-secondary">
+                  The plan is worth {formatCurrency(finalPrice)} — the discounted
+                  price is what the patient owes, split across the installments.
+                </p>
+              )}
+            </div>
 
             <div className="flex flex-col gap-2 rounded-lg border border-border p-4">
               <p className="text-xs font-medium text-text-secondary">
@@ -293,7 +381,10 @@ export function InstallmentServiceEnrollment() {
               <Button
                 onClick={handleCreatePlan}
                 isLoading={createPlan.isPending}
-                disabled={Boolean(rangeError) || outstandingTotal > 0}
+                disabled={
+                  Boolean(rangeError || discountError || discountReasonError) ||
+                  outstandingTotal > 0
+                }
               >
                 Create Plan
               </Button>
