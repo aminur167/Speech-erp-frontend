@@ -13,9 +13,17 @@ interface RawInstallment extends Omit<Installment, "id" | "amount" | "amountPaid
   amountPaid: number | string;
   outstanding: number | string;
 }
-interface RawPlan extends Omit<InstallmentPlan, "id" | "installments" | "totalAmount"> {
+interface RawPlan
+  extends Omit<
+    InstallmentPlan,
+    "id" | "installments" | "totalAmount" | "grossAmount" | "discountAmount"
+  > {
   id: number | string;
   totalAmount: number | string;
+  // Null rather than absent when no discount was given -- DRF serializes the
+  // nullable DecimalField, it does not drop the key.
+  grossAmount: number | string | null;
+  discountAmount: number | string;
   installments: RawInstallment[];
 }
 
@@ -34,6 +42,8 @@ function normalizePlan(raw: RawPlan): InstallmentPlan {
     ...raw,
     id: String(raw.id),
     totalAmount: Number(raw.totalAmount),
+    grossAmount: raw.grossAmount == null ? undefined : Number(raw.grossAmount),
+    discountAmount: Number(raw.discountAmount ?? 0),
     installments: raw.installments.map(normalizeInstallment),
   };
 }
@@ -53,6 +63,14 @@ export interface CreateInstallmentPlanInput {
   /** The window the plan must be cleared in — due dates are spread across it. */
   startsOn?: string;
   endsOn?: string;
+  /**
+   * Comes off the package fee **before** the installments are split, so the
+   * discounted figure becomes the plan's price rather than a credit applied
+   * to it later. Any discount needs `discountReason`, and one covering the
+   * whole fee is refused — there would be nothing left to pay in parts.
+   */
+  discount?: number;
+  discountReason?: string;
 }
 
 export async function createInstallmentPlan(
@@ -66,6 +84,8 @@ export async function createInstallmentPlan(
     numberOfInstallments: input.numberOfInstallments,
     startsOn: input.startsOn,
     endsOn: input.endsOn,
+    discount: input.discount ?? 0,
+    discountReason: input.discountReason ?? "",
   });
   return normalizePlan(data);
 }

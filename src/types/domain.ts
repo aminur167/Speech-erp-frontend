@@ -348,6 +348,10 @@ export interface Installment {
 
 export interface InstallmentPlan {
   id: string;
+  /** The package fee before any discount — absent when none was given. */
+  grossAmount?: number;
+  discountAmount: number;
+  discountReason?: string;
   patientId: string;
   serviceId: string;
   branchId: string;
