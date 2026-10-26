@@ -18,6 +18,7 @@ import {
   Undo2,
   Users,
   Banknote,
+  PhoneCall,
 } from "lucide-react";
 
 export interface NavLink {
@@ -44,6 +45,9 @@ export const managerNav: NavItem[] = [
   // going", Summary answers the same question for any range you pick.
   { label: "Summary", href: "/manager/summary", icon: BarChart3 },
   { label: "Patients", href: "/manager/patients", icon: UserPlus },
+  // Next to Patients on purpose: these are the people who are not patients
+  // yet, and the desk moves between the two lists all day.
+  { label: "Enquiries", href: "/manager/enquiries", icon: PhoneCall },
   { label: "Attendance", href: "/manager/attendance", icon: ClipboardCheck },
   {
     label: "Enroll Service",
@@ -98,6 +102,7 @@ export const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Branches", href: "/admin/branches", icon: Building2 },
   { label: "Patients", href: "/admin/patients", icon: UserPlus },
+  { label: "Enquiries", href: "/admin/enquiries", icon: PhoneCall },
   { label: "Services", href: "/admin/services", icon: ClipboardList },
   { label: "Appointments", href: "/admin/appointments", icon: CalendarClock },
   { label: "Expenses", href: "/admin/expenses", icon: Receipt },
