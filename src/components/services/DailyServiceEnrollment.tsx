@@ -12,11 +12,14 @@ import { PatientSearchInput } from "@/components/patients/PatientSearchInput";
 import { PatientSearchResultList } from "@/components/patients/PatientSearchResultList";
 import { PaymentMethodSelector } from "@/components/payments/PaymentMethodSelector";
 import { PaymentSummary } from "@/components/payments/PaymentSummary";
+import { DiscountFields } from "@/components/payments/DiscountFields";
 import { Receipt } from "@/components/payments/Receipt";
 import { useServices } from "@/hooks/services/useServices";
 import { usePatients } from "@/hooks/patients/usePatients";
-import { useCreatePayment } from "@/hooks/payments/useCreatePayment";
+import { useChargeDailySession } from "@/hooks/payments/useChargeDailySession";
+import { useDiscount } from "@/hooks/useDiscount";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
+import { formatCurrency } from "@/utils/currency";
 import { useAuthStore } from "@/store/authStore";
 import type { Patient, Service, PaymentMethod, Payment } from "@/types/domain";
 
@@ -47,18 +50,30 @@ export function DailyServiceEnrollment() {
     search,
     pageSize: 5,
   });
-  const createPayment = useCreatePayment();
+  const chargeSession = useChargeDailySession();
+
+  const fee = selectedService?.fee ?? 0;
+  // A paisa short of the fee, matching the server: a daily session raises no
+  // bill, so a free one would leave no record of the visit at all.
+  const discount = useDiscount({
+    charge: fee,
+    ceiling: Math.max(0, fee - 0.01),
+    what: "session fee",
+  });
 
   const stepIndex = STEP_ORDER.indexOf(step);
 
   const handleCollectPayment = () => {
-    if (!selectedService || !selectedPatient || !user) return;
-    createPayment.mutate(
+    if (!selectedService || !selectedPatient || !user || !discount.isValid) return;
+    // No amount: the server charges the catalogue fee less the discount, so
+    // a discount is recorded as one rather than inferred from a smaller
+    // number (see chargeDailySession).
+    chargeSession.mutate(
       {
         patientId: selectedPatient.id,
-        amount: selectedService.fee,
+        serviceId: selectedService.id,
         method,
-        category: "daily",
+        ...discount.payload,
       },
       {
         onSuccess: (createdPayment) => {
@@ -76,6 +91,7 @@ export function DailyServiceEnrollment() {
     setSelectedPatient(null);
     setMethod("cash");
     setPayment(null);
+    discount.reset();
   };
 
   return (
@@ -148,12 +164,29 @@ export function DailyServiceEnrollment() {
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-medium text-text-secondary">Collect payment</h2>
             <PaymentSummary patient={selectedPatient} service={selectedService} />
+            <DiscountFields
+              discount={discount}
+              max={Math.max(0, fee - 0.01)}
+              reasonPlaceholder="e.g. Sibling already enrolled"
+            />
+            {discount.value > 0 && !discount.amountError && (
+              <div className="flex justify-between rounded-lg border border-border bg-background px-4 py-3 text-sm">
+                <span className="text-text-secondary">To collect</span>
+                <span className="text-lg font-semibold text-primary-dark">
+                  {formatCurrency(discount.net)}
+                </span>
+              </div>
+            )}
             <PaymentMethodSelector value={method} onChange={setMethod} />
             <div className="flex gap-2">
               <Button variant="secondary" onClick={() => setStep("confirm")}>
                 ← Back
               </Button>
-              <Button onClick={handleCollectPayment} isLoading={createPayment.isPending}>
+              <Button
+                onClick={handleCollectPayment}
+                isLoading={chargeSession.isPending}
+                disabled={!discount.isValid}
+              >
                 Confirm Payment
               </Button>
             </div>

@@ -112,6 +112,12 @@ export interface SellMaterialsInput {
   items: SellMaterialsCartItem[];
   patientId: string;
   method: PaymentMethod;
+  /**
+   * One figure off the whole cart, not per line. Checked against the total
+   * the server prices itself (backend docs/12-discounts.md).
+   */
+  discount?: number;
+  discountReason?: string;
   idempotencyKey?: string;
 }
 
@@ -134,6 +140,8 @@ export async function sellMaterials(input: SellMaterialsInput): Promise<Material
       patient: input.patientId,
       items: input.items.map((item) => ({ material: item.materialId, quantity: item.quantity })),
       method: input.method,
+      discount: input.discount,
+      discountReason: input.discountReason,
       idempotencyKey: input.idempotencyKey,
     },
   );

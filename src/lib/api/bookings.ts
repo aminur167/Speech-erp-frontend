@@ -3,15 +3,31 @@ import { normalizePayment, type RawPayment } from "@/lib/api/payments";
 import type { Booking, Payment, PaymentMethod } from "@/types/domain";
 import type { PaginatedResponse } from "@/types/api";
 
-// `advanceAmount` is a real DRF DecimalField, so it crosses the wire as a
-// JSON string (COERCE_DECIMAL_TO_STRING) -- normalized here too.
-interface RawBooking extends Omit<Booking, "id" | "advanceAmount"> {
+// The money fields are real DRF DecimalFields, so they cross the wire as
+// JSON strings (COERCE_DECIMAL_TO_STRING) -- normalized here too.
+interface RawBooking
+  extends Omit<
+    Booking,
+    "id" | "advanceAmount" | "feeAmount" | "grossAmount" | "discountAmount"
+  > {
   id: number | string;
   advanceAmount: number | string;
+  feeAmount?: number | string | null;
+  grossAmount?: number | string | null;
+  discountAmount?: number | string;
 }
 
 function normalizeBooking(raw: RawBooking): Booking {
-  return { ...raw, id: String(raw.id), advanceAmount: Number(raw.advanceAmount) };
+  return {
+    ...raw,
+    id: String(raw.id),
+    advanceAmount: Number(raw.advanceAmount),
+    // `== null` rather than `Number(...)`: a booking taken before the fee
+    // was recorded has none, and 0 would read as a free session.
+    feeAmount: raw.feeAmount == null ? null : Number(raw.feeAmount),
+    grossAmount: raw.grossAmount == null ? null : Number(raw.grossAmount),
+    discountAmount: Number(raw.discountAmount ?? 0),
+  };
 }
 
 export interface CreateBookingInput {
@@ -20,34 +36,50 @@ export interface CreateBookingInput {
   date: string;
   time: string;
   method: PaymentMethod;
+  /**
+   * How much of the fee to take today -- the manager's figure. Omitted, the
+   * server falls back to the ratio this form suggests.
+   */
+  advanceAmount?: number;
+  /** Off the session fee, not off the advance. */
+  discount?: number;
+  discountReason?: string;
   idempotencyKey?: string;
 }
 
 export interface CreateBookingResult {
   booking: Booking;
-  payment: Payment;
+  /** Null when the advance taken today was nothing — nothing was collected. */
+  payment: Payment | null;
 }
 
 /**
- * One atomic call: the backend creates the booking and charges its advance
- * together (advanceAmount is computed server-side from the service's fee --
- * there's nothing here for a client to tamper with, so it's never sent).
+ * One atomic call: the backend creates the booking and takes its advance
+ * together.
+ *
+ * The advance is sent, the **fee** is not: it comes from the catalogue, and
+ * the discount is checked against it server-side. A request may say how
+ * much to collect today, never what the session costs (backend
+ * docs/12-discounts.md).
  */
 export async function createBooking(input: CreateBookingInput): Promise<CreateBookingResult> {
   const { data } = await apiClient.post<{
     booking: RawBooking;
-    payment: RawPayment;
+    payment: RawPayment | null;
   }>("/enrollments/bookings/", {
     patient: input.patientId,
     service: input.serviceId,
     date: input.date,
     time: input.time,
     method: input.method,
+    advanceAmount: input.advanceAmount,
+    discount: input.discount,
+    discountReason: input.discountReason,
     idempotencyKey: input.idempotencyKey,
   });
   return {
     booking: normalizeBooking(data.booking),
-    payment: normalizePayment(data.payment),
+    payment: data.payment ? normalizePayment(data.payment) : null,
   };
 }
 
