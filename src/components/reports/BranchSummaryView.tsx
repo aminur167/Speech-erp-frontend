@@ -21,6 +21,12 @@ import { useBranchActivity } from "@/hooks/reports/useBranchActivity";
 import { useBranchDailyLedger } from "@/hooks/reports/useBranchDailyLedger";
 import { useDuePayments } from "@/hooks/duePayments/useDuePayments";
 import { exportToCsv } from "@/utils/exportCsv";
+import { exportBranchReportPdf } from "@/utils/branchReportPdf";
+import { getBranchReport } from "@/lib/api/branchReport";
+import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
+import { useBranches } from "@/hooks/branches/useBranches";
+import { useAuthStore } from "@/store/authStore";
+import { toast } from "@/store/toastStore";
 import { formatCurrency } from "@/utils/currency";
 import { toLocalDateString } from "@/utils/time";
 import type { DuePaymentType } from "@/lib/api/duePayments";
@@ -134,6 +140,41 @@ export function BranchSummaryView({
     setPage(1);
     if (which === "from") setDateFrom(value);
     else setDateTo(value);
+  };
+
+  const user = useAuthStore((state) => state.user);
+  const ownBranchName = useCurrentBranchName();
+  // Admin is on a branch drill-down, so the name has to come from the list;
+  // a Manager already has their own on the session.
+  const branches = useBranches(Boolean(branchId));
+  const branchName =
+    (branchId ? branches.data?.find((one) => one.id === branchId)?.name : ownBranchName) ??
+    "Branch";
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  /**
+   * The whole period as one PDF — the thing a Manager hands to the Admin.
+   *
+   * Fetched on click rather than kept loaded: it is a much larger payload
+   * than the screen needs (every receipt), and nobody wants it until they
+   * ask for it.
+   */
+  const handleExportPdf = async () => {
+    if (!rangeIsValid) return;
+    setIsExporting(true);
+    try {
+      const report = await getBranchReport({ dateFrom, dateTo, branchId });
+      exportBranchReportPdf({
+        report,
+        branchName,
+        generatedBy: user?.name ?? "—",
+      });
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const activity = useBranchActivity({ branchId, ...range }, on("activity"));
@@ -293,6 +334,12 @@ export function BranchSummaryView({
               containerClassName={FILTER_FIELD_WIDTH}
             />
           </div>
+        }
+        actions={
+          <Button onClick={handleExportPdf} isLoading={isExporting} disabled={!rangeIsValid}>
+            <Download className="h-4 w-4" />
+            Export PDF
+          </Button>
         }
       >
         {tab === "dues" && (
