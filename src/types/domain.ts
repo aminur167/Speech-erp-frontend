@@ -103,6 +103,69 @@ export interface MaterialSale {
   items: MaterialSaleLine[];
 }
 
+export type EnquirySource =
+  | "facebook"
+  | "google"
+  | "poster"
+  | "referral"
+  | "signboard"
+  | "other";
+
+/**
+ * Where someone is in the funnel. Distinct from `followUpOn`, which says
+ * whether today's work includes them — the two are filtered separately, and
+ * a closed enquiry is never outstanding work however old its date.
+ */
+export type EnquiryStatus =
+  | "new"
+  | "contacted"
+  | "visit_planned"
+  | "visited"
+  | "converted"
+  | "not_interested"
+  | "unreachable";
+
+/**
+ * Someone who rang after seeing an ad — a prospective patient, deliberately
+ * not a `Patient` row (docs/11). `convertedPatientId` is set if they come in
+ * and register, which is what makes "40 calls, 12 enrolled" countable.
+ */
+export interface Enquiry {
+  id: string;
+  enquiryCode: string;
+  callerName: string;
+  callerPhone: string;
+  callerRelation: "self" | "father" | "mother" | "guardian" | "other";
+  /** Who the therapy is for — blank when the caller is the patient. */
+  patientName: string;
+  /** Whatever age was given on the phone; no birth date is collected. */
+  patientAge: number | null;
+  concern: string;
+  source: EnquirySource;
+  sourceDetail: string;
+  status: EnquiryStatus;
+  followUpOn: string | null;
+  /** Derived server-side, never stored — a stored flag would go stale. */
+  followUpOverdue: boolean;
+  notes: string;
+  convertedPatientId: string | null;
+  convertedPatientCode: string;
+  branchId: string;
+  branchName: string;
+  takenBy: string;
+  calledAt: string;
+  createdAt: string;
+}
+
+export interface EnquirySummary {
+  total: number;
+  converted: number;
+  dueToday: number;
+  overdue: number;
+  topSource: EnquirySource | "";
+  topSourceCount: number;
+}
+
 export type ServiceCategory = "daily" | "monthly" | "installment" | "online";
 
 export interface Service {

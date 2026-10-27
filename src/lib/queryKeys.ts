@@ -39,6 +39,11 @@ export const queryKeys = {
     all: ["sales"] as const,
     list: (params?: object) => ["sales", "list", params] as const,
   },
+  enquiries: {
+    all: ["enquiries"] as const,
+    list: (params?: object) => ["enquiries", "list", params] as const,
+    summary: (params?: object) => ["enquiries", "summary", params] as const,
+  },
   refundRequests: {
     all: ["refund-requests"] as const,
     list: (params?: object) => ["refund-requests", "list", params] as const,
