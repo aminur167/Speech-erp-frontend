@@ -19,8 +19,8 @@ import { Receipt } from "@/components/payments/Receipt";
 import { useServices } from "@/hooks/services/useServices";
 import { usePatients } from "@/hooks/patients/usePatients";
 import { useCreateInstallmentPlan } from "@/hooks/enrollments/useCreateInstallmentPlan";
-import { usePatientOutstandingDues } from "@/hooks/patients/usePatientOutstandingDues";
-import { OutstandingDueNotice } from "@/components/enrollments/OutstandingDueNotice";
+import { useEnrollmentEligibility } from "@/hooks/enrollments/useEnrollmentEligibility";
+import { EnrollmentEligibilityNotice } from "@/components/enrollments/EnrollmentEligibilityNotice";
 import { usePayInstallment } from "@/hooks/enrollments/usePayInstallment";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
@@ -76,8 +76,12 @@ export function InstallmentServiceEnrollment() {
   const createPlan = useCreateInstallmentPlan();
   // Read as soon as a patient is chosen, so the block is explained on this
   // step rather than discovered when Create Plan is refused.
-  const { data: outstanding } = usePatientOutstandingDues(selectedPatient?.id);
-  const outstandingTotal = outstanding?.total ?? 0;
+  // Dues on other services are shown, not enforced (2026-10-27); this
+  // service's own due, and a package already running on it, still refuse.
+  const eligibility = useEnrollmentEligibility(
+    selectedPatient?.id,
+    selectedService?.id,
+  );
   const payInstallmentMutation = usePayInstallment();
 
   const stepIndex = STEP_ORDER.indexOf(step);
@@ -367,10 +371,11 @@ export function InstallmentServiceEnrollment() {
               {rangeError && <p className="text-xs text-danger">{rangeError}</p>}
             </div>
 
-            {outstandingTotal > 0 && (
-              <OutstandingDueNotice
-                items={outstanding?.items ?? []}
-                total={outstandingTotal}
+            {selectedPatient && selectedService && (
+              <EnrollmentEligibilityNotice
+                eligibility={eligibility}
+                patientId={selectedPatient.id}
+                serviceName={selectedService.name}
               />
             )}
 
@@ -383,7 +388,7 @@ export function InstallmentServiceEnrollment() {
                 isLoading={createPlan.isPending}
                 disabled={
                   Boolean(rangeError || discountError || discountReasonError) ||
-                  outstandingTotal > 0
+                  !eligibility.canEnroll
                 }
               >
                 Create Plan

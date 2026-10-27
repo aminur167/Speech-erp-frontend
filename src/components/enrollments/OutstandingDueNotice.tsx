@@ -7,21 +7,27 @@ import { formatCurrency } from "@/utils/currency";
 import type { OutstandingDueItem } from "@/lib/api/monthlyEnrollments";
 
 /**
- * Why a new enrollment or a reactivation is blocked, and what to do about it.
+ * What a patient owes, itemised, where that balance is standing in the way.
  *
- * The rule is enforced on the server; this exists so the manager is told which
- * months and how much *before* pressing the button, rather than being refused
- * afterwards. It is one component because both places have to say the same
- * thing — a patient who is told a different figure on two screens will be told
- * a third by the person at the desk.
+ * One component because the figure has to be the same wherever it appears — a
+ * patient told a different amount on two screens will be told a third by the
+ * person at the desk. What differs is *why* it matters, so the caller says
+ * that: reactivating a service and taking an advance are blocked by different
+ * rules, and since 2026-10-27 starting a *new* service is blocked only by
+ * that service's own due (see EnrollmentEligibilityNotice, which is what the
+ * enrolment screens use).
  */
 export function OutstandingDueNotice({
   items,
   total,
+  message,
   className,
 }: {
   items: OutstandingDueItem[];
   total: number;
+  /** Why this balance is in the way here. Required — there is no rule that
+   *  applies to every screen any more. */
+  message: string;
   className?: string;
 }) {
   const router = useRouter();
@@ -38,10 +44,7 @@ export function OutstandingDueNotice({
           <p className="text-sm font-medium text-text-primary">
             This patient has outstanding due payments
           </p>
-          <p className="text-xs text-text-secondary">
-            Please clear the due payments before enrolling a new service or
-            activating an existing service.
-          </p>
+          <p className="text-xs text-text-secondary">{message}</p>
         </div>
       </div>
 

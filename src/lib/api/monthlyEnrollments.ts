@@ -191,6 +191,11 @@ export interface OutstandingDueItem {
   type: "monthly" | "installment";
   refId: string;
   itemId: string;
+  /**
+   * Which service this is owed on. The gate matches on it, not on the name:
+   * two services can share a name, and the wrong one would be blocked.
+   */
+  serviceId: string;
   serviceName: string;
   month: string;
   label: string;
@@ -214,6 +219,7 @@ export function normalizeOutstandingItem(
     type: raw.type === "installment" ? "installment" : "monthly",
     refId: String(raw.refId),
     itemId: String(raw.itemId),
+    serviceId: String(raw.serviceId ?? ""),
     serviceName: String(raw.serviceName ?? ""),
     month: String(raw.month ?? ""),
     label: String(raw.label ?? ""),
