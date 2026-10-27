@@ -70,6 +70,10 @@ function ReceiptCard({
   const total = lines
     ? lines.reduce((sum, line) => sum + line.amount, 0)
     : payment.amount;
+  // Only shown on a single-payment receipt: with `lines`, each line already
+  // states what it cost and a cart-wide subtotal would not add up to them.
+  const discountAmount = lines ? 0 : (payment.discountAmount ?? 0);
+  const grossAmount = payment.grossAmount;
 
   return (
     <Card className="receipt-card relative mx-auto w-full max-w-md overflow-hidden">
@@ -171,6 +175,31 @@ function ReceiptCard({
                 ))}
           </div>
         </div>
+
+        {/* Daily sessions and counter sales: the charge before a discount
+            given at the desk, so the patient's own copy says why they paid
+            less than the list price. A payment against a bill, a plan or a
+            booking carries no discount of its own -- that one is recorded on
+            the bill, and a multi-line receipt shows what each line cost. */}
+        {discountAmount > 0 && grossAmount != null && (
+          <div className="mt-4 flex flex-col gap-1 border-t border-border pt-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary">Subtotal</span>
+              <span className="font-medium text-text-primary">
+                {formatCurrency(grossAmount)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary">Discount</span>
+              <span className="font-medium text-danger">
+                &minus; {formatCurrency(discountAmount)}
+              </span>
+            </div>
+            {payment.discountReason && (
+              <p className="text-xs text-text-secondary">{payment.discountReason}</p>
+            )}
+          </div>
+        )}
 
         <div className="mt-4 flex items-center justify-between border-t-2 border-primary/15 pt-3">
           <span className="text-sm font-semibold text-text-primary">Total Paid</span>

@@ -25,12 +25,14 @@ import { LoadingState, EmptyState } from "@/components/ui/states";
 import { MaterialThumb } from "@/components/materials/MaterialThumb";
 import { PatientSearchInput } from "@/components/patients/PatientSearchInput";
 import { PaymentMethodSelector } from "@/components/payments/PaymentMethodSelector";
+import { DiscountFields } from "@/components/payments/DiscountFields";
 import { Receipt } from "@/components/payments/Receipt";
 import { SellHistoryTable } from "@/components/sales/SellHistoryTable";
 import { useMaterials } from "@/hooks/materials/useMaterials";
 import { usePatients } from "@/hooks/patients/usePatients";
 import { useCreatePatient } from "@/hooks/patients/useCreatePatient";
 import { useSellMaterials } from "@/hooks/materials/useSellMaterials";
+import { useDiscount } from "@/hooks/useDiscount";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
@@ -157,6 +159,17 @@ export function SellMaterialsView() {
 
   const itemCount = cart.reduce((sum, line) => sum + line.quantity, 0);
   const total = cart.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0);
+  // One discount off the whole cart, not per line -- a counter sale is
+  // settled as a total, and the refund path values a return from the line's
+  // own unit_price (backend docs/12-discounts.md). A paisa short of the
+  // total, matching the server: a free cart would take stock out of the
+  // branch with no payment to hang the sale lines off.
+  const discount = useDiscount({
+    charge: total,
+    ceiling: Math.max(0, total - 0.01),
+    what: "cart total",
+  });
+  const payable = Math.max(0, total - discount.value);
 
   const resetSale = () => {
     setCart([]);
@@ -170,6 +183,7 @@ export function SellMaterialsView() {
     setWalkInName("");
     setWalkInPhone("");
     setWalkInError(undefined);
+    discount.reset();
   };
 
   const handleAddWalkIn = () => {
@@ -197,7 +211,7 @@ export function SellMaterialsView() {
   };
 
   const handleConfirm = () => {
-    if (!selectedPatient || !user || cart.length === 0) return;
+    if (!selectedPatient || !user || cart.length === 0 || !discount.isValid) return;
     sellMaterials.mutate(
       {
         items: cart.map((line) => ({
@@ -206,6 +220,7 @@ export function SellMaterialsView() {
         })),
         patientId: selectedPatient.id,
         method,
+        ...discount.payload,
         idempotencyKey: generateIdempotencyKey(),
       },
       {
@@ -418,10 +433,26 @@ export function SellMaterialsView() {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
+              {discount.value > 0 && !discount.amountError && (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-text-secondary">Subtotal</span>
+                    <span className="font-medium text-text-primary">
+                      {formatCurrency(total)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-text-secondary">Discount</span>
+                    <span className="font-medium text-danger">
+                      − {formatCurrency(discount.value)}
+                    </span>
+                  </div>
+                </>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-text-secondary">Total</span>
                 <span className="text-xl font-bold text-primary-dark">
-                  {formatCurrency(total)}
+                  {formatCurrency(payable)}
                 </span>
               </div>
               {stage === "cart" && (
@@ -440,7 +471,7 @@ export function SellMaterialsView() {
                   </Button>
                   <Button
                     onClick={handleConfirm}
-                    disabled={!selectedPatient}
+                    disabled={!selectedPatient || !discount.isValid}
                     isLoading={sellMaterials.isPending}
                     className="flex-1 justify-center"
                   >
@@ -635,6 +666,11 @@ export function SellMaterialsView() {
                     </button>
                   </div>
                 </div>
+                <DiscountFields
+                  discount={discount}
+                  max={Math.max(0, total - 0.01)}
+                  reasonPlaceholder="e.g. Regular customer"
+                />
                 <div className="flex flex-col gap-2">
                   <h3 className="text-sm font-medium text-text-secondary">Payment method</h3>
                   <PaymentMethodSelector value={method} onChange={setMethod} />

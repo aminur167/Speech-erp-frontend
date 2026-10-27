@@ -270,6 +270,15 @@ export interface Payment {
    * Null for every other category and for older installment payments.
    */
   dueAfter?: number | null;
+  /**
+   * Daily sessions and counter sales only: the charge before a discount
+   * given at the desk, and why. Null/0 everywhere else -- a payment against
+   * a bill, a plan or a booking carries its discount on that record (see
+   * backend docs/12-discounts.md).
+   */
+  grossAmount?: number | null;
+  discountAmount?: number;
+  discountReason?: string;
 }
 
 export type RefundRequestStatus = "pending" | "approved" | "rejected";
@@ -439,8 +448,15 @@ export interface Booking {
   branchName: string;
   date: string;
   time: string;
+  /** What was actually collected at booking time -- the manager's figure, not a ratio of the fee. */
   advanceAmount: number;
-  /** False only for a booking the public website made — see create_public_booking. */
+  /** What the session is worth after any discount. Null on bookings taken before the fee was recorded. */
+  feeAmount?: number | null;
+  /** The fee before that discount, null when none was given. */
+  grossAmount?: number | null;
+  discountAmount?: number;
+  discountReason?: string;
+  /** False for a website booking, and for one a manager took with no advance. */
   advancePaid: boolean;
   status: "confirmed" | "cancelled";
 }

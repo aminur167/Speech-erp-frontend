@@ -10,10 +10,16 @@ import type { Payment, PaymentCategory, PaymentMethod } from "@/types/domain";
 // `amount` is a real DRF DecimalField, so it crosses the wire as a JSON
 // string (COERCE_DECIMAL_TO_STRING) -- normalized to a number here too, the
 // same as the id field, so formatCurrency() always receives a real number.
-export interface RawPayment extends Omit<Payment, "id" | "amount" | "dueAfter"> {
+export interface RawPayment
+  extends Omit<
+    Payment,
+    "id" | "amount" | "dueAfter" | "grossAmount" | "discountAmount"
+  > {
   id: number | string;
   amount: number | string;
   dueAfter?: number | string | null;
+  grossAmount?: number | string | null;
+  discountAmount?: number | string;
 }
 
 export function normalizePayment(raw: RawPayment): Payment {
@@ -24,7 +30,45 @@ export function normalizePayment(raw: RawPayment): Payment {
     // `== null`: Number(null) is 0, which would print "Remaining due ৳0" on
     // receipts that simply have no figure.
     dueAfter: raw.dueAfter == null ? null : Number(raw.dueAfter),
+    // Same `== null` reason: a receipt with no discount must not strike
+    // through a gross of 0.
+    grossAmount: raw.grossAmount == null ? null : Number(raw.grossAmount),
+    discountAmount: Number(raw.discountAmount ?? 0),
   };
+}
+
+export interface ChargeDailySessionInput {
+  patientId: string;
+  serviceId: string;
+  method: PaymentMethod;
+  /** Off the catalogue fee. Omitted when nothing was discounted. */
+  discount?: number;
+  discountReason?: string;
+  idempotencyKey?: string;
+}
+
+/**
+ * Charge one daily session.
+ *
+ * No `amount`. This screen used to post its own figure to `/payments/`,
+ * which meant a discount was given by typing a smaller number and nothing
+ * recorded that one had been given, how much, or why -- missing from the
+ * receipt, the branch report and the audit trail alike. The fee now comes
+ * from the catalogue and the discount is checked against it server-side
+ * (backend docs/12-discounts.md).
+ */
+export async function chargeDailySession(
+  input: ChargeDailySessionInput,
+): Promise<Payment> {
+  const { data } = await apiClient.post<RawPayment>("/enrollments/daily/", {
+    patient: input.patientId,
+    service: input.serviceId,
+    method: input.method,
+    discount: input.discount,
+    discountReason: input.discountReason,
+    idempotencyKey: input.idempotencyKey,
+  });
+  return normalizePayment(data);
 }
 
 export interface CreatePaymentInput {

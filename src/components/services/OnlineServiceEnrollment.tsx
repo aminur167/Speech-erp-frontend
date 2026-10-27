@@ -12,10 +12,12 @@ import { ServiceCard } from "@/components/services/ServiceCard";
 import { PatientSearchInput } from "@/components/patients/PatientSearchInput";
 import { PatientSearchResultList } from "@/components/patients/PatientSearchResultList";
 import { PaymentMethodSelector } from "@/components/payments/PaymentMethodSelector";
+import { DiscountFields } from "@/components/payments/DiscountFields";
 import { Receipt } from "@/components/payments/Receipt";
 import { useServices } from "@/hooks/services/useServices";
 import { usePatients } from "@/hooks/patients/usePatients";
 import { useCreateBooking } from "@/hooks/enrollments/useCreateBooking";
+import { useDiscount } from "@/hooks/useDiscount";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
@@ -37,7 +39,14 @@ const STEP_LABELS: Record<Step, string> = {
 /** Clinic's online-session booking window — the time input is constrained to this range. */
 const BOOKING_TIME_RANGE = { min: "10:00", max: "18:00" };
 const BOOKING_TIME_RANGE_LABEL = "10:00 AM – 6:00 PM";
-const ADVANCE_RATIO = 0.5;
+/**
+ * What the advance field starts at. Only a suggestion now: the manager
+ * decides how much of the fee to take today, and the server accepts their
+ * figure (backend docs/12-discounts.md). Kept in step with
+ * BOOKING_ADVANCE_RATIO, which is still what the server falls back to when
+ * no advance is sent — the public website booking path.
+ */
+const SUGGESTED_ADVANCE_RATIO = 0.5;
 
 export function OnlineServiceEnrollment() {
   const router = useRouter();
@@ -52,6 +61,9 @@ export function OnlineServiceEnrollment() {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [method, setMethod] = useState<PaymentMethod>("online_payment");
   const [payment, setPayment] = useState<Payment | null>(null);
+  // Kept as text so a half-typed "12." is not rewritten mid-keystroke, the
+  // same reason useDiscount holds its amount as text.
+  const [advanceText, setAdvanceText] = useState("");
 
   const { data: services, isLoading: servicesLoading } = useServices("online");
   const { data: patientResults, isLoading: patientsLoading } = usePatients({
@@ -60,14 +72,39 @@ export function OnlineServiceEnrollment() {
   });
   const createBooking = useCreateBooking();
 
+  const fee = selectedService?.fee ?? 0;
+  // The discount comes off the fee; the advance is then taken against what
+  // is left. A fee discounted to nothing is allowed here (unlike a daily
+  // session) because the Booking row records the session either way.
+  const discount = useDiscount({ charge: fee, what: "session fee" });
+  const suggestedAdvance =
+    Math.round(discount.net * SUGGESTED_ADVANCE_RATIO * 100) / 100;
+  // Untouched field means "take the suggestion" -- and it re-suggests as the
+  // discount changes, instead of stranding half of the old price in the box.
+  const advance = advanceText.trim() === "" ? suggestedAdvance : Number(advanceText);
+
+  let advanceError: string | undefined;
+  if (!Number.isFinite(advance) || advance < 0) {
+    advanceError = "Enter an advance of 0 or more.";
+  } else if (advance > discount.net) {
+    advanceError = `The advance cannot be more than the session fee (${formatCurrency(
+      discount.net,
+    )}).`;
+  }
+
+  const canBook = Boolean(date) && Boolean(time) && discount.isValid && !advanceError;
+
   const stepIndex = STEP_ORDER.indexOf(step);
 
-  // One atomic call: the backend creates the booking and charges its advance
-  // together, computing the advance amount itself from the service fee --
-  // this used to be two separate requests (create booking, then pay it),
-  // which could leave a booking confirmed with no advance ever collected.
+  // One atomic call: the backend creates the booking and takes its advance
+  // together -- this used to be two separate requests (create booking, then
+  // pay it), which could leave a booking confirmed with no advance ever
+  // collected. The advance sent is the manager's; the fee is never sent.
   const handleCreateBooking = () => {
+    // `time` spelled out rather than folded into `canBook`: a boolean does
+    // not narrow `string | null` for the request body below.
     if (!selectedService || !selectedPatient || !user || !date || !time) return;
+    if (!canBook) return;
     createBooking.mutate(
       {
         patientId: selectedPatient.id,
@@ -81,6 +118,8 @@ export function OnlineServiceEnrollment() {
         // now only ever used for what's shown on screen, never sent.
         time,
         method,
+        advanceAmount: advance,
+        ...discount.payload,
         idempotencyKey: generateIdempotencyKey(),
       },
       {
@@ -103,6 +142,8 @@ export function OnlineServiceEnrollment() {
     setBooking(null);
     setMethod("online_payment");
     setPayment(null);
+    setAdvanceText("");
+    discount.reset();
   };
 
   return (
@@ -177,12 +218,46 @@ export function OnlineServiceEnrollment() {
                 max={BOOKING_TIME_RANGE.max}
               />
             </div>
-            <div className="flex justify-between rounded-lg border border-border bg-background p-4 text-sm">
-              <span className="text-text-secondary">Advance Due (est. 50%)</span>
-              <span className="text-lg font-semibold text-primary-dark">
-                {formatCurrency(Math.round(selectedService.fee * ADVANCE_RATIO))}
-              </span>
+            <DiscountFields
+              discount={discount}
+              max={fee}
+              reasonPlaceholder="e.g. Follow-up session for an existing patient"
+            />
+            <div className="flex flex-col gap-2 rounded-lg border border-border bg-background p-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-text-secondary">Session fee</span>
+                <span className="font-medium text-text-primary">
+                  {discount.value > 0 ? (
+                    <>
+                      <span className="mr-2 text-text-secondary/70 line-through">
+                        {formatCurrency(fee)}
+                      </span>
+                      {formatCurrency(discount.net)}
+                    </>
+                  ) : (
+                    formatCurrency(fee)
+                  )}
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-border pt-2">
+                <span className="text-text-secondary">Remaining after this advance</span>
+                <span className="font-medium text-text-primary">
+                  {advanceError ? "—" : formatCurrency(Math.max(0, discount.net - advance))}
+                </span>
+              </div>
             </div>
+            <Input
+              label="Advance to collect now (৳)"
+              type="number"
+              inputMode="decimal"
+              min={0}
+              max={discount.net}
+              step="0.01"
+              placeholder={String(suggestedAdvance)}
+              value={advanceText}
+              onChange={(event) => setAdvanceText(event.target.value)}
+              error={advanceError}
+            />
             <PaymentMethodSelector value={method} onChange={setMethod} />
             <div className="flex gap-2">
               <Button variant="secondary" onClick={() => setStep("patient")}>
@@ -190,10 +265,10 @@ export function OnlineServiceEnrollment() {
               </Button>
               <Button
                 onClick={handleCreateBooking}
-                disabled={!date || !time}
+                disabled={!canBook}
                 isLoading={createBooking.isPending}
               >
-                Create Booking &amp; Pay Advance
+                {advance > 0 ? "Create Booking & Pay Advance" : "Create Booking"}
               </Button>
             </div>
           </div>
@@ -217,10 +292,46 @@ export function OnlineServiceEnrollment() {
                   {booking.date} at {formatTimeLabel(booking.time)}
                 </span>
               </div>
+              <div className="flex justify-between border-t border-success/30 pt-2">
+                <span className="text-text-secondary">Advance collected</span>
+                <span className="font-medium text-text-primary">
+                  {formatCurrency(booking.advanceAmount)}
+                </span>
+              </div>
+              {booking.feeAmount != null && (
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Still to pay</span>
+                  <span className="font-medium text-text-primary">
+                    {formatCurrency(Math.max(0, booking.feeAmount - booking.advanceAmount))}
+                  </span>
+                </div>
+              )}
             </div>
-            <div>
-              <Button onClick={() => setStep("receipt")}>View Receipt</Button>
-            </div>
+            {/* No advance taken means no payment and so no receipt to print.
+                The booking stands; the desk can take the advance later from
+                the bookings list, the same as a website booking. */}
+            {payment ? (
+              <div>
+                <Button onClick={() => setStep("receipt")}>View Receipt</Button>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-text-secondary">
+                  No advance was collected, so there is no receipt for this booking
+                  yet. Collect it from the bookings list when the patient pays.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => router.push("/manager/dashboard")}
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    Go to Dashboard
+                  </Button>
+                  <Button onClick={reset}>Start New Booking</Button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
