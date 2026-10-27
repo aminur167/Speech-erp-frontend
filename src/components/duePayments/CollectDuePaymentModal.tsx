@@ -301,6 +301,7 @@ export function CollectDuePaymentModal({
                 <OutstandingDueNotice
                   items={advanceOptions.outstandingItems}
                   total={advanceOptions.outstandingTotal}
+                  message="Months already owed have to be settled before paying ahead — otherwise an advance would be taken while an older month is still unpaid."
                 />
               )}
 

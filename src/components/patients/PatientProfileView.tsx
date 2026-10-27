@@ -17,6 +17,7 @@ import { usePatient } from "@/hooks/patients/usePatient";
 import { usePatientActiveServices } from "@/hooks/patients/usePatientActiveServices";
 import { usePatientOutstandingDues } from "@/hooks/patients/usePatientOutstandingDues";
 import { useReactivateService } from "@/hooks/enrollments/useInactivateService";
+import type { PatientActiveServiceItem } from "@/lib/api/patientServices";
 import { useTransactions } from "@/hooks/transactions/useTransactions";
 import { useBranches } from "@/hooks/branches/useBranches";
 import { useAuthStore } from "@/store/authStore";
@@ -78,6 +79,20 @@ export function PatientProfileView({
   const user = useAuthStore((state) => state.user);
   const { data: outstanding } = usePatientOutstandingDues(patientId);
   const reactivate = useReactivateService();
+  /**
+   * What is owed on one service the patient holds.
+   *
+   * Reactivating is gated on this, not on the patient's total: the debt a
+   * reactivation revives is that service's own kept months. Matched on
+   * `serviceId` rather than the name, because two services can share one.
+   */
+  const duesOn = (item: PatientActiveServiceItem) => {
+    const serviceId =
+      item.type === "monthly" ? item.enrollment.serviceId : item.plan.serviceId;
+    return (outstanding?.items ?? [])
+      .filter((owed) => owed.serviceId === serviceId)
+      .reduce((sum, owed) => sum + owed.amount, 0);
+  };
   // Making a service inactive is a branch-desk action, like collecting a
   // payment — Admin can read the profile without being offered it.
   const canStopServices = user?.role === "manager";
@@ -324,6 +339,7 @@ export function PatientProfileView({
               <OutstandingDueNotice
                 items={outstanding?.items ?? []}
                 total={outstandingTotal}
+                message="A stopped service can only be reactivated once its own unpaid months are cleared — reactivating revives exactly that debt."
               />
             </div>
           )}
@@ -352,10 +368,15 @@ export function PatientProfileView({
                           // Disabled with the reason rather than hidden: "not
                           // yet, and here is why" beats a missing option. The
                           // server refuses it either way.
-                          disabled: outstandingTotal > 0 || reactivate.isPending,
+                          //
+                          // This service's own arrears, not the patient's
+                          // whole balance: since 2026-10-27 a due on some
+                          // other package is no reason to keep this one
+                          // switched off, and the server allows it.
+                          disabled: duesOn(item) > 0 || reactivate.isPending,
                           hint:
-                            outstandingTotal > 0
-                              ? "Clear the outstanding dues first"
+                            duesOn(item) > 0
+                              ? `Clear the ${formatCurrency(duesOn(item))} owed on this service first`
                               : undefined,
                           onSelect: () =>
                             reactivate.mutate({

@@ -25,9 +25,9 @@ import {
   useAdvancePreview,
   useCollectMonthlyAdvance,
 } from "@/hooks/enrollments/useMonthlyAdvance";
-import { usePatientOutstandingDues } from "@/hooks/patients/usePatientOutstandingDues";
+import { useEnrollmentEligibility } from "@/hooks/enrollments/useEnrollmentEligibility";
 import { AdvanceMonthPicker } from "@/components/enrollments/AdvanceMonthPicker";
-import { OutstandingDueNotice } from "@/components/enrollments/OutstandingDueNotice";
+import { EnrollmentEligibilityNotice } from "@/components/enrollments/EnrollmentEligibilityNotice";
 import { useCurrentBranchName } from "@/hooks/branches/useCurrentBranchName";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
@@ -100,10 +100,14 @@ export function MonthlyServiceEnrollment() {
   const payFirstMonth = usePayMonthlyBill();
   const collectAdvance = useCollectMonthlyAdvance();
 
-  // Read as soon as a patient is chosen, so the block is explained on the
-  // confirm step rather than discovered when the payment is refused.
-  const { data: outstanding } = usePatientOutstandingDues(selectedPatient?.id);
-  const outstandingTotal = outstanding?.total ?? 0;
+  // Read as soon as a patient is chosen, so a refusal is explained on the
+  // confirm step rather than discovered when the payment is refused. Dues on
+  // *other* services no longer block (2026-10-27) -- they are shown, and the
+  // manager sells anyway.
+  const eligibility = useEnrollmentEligibility(
+    selectedPatient?.id,
+    selectedService?.id,
+  );
 
   const { data: advanceOptions, isLoading: advanceLoading } = useAdvanceOptions(
     step === "advance" ? enrollment?.id : undefined,
@@ -345,12 +349,11 @@ export function MonthlyServiceEnrollment() {
           <div className="flex flex-col gap-4">
             <h2 className="text-sm font-medium text-text-secondary">Confirm enrollment</h2>
             <PaymentSummary patient={selectedPatient} service={selectedService} />
-            {outstandingTotal > 0 && (
-              <OutstandingDueNotice
-                items={outstanding?.items ?? []}
-                total={outstandingTotal}
-              />
-            )}
+            <EnrollmentEligibilityNotice
+              eligibility={eligibility}
+              patientId={selectedPatient.id}
+              serviceName={selectedService.name}
+            />
             <p className="text-sm text-text-secondary">
               The enrollment is created when the admit fee is collected, on the
               next step. The first month is billed at the same time and
@@ -360,7 +363,7 @@ export function MonthlyServiceEnrollment() {
               <Button variant="secondary" onClick={() => setStep("patient")}>
                 ← Back
               </Button>
-              <Button onClick={() => setStep("payment")} disabled={outstandingTotal > 0}>
+              <Button onClick={() => setStep("payment")} disabled={!eligibility.canEnroll}>
                 Continue
               </Button>
             </div>
