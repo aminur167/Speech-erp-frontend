@@ -97,7 +97,14 @@ export function exportBranchReportPdf({
     return after();
   };
 
-  const caption = (text: string, y: number) => {
+  const caption = (text: string, startY: number) => {
+    // A heading must never be orphaned at the foot of a page: autoTable
+    // pushes a table that does not fit onto the next page and would leave
+    // the title behind on this one, captioning nothing.
+    const breaks = startY > doc.internal.pageSize.getHeight() - 28;
+    if (breaks) doc.addPage();
+    const y = breaks ? 16 : startY;
+
     doc.setFontSize(9);
     doc.setTextColor(...INK);
     doc.text(text, 14, y);
@@ -135,6 +142,16 @@ export function exportBranchReportPdf({
     y,
   );
 
+  // The named packages, which is what "what sold today?" actually means --
+  // the block above only splits by billing type. The server's trailing row
+  // for unpackaged money is what keeps this column totalling to Collected.
+  y = caption("Collected by service name", y);
+  y = section(
+    ["Service", "Enrolled", "Amount"],
+    report.byService.map((row) => [row.service, row.enrolled, money(row.amount)]),
+    y,
+  );
+
   y = caption(
     `Expenses — approved ${money(report.expensesApproved)}, pending ${money(report.expensesPending)}`,
     y,
@@ -145,29 +162,6 @@ export function exportBranchReportPdf({
     y,
   );
 
-  // Adjustments explain why the takings are not the sum of the receipts.
-  if (report.refunds.length > 0 || report.voids.length > 0) {
-    y = caption("Adjustments", y);
-    y = section(
-      ["Kind", "Receipt", "Patient", "Amount"],
-      [
-        ...report.refunds.map((row) => [
-          "Refund",
-          row.receiptNumber,
-          row.patientName,
-          money(row.amount),
-        ]),
-        ...report.voids.map((row) => [
-          "Void",
-          row.receiptNumber,
-          row.patientName,
-          money(row.amount),
-        ]),
-      ],
-      y,
-    );
-  }
-
   // --- 5-10: the rest of the day ----------------------------------------
   y = caption("Patients and services", y);
   y = section(
@@ -175,9 +169,6 @@ export function exportBranchReportPdf({
     [
       ["New patients registered", report.newPatients],
       ["Patients seen (paid)", report.patientsSeen],
-      ["Attendance — present", report.attendance.present],
-      ["Attendance — informed absence", report.attendance.informed],
-      ["Attendance — absent", report.attendance.absent],
       ["New monthly enrolments", report.services.newMonthly],
       ["New installment plans", report.services.newInstallmentPlans],
       ["Appointments booked", report.services.bookings],
@@ -185,6 +176,38 @@ export function exportBranchReportPdf({
     ],
     y,
   );
+
+  // Per service kind, never added together: monthly and installment are
+  // separate rosters, and a combined "9 absent" hides which group it was.
+  y = caption("Patient attendance", y);
+  y = section(
+    ["Service type", "Present", "Informed absence", "Absent"],
+    (["monthly", "installment"] as const).map((kind) => [
+      kind === "monthly" ? "Monthly" : "Installment",
+      report.attendance[kind].present,
+      report.attendance[kind].informed,
+      report.attendance[kind].absent,
+    ]),
+    y,
+  );
+
+  // Who the branch took on, not just how many. Skipped on a day with no
+  // intake rather than printing an empty frame.
+  if (report.newlyRegistered.length > 0) {
+    y = caption("Newly registered", y);
+    y = section(
+      ["Code", "Name", "Age", "Gender", "Phone", "Enrolled in"],
+      report.newlyRegistered.map((row) => [
+        row.code,
+        row.name,
+        row.age ?? "—",
+        row.gender ? titleCase(row.gender) : "—",
+        row.phone,
+        row.service || "—",
+      ]),
+      y,
+    );
+  }
 
   if (report.materialsSold.length > 0) {
     y = caption("Materials sold", y);
@@ -219,11 +242,14 @@ export function exportBranchReportPdf({
     y,
   );
 
-  // --- 11: every receipt -------------------------------------------------
-  doc.addPage();
-  caption(`Receipts (${report.payments.length})`, 16);
+  // --- every receipt -----------------------------------------------------
+  //
+  // Continues from wherever the summary ended rather than starting a page of
+  // its own: autoTable breaks the table when it runs out of room, so the
+  // report is as many pages as the data needs and no more.
+  y = caption(`Receipts (${report.payments.length})`, y);
   autoTable(doc, {
-    startY: 20,
+    startY: y,
     head: [["Receipt", "Time", "Patient", "Type", "Method", "Collected by", "Amount"]],
     body: report.payments.map((row) => [
       row.receiptNumber,

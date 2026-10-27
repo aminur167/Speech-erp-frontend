@@ -39,9 +39,23 @@ export interface BranchReport {
   expensesByCategory: { category: string; amount: Money; count: number }[];
   expensesApproved: Money;
   expensesPending: Money;
-  refunds: { receiptNumber: string; patientName: string; amount: Money; reason: string }[];
-  voids: { receiptNumber: string; patientName: string; amount: Money }[];
-  attendance: { present: number; informed: number; absent: number };
+  /** What each package earned, and how many signed up for it. The server
+   *  adds a row for money that belongs to no package (daily visits, counter
+   *  sales) so these amounts still total `grossCollected`. */
+  byService: { service: string; enrolled: number; amount: Money }[];
+  /** Per service kind, never summed: the two are different rosters. Both
+   *  keys are always present, even on a day nobody was marked. */
+  attendance: Record<"monthly" | "installment", { present: number; informed: number; absent: number }>;
+  newlyRegistered: {
+    code: string;
+    name: string;
+    age: number | null;
+    gender: string;
+    phone: string;
+    /** The package they were registered for; empty if they are not on one yet. */
+    service: string;
+    createdAt: string;
+  }[];
   services: {
     newMonthly: number;
     newInstallmentPlans: number;
