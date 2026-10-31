@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarOff, Download, Plus, UserCheck, Users, Wallet } from "lucide-react";
+import { CalendarOff, Plus, UserCheck, Users, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -10,24 +10,20 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { StaffTable } from "@/components/staff/StaffTable";
+import { StaffTabs } from "@/components/staff/StaffTabs";
 import { StaffForm } from "@/components/staff/StaffForm";
 import { StaffDetailDrawer } from "@/components/staff/StaffDetailDrawer";
 import { useStaff } from "@/hooks/staff/useStaff";
 import { useStaffSummary } from "@/hooks/staff/useStaffSummary";
-import { useTodayAttendance } from "@/hooks/staff/useTodayAttendance";
-import { useMonthlyStaffReport } from "@/hooks/staff/useMonthlyStaffReport";
-import { useSalaryPayments } from "@/hooks/salaryPayments/useSalaryPayments";
 import { useCreateStaff } from "@/hooks/staff/useCreateStaff";
 import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useDeleteStaff } from "@/hooks/staff/useDeleteStaff";
 import { useAuthStore } from "@/store/authStore";
 import { formatCurrency } from "@/utils/currency";
-import { exportTableToPdf, formatCurrencyForPdf } from "@/utils/exportPdf";
 import type { StaffInput } from "@/lib/api/staff";
 import type { StaffMember } from "@/types/domain";
 import { useToggleStaffActive } from "@/hooks/staff/useToggleStaffActive";
 
-const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
 /**
  * One branch's team.
@@ -39,11 +35,12 @@ const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
  */
 export function StaffListView({
   branchId: branchIdOverride,
-  roleLabel = "Branch Manager",
+  basePath = "/manager/staff",
 }: {
   /** Admin only — a Manager is scoped to their own branch server-side. */
   branchId?: string;
-  roleLabel?: string;
+  /** Where the tab strip links: `/manager/staff` or `/admin/branches/{id}/staff`. */
+  basePath?: string;
 } = {}) {
   const user = useAuthStore((state) => state.user);
   // Undefined for a Manager, whose branch the backend already knows.
@@ -51,18 +48,6 @@ export function StaffListView({
 
   const { data: staff, isLoading } = useStaff(branchId);
   const { data: summary } = useStaffSummary(branchId);
-  const { data: todayAttendance } = useTodayAttendance(branchId);
-  const { data: monthlyReport } = useMonthlyStaffReport(branchId, currentMonth);
-  const { data: currentMonthPayments } = useSalaryPayments({
-    branchId,
-    month: currentMonth,
-    pageSize: 500,
-  });
-  const paidStaffIds = new Set(
-    (currentMonthPayments?.results ?? [])
-      .filter((payment) => payment.status === "paid")
-      .map((payment) => payment.staffId),
-  );
   const createStaff = useCreateStaff(branchId);
   const updateStaff = useUpdateStaff(branchId);
   const deleteStaffMutation = useDeleteStaff(branchId);
@@ -94,64 +79,22 @@ export function StaffListView({
     deleteStaffMutation.mutate(deletingStaff.id, { onSuccess: () => setDeletingStaff(null) });
   };
 
-  const handleExport = () => {
-    const monthLabel = new Date(`${currentMonth}-01T00:00:00`).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "long",
-    });
-
-    exportTableToPdf({
-      filename: `staff-monthly-report-${currentMonth}.pdf`,
-      title: "Staff Monthly Report",
-      subtitle: `${roleLabel} — ${monthLabel}`,
-      columns: [
-        "Staff Code",
-        "Name",
-        "Designation",
-        "Monthly Salary",
-        "Bonus",
-        "Net Payable",
-        "Present",
-        "Early Leave",
-        "Absent",
-        "On Leave",
-      ],
-      rows: (monthlyReport ?? []).map((row) => [
-        row.staffCode,
-        row.name,
-        row.designation,
-        formatCurrencyForPdf(row.monthlySalary),
-        formatCurrencyForPdf(row.bonusTotal),
-        formatCurrencyForPdf(row.netPayable),
-        row.presentCount,
-        row.earlyLeaveCount,
-        row.absentCount,
-        row.leaveCount,
-      ]),
-    });
-  };
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Staff"
         action={
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={handleExport}
-              disabled={!monthlyReport || monthlyReport.length === 0}
-            >
-              <Download className="h-4 w-4" />
-              Export Monthly Report
-            </Button>
-            <Button onClick={() => setIsAddOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Add Staff
-            </Button>
-          </div>
+          <Button onClick={() => setIsAddOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Add Staff
+          </Button>
         }
       />
+
+      {/* The monthly report export moved to the Payroll tab, where the month
+          picker that scopes it lives. */}
+      <StaffTabs base={basePath} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Staff" value={String(summary?.totalStaff ?? 0)} icon={Users} />
@@ -181,10 +124,7 @@ export function StaffListView({
         {!isLoading && (!staff || staff.length === 0) && <EmptyState label="No staff added yet." />}
         {!isLoading && staff && staff.length > 0 && (
           <StaffTable
-            branchId={branchId}
             staff={staff}
-            todayAttendance={todayAttendance ?? {}}
-            paidStaffIds={paidStaffIds}
             onViewDetails={(member) => setViewingStaffId(member.id)}
             onEdit={setEditingStaff}
             onDelete={setDeletingStaff}

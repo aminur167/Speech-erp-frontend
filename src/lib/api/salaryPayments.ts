@@ -9,12 +9,23 @@ import type { PaymentMethod, SalaryPayment, SalaryPaymentStatus } from "@/types/
 
 // `amount` is a real DRF DecimalField, so it crosses the wire as a JSON
 // string (COERCE_DECIMAL_TO_STRING) -- normalized here too, same as id.
-interface RawSalaryPayment extends Omit<SalaryPayment, "id" | "amount"> {
+interface RawSalaryPayment
+  extends Omit<SalaryPayment, "id" | "amount" | "grossAmount" | "advanceDeduction"> {
   id: number | string;
   amount: number | string;
+  grossAmount?: number | string | null;
+  advanceDeduction?: number | string;
 }
 function normalizeSalaryPayment(raw: RawSalaryPayment): SalaryPayment {
-  return { ...raw, id: String(raw.id), amount: Number(raw.amount) };
+  return {
+    ...raw,
+    id: String(raw.id),
+    amount: Number(raw.amount),
+    // `== null` rather than Number(...): an older request has no gross, and
+    // 0 would print a payslip claiming the salary was nothing.
+    grossAmount: raw.grossAmount == null ? null : Number(raw.grossAmount),
+    advanceDeduction: Number(raw.advanceDeduction ?? 0),
+  };
 }
 
 export interface SalaryPaymentListParams {

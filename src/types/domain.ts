@@ -530,6 +530,13 @@ export type AttendanceStatus = "present" | "early_leave" | "on_leave" | "absent"
 export interface StaffAttendance {
   id: string;
   staffId: string;
+  /**
+   * Carried on the record rather than joined from the roster: a past day's
+   * sheet includes staff who have since left, and they are not in the
+   * roster the screen holds.
+   */
+  staffName: string;
+  staffCode: string;
   branchId: string;
   date: string; // ISO "YYYY-MM-DD"
   checkInAt: string | null; // ISO datetime
@@ -565,7 +572,15 @@ export interface SalaryPayment {
   branchId: string;
   branchName: string;
   month: string; // ISO "YYYY-MM"
+  /** What will actually be handed over: gross less any advance recovered. */
   amount: number;
+  /**
+   * Salary + bonus before advances came off. Null on requests made before
+   * advances existed — there was nothing to deduct, so `amount` was gross.
+   */
+  grossAmount?: number | null;
+  /** What outstanding advances took out of this month. */
+  advanceDeduction?: number;
   status: SalaryPaymentStatus;
   requestedBy: string;
   reviewNote: string;
