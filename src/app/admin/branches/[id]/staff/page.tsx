@@ -9,7 +9,7 @@ export default async function AdminBranchStaffPage({
   return (
     <StaffListView
       branchId={id}
-      roleLabel="Admin"
+      basePath={`/admin/branches/${id}/staff`}
     />
   );
 }

@@ -4,30 +4,22 @@ import type { KeyboardEvent, MouseEvent } from "react";
 import { Eye, Pencil, Power, PowerOff, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { StaffAvatar } from "@/components/staff/StaffAvatar";
-import { AttendanceCell } from "@/components/staff/AttendanceCell";
 import { humanizeField } from "@/utils/fields";
 import { formatCurrency } from "@/utils/currency";
 import { cameFromControl } from "@/utils/interactiveClick";
-import type { StaffAttendance, StaffMember } from "@/types/domain";
+import type {StaffMember} from "@/types/domain";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 
 export function StaffTable({
-  branchId,
   staff,
-  todayAttendance,
-  paidStaffIds,
   onViewDetails,
   onEdit,
   onDelete,
   onToggleActive,
   canManage,
 }: {
-  /** Admin only — a Manager is scoped to their own branch server-side. */
-  branchId?: string;
   staff: StaffMember[];
-  todayAttendance: Record<string, StaffAttendance>;
   /** Staff already disbursed this month's salary — everyone else reads as "Unpaid" at a glance. */
-  paidStaffIds: Set<string>;
   onViewDetails: (member: StaffMember) => void;
   onEdit: (member: StaffMember) => void;
   onDelete: (member: StaffMember) => void;
@@ -43,9 +35,11 @@ export function StaffTable({
             <th className="py-2 pr-4 font-medium">Staff</th>
             <th className="py-2 pr-4 font-medium">Designation</th>
             <th className="py-2 pr-4 font-medium">Contact</th>
+            {/* Attendance and the salary workflow moved to their own tabs
+                (StaffTabs). They were two different jobs wearing the costume
+                of a roster column — one needed a date, the other a month,
+                and neither fits a list of who works here. */}
             <th className="py-2 pr-4 font-medium">Monthly Salary</th>
-            <th className="py-2 pr-4 font-medium">Today&apos;s Attendance</th>
-            <th className="py-2 pr-4 font-medium">This Month&apos;s Salary</th>
             <th className="py-2 pr-4 font-medium">Status</th>
             {canManage && <th className="w-12 py-2 pr-2 font-medium"><span className="sr-only">Actions</span></th>}
           </tr>
@@ -86,19 +80,6 @@ export function StaffTable({
               </td>
               <td className="py-3 pr-4 font-medium text-text-primary">
                 {formatCurrency(member.monthlySalary)}
-              </td>
-              <td className="py-3 pr-4">
-                <AttendanceCell
-                  branchId={branchId}
-                  staffId={member.id}
-                  record={todayAttendance[member.id]}
-                />
-              </td>
-              <td className="py-3 pr-4">
-                <Badge
-                  tone={paidStaffIds.has(member.id) ? "success" : "warning"}
-                  label={paidStaffIds.has(member.id) ? "Paid" : "Unpaid"}
-                />
               </td>
               <td className="py-3 pr-4">
                 <Badge

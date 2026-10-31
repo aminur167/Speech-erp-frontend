@@ -20,6 +20,7 @@ import { ApproveSalaryPaymentModal } from "@/components/salaryPayments/ApproveSa
 import { RejectSalaryPaymentModal } from "@/components/salaryPayments/RejectSalaryPaymentModal";
 import { SalaryInvoiceModal } from "@/components/salaryPayments/SalaryInvoiceModal";
 import { StaffPerformanceDrawer } from "@/components/salaryPayments/StaffPerformanceDrawer";
+import { AdvanceApprovalsSection } from "@/components/salaryPayments/AdvanceApprovalsSection";
 import { StaffAvatar } from "@/components/staff/StaffAvatar";
 import { cameFromControl } from "@/utils/interactiveClick";
 import type { SalaryPayment, SalaryPaymentStatus } from "@/types/domain";
@@ -74,6 +75,10 @@ export function SalaryApprovalsView() {
       <PageHeader
         title="Salary Approvals"
       />
+
+      {/* Advances first: they are the smaller, more urgent queue, and they
+          disappear entirely when none are waiting. */}
+      {isAdmin && <AdvanceApprovalsSection />}
 
       {branchSummary && branchSummary.length > 0 && (
         <div className="flex flex-col gap-2.5">

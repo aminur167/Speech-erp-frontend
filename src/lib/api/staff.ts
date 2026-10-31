@@ -141,12 +141,26 @@ export async function deleteStaff(branchId: string | undefined, id: string): Pro
 }
 
 /** Today's attendance keyed by staff id — staff nobody has marked yet are simply missing keys. */
+/**
+ * One day's attendance, keyed by staff id.
+ *
+ * `date` defaults to today, which is the live sheet: the server runs its
+ * auto-close jobs first, so a missing key means "not checked in yet" and the
+ * screen offers the button.
+ *
+ * Any other date is history. The server does not auto-close it (marking
+ * someone absent for a day already over would invent a fact nobody observed)
+ * and the roster it reads includes staff who have since left — they worked
+ * that day. A missing key there means no record exists, so the screen shows
+ * nobody rather than an absence.
+ */
 export async function getTodayAttendance(
   branchId?: string,
+  date?: string,
 ): Promise<Record<string, StaffAttendance>> {
   const { data } = await apiClient.get<Record<string, RawAttendance>>(
     "/staff/today-attendance/",
-    branchParams(branchId),
+    { params: { ...branchParams(branchId).params, date } },
   );
   return Object.fromEntries(
     Object.entries(data).map(([staffId, record]) => [staffId, normalizeAttendance(record)]),
@@ -268,4 +282,135 @@ export async function deactivateStaff(id: string): Promise<StaffMember> {
 export async function activateStaff(id: string): Promise<StaffMember> {
   const { data } = await apiClient.post<RawStaffMember>(`/staff/${id}/activate/`);
   return normalizeMember(data);
+}
+
+
+/** A decimal string on the wire (COERCE_DECIMAL_TO_STRING), like every other money field. */
+type Money = string;
+
+export type StaffAdvanceStatus =
+  | "pending_approval"
+  | "approved"
+  | "rejected"
+  | "paid";
+
+export interface StaffAdvance {
+  id: string;
+  staffId: string;
+  staffName: string;
+  staffCode: string;
+  staffPhotoUrl: string;
+  branchId: string;
+  branchName: string;
+  amount: number;
+  reason: string;
+  /** How much later salary has already taken back. */
+  recoveredAmount: number;
+  /** Still to come out of future salary. */
+  outstanding: number;
+  status: StaffAdvanceStatus;
+  requestedBy: string;
+  reviewNote: string;
+  reviewedBy: string;
+  reviewedAt: string | null;
+  paymentMethod: string;
+  paidAt: string | null;
+  expenseId: string | null;
+  expenseCode: string;
+  createdAt: string;
+}
+
+interface RawAdvance
+  extends Omit<StaffAdvance, "id" | "amount" | "recoveredAmount" | "outstanding"> {
+  id: number | string;
+  amount: Money | number;
+  recoveredAmount: Money | number;
+  outstanding: Money | number;
+}
+
+function normalizeAdvance(raw: RawAdvance): StaffAdvance {
+  return {
+    ...raw,
+    id: String(raw.id),
+    amount: Number(raw.amount),
+    recoveredAmount: Number(raw.recoveredAmount),
+    outstanding: Number(raw.outstanding),
+  };
+}
+
+export async function listStaffAdvances(
+  branchId: string | undefined,
+  staffId: string,
+): Promise<StaffAdvance[]> {
+  const { data } = await apiClient.get<RawAdvance[]>(`/staff/${staffId}/advances/`);
+  return data.map(normalizeAdvance);
+}
+
+export interface RequestAdvanceInput {
+  staffId: string;
+  amount: number;
+  /** Required — see the backend's docs/14. */
+  reason: string;
+}
+
+/**
+ * Ask Admin to approve paying this staff member early.
+ *
+ * No branch and no requester in the body: the server derives both from the
+ * authenticated manager, as it does for every other branch-desk action.
+ */
+export async function requestStaffAdvance(
+  input: RequestAdvanceInput,
+): Promise<StaffAdvance> {
+  const { data } = await apiClient.post<RawAdvance>(
+    `/staff/${input.staffId}/request-advance/`,
+    { amount: input.amount, reason: input.reason },
+  );
+  return normalizeAdvance(data);
+}
+
+export interface AdvanceListParams {
+  branchId?: string;
+  status?: StaffAdvanceStatus;
+  staffId?: string;
+}
+
+export async function listAdvances(
+  params: AdvanceListParams = {},
+): Promise<StaffAdvance[]> {
+  const { data } = await apiClient.get<RawAdvance[] | { results: RawAdvance[] }>(
+    "/staff/advances/",
+    {
+      params: {
+        branch: params.branchId || undefined,
+        status: params.status,
+        staff: params.staffId,
+      },
+    },
+  );
+  const rows = Array.isArray(data) ? data : data.results;
+  return rows.map(normalizeAdvance);
+}
+
+export async function reviewStaffAdvance(
+  advanceId: string,
+  approve: boolean,
+  reviewNote = "",
+): Promise<StaffAdvance> {
+  const { data } = await apiClient.post<RawAdvance>(
+    `/staff/advances/${advanceId}/review/`,
+    { approve, reviewNote },
+  );
+  return normalizeAdvance(data);
+}
+
+export async function disburseStaffAdvance(
+  advanceId: string,
+  paymentMethod: string,
+): Promise<StaffAdvance> {
+  const { data } = await apiClient.post<RawAdvance>(
+    `/staff/advances/${advanceId}/disburse/`,
+    { paymentMethod },
+  );
+  return normalizeAdvance(data);
 }

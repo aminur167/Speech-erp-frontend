@@ -119,7 +119,14 @@ export const queryKeys = {
     list: (branchId?: string) => ["staff", "list", branchId] as const,
     detail: (staffId: string) => ["staff", "detail", staffId] as const,
     summary: (branchId?: string) => ["staff", "summary", branchId] as const,
-    todayAttendance: (branchId?: string) => ["staff", "today-attendance", branchId] as const,
+    /** `date` is part of the key: each day's sheet is its own cached answer. */
+    todayAttendance: (branchId?: string, date?: string) =>
+      ["staff", "today-attendance", branchId, date ?? "today"] as const,
+    /** Prefix key — invalidating after a check-in refreshes every cached day. */
+    todayAttendanceAll: () => ["staff", "today-attendance"] as const,
+    advances: (staffId: string) => ["staff", "advances", staffId] as const,
+    advanceList: (branchId?: string, status?: string) =>
+      ["staff", "advance-list", branchId, status] as const,
     attendanceHistory: (staffId: string, month: string) =>
       ["staff", "attendance-history", staffId, month] as const,
     /** Prefix key for invalidating every month's history at once. */

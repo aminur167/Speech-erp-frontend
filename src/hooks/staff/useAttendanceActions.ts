@@ -7,7 +7,8 @@ import type { AttendanceStatus, StaffAttendance } from "@/types/domain";
 function useInvalidateAttendance(branchId?: string) {
   const queryClient = useQueryClient();
   return (staffId: string) => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.staff.todayAttendance(branchId) });
+    // Every cached day, not just today's: the key now carries the date.
+    queryClient.invalidateQueries({ queryKey: queryKeys.staff.todayAttendanceAll() });
     queryClient.invalidateQueries({ queryKey: queryKeys.staff.summary(branchId) });
     queryClient.invalidateQueries({ queryKey: queryKeys.staff.attendanceHistoryAll(staffId) });
   };

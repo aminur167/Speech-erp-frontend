@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { StaffPhotoPicker } from "@/components/staff/StaffPhotoPicker";
 import { SalaryPaymentSection } from "@/components/staff/SalaryPaymentSection";
+import { StaffAdvanceSection } from "@/components/staff/StaffAdvanceSection";
 import { useUpdateStaff } from "@/hooks/staff/useUpdateStaff";
 import { useAddBonus } from "@/hooks/staff/useAddBonus";
 import { useStaffBonuses } from "@/hooks/staff/useStaffBonuses";
@@ -190,6 +191,8 @@ export function StaffDetailDrawer({
         </section>
 
         <SalaryPaymentSection staff={staff} />
+
+        <StaffAdvanceSection staff={staff} branchId={branchId} />
 
         <section className="flex flex-col gap-1.5">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Bonuses</h3>
